@@ -1,0 +1,1013 @@
+/* 全局样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 皮肤系统 - CSS变量 */
+:root {
+    --score-bg-color: white;
+    --score-border-color: #dee2e6;
+    --score-text-color: #333;
+    --score-note-color: #333;
+    --score-rest-color: #666;
+    --score-special-color: #333;
+    --score-header-border: #333;
+}
+
+body {
+    font-family: 'Microsoft YaHei', Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f5f5f5;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    max-width: 1440px;
+    margin: 0 auto;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 顶部工具栏样式 */
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.2rem 1.5rem;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-bottom: 1px solid #e9ecef;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    position: relative;
+    z-index: 10;
+}
+
+.tool-group {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tool-btn {
+    padding: 0.75rem 1.5rem;
+    border: 1px solid #e1e5e9;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-weight: 500;
+    color: #495057;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+    /* 性能优化 */
+    will-change: transform, box-shadow, background-color;
+    contain: layout style paint;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+.tool-btn:hover {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.tool-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+}
+
+.tool-btn:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.title-input {
+    padding: 0.75rem 1rem;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 1rem;
+    min-width: 220px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.15s ease;
+    font-weight: 500;
+    color: #495057;
+    /* 性能优化 */
+    will-change: border-color, box-shadow;
+    contain: layout style;
+}
+
+.title-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25), 0 2px 4px rgba(0, 0, 0, 0.05);
+    background: #ffffff;
+}
+
+.title-input:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 主要内容区域样式 */
+.main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* 左侧元素面板样式 */
+.elements-panel {
+    width: 320px;
+    padding: 1rem 0.8rem;
+    background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+    border-right: 1px solid #e9ecef;
+    overflow-y: auto;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.panel-section {
+    margin-bottom: 1rem;
+}
+
+.panel-section h3 {
+    margin-bottom: 0.5rem;
+    color: #343a40;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.3rem 0;
+    border-bottom: 2px solid #e9ecef;
+    position: relative;
+}
+
+.panel-section h3::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 30px;
+    height: 2px;
+    background: linear-gradient(90deg, #007bff, #6f42c1);
+    border-radius: 1px;
+}
+
+.element-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    gap: 0.5rem;
+}
+
+/* 时值按钮网格 - 一行大约三个按钮 */
+.element-grid:has([data-duration]) {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+}
+
+/* 休止符按钮网格 - 需要更宽的空间 */
+.element-grid:has([data-rest]) {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+}
+
+/* 修饰符号按钮网格 - 中等宽度 */
+.element-grid:has([data-modifier]),
+.element-grid:has([data-octave]) {
+    grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+}
+
+/* 特殊符号按钮网格 - 需要更宽的空间 */
+.element-grid:has([data-special]) {
+    grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+}
+
+.element-btn {
+    padding: 0.5rem 0.4rem;
+    border: 1px solid #e1e5e9;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #495057;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    /* 性能优化 */
+    will-change: transform, box-shadow, background-color;
+    contain: layout style paint;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+.element-btn:hover {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.element-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+}
+
+.element-btn:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* 基本音符按钮特殊样式 */
+.element-btn[data-note] {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-color: #90caf9;
+    color: #1976d2;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.element-btn[data-note]:hover {
+    background: linear-gradient(135deg, #bbdefb 0%, #e1bee7 100%);
+    border-color: #1976d2;
+    color: #0d47a1;
+}
+
+/* 时值按钮特殊样式 */
+.element-btn[data-duration] {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%);
+    border-color: #a5d6a7;
+    color: #388e3c;
+    min-width: 100px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.element-btn[data-duration]:hover {
+    background: linear-gradient(135deg, #c8e6c9 0%, #dcedc8 100%);
+    border-color: #388e3c;
+    color: #1b5e20;
+}
+
+/* 休止符按钮特殊样式 */
+.element-btn[data-rest] {
+    background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%);
+    border-color: #ffcc02;
+    color: #f57c00;
+    min-width: 80px;
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.element-btn[data-rest]:hover {
+    background: linear-gradient(135deg, #ffe0b2 0%, #f8bbd9 100%);
+    border-color: #f57c00;
+    color: #e65100;
+}
+
+/* 修饰符号按钮特殊样式 */
+.element-btn[data-modifier],
+.element-btn[data-octave] {
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1f5fe 100%);
+    border-color: #ce93d8;
+    color: #7b1fa2;
+    min-width: 65px;
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.element-btn[data-modifier]:hover,
+.element-btn[data-octave]:hover {
+    background: linear-gradient(135deg, #e1bee7 0%, #b3e5fc 100%);
+    border-color: #7b1fa2;
+    color: #4a148c;
+}
+
+/* 特殊符号按钮特殊样式 */
+.element-btn[data-special] {
+    background: linear-gradient(135deg, #ffebee 0%, #f1f8e9 100%);
+    border-color: #ef9a9a;
+    color: #c62828;
+    min-width: 75px;
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.element-btn[data-special]:hover {
+    background: linear-gradient(135deg, #ffcdd2 0%, #dcedc8 100%);
+    border-color: #c62828;
+    color: #b71c1c;
+}
+
+/* 中央编辑区域样式 */
+.score-editor {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    background-color: white;
+}
+
+.score-container {
+    min-height: 500px;
+    height: auto; /* 允许动态扩展 */
+    border: 1px solid var(--score-border-color);
+    border-radius: 4px;
+    padding: 2rem;
+    background-color: var(--score-bg-color);
+    /* 移除内阴影，这可能导致导出图片出现灰色区域 */
+    /* box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1); */
+    position: relative; /* 添加相对定位，作为连音线的定位上下文 */
+    /* 性能优化 */
+    contain: layout style paint;
+    will-change: transform;
+    /* 确保容器能够动态扩展 */
+    overflow: visible;
+}
+
+/* 底部控制面板样式 */
+.control-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.control-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.control-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ced4da;
+    background-color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.control-btn:hover {
+    background-color: #e9ecef;
+}
+
+.control-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+.control-btn:disabled:hover {
+    background-color: #f8f9fa;
+    transform: none;
+}
+
+/* 表单控件样式 */
+select {
+    padding: 0.75rem 1rem;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.15s ease;
+    font-weight: 500;
+    color: #495057;
+    cursor: pointer;
+    /* 性能优化 */
+    will-change: border-color, box-shadow;
+    contain: layout style;
+}
+
+select:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25), 0 2px 4px rgba(0, 0, 0, 0.05);
+    background: #ffffff;
+}
+
+/* 皮肤选择器样式 */
+#scoreSkin {
+    min-width: 120px;
+}
+
+/* 标签样式优化 */
+label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+input[type="range"] {
+    width: 150px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+    
+    .elements-panel {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .score-editor {
+        padding: 1rem;
+    }
+    
+    .toolbar, .control-panel {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+
+/* 拖拽相关样式 */
+.draggable {
+    cursor: move;
+}
+
+.dragging {
+    opacity: 0.5;
+}
+
+/* 简谱元素样式 */
+.score-title {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 6px;  /* 减少底部边距 */
+    color: var(--score-text-color);
+    font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', 'FangSong', '仿宋', 'STFangsong', '华文仿宋', serif;
+}
+
+.score-header {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 3px;  /* 减少底部边距 */
+    padding: 3px;  /* 减少内边距 */
+    border-bottom: 2px solid var(--score-header-border);
+}
+
+.score-measure {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    min-height: 100px;  /* 增加高度以适应下方的时值符号 */
+    margin: 2px 0;
+    padding: 2px 0 8px;  /* 减少上下内边距，让元素更贴合 */
+    border-bottom: 1px solid var(--score-border-color);
+    position: relative;
+}
+
+.score-note {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 8px;
+    min-width: 48px;
+    min-height: 65px;  /* 增加高度以适应下方的时值符号 */
+    font-size: 24px;
+    cursor: pointer;
+    position: relative;
+    padding: 2px 4px 2px;  /* 减少上下内边距，让元素更贴合 */
+    font-family: "Times New Roman", serif;
+    /* 性能优化 */
+    contain: layout style;
+    will-change: background-color;
+}
+
+/* 音符基本样式 */
+.score-note[data-type="note"] {
+    font-weight: bold;
+    color: var(--score-note-color);
+}
+
+/* 休止符样式 */
+.score-note[data-type="rest"] {
+    color: var(--score-rest-color);
+}
+
+/* 特殊符号样式 */
+.score-note[data-type="special"] {
+    font-size: 28px;
+    color: var(--score-special-color);
+}
+
+/* 小节线样式 */
+.score-note[data-special="bar"] {
+    border-right: 2px solid #333;
+    padding: 0;
+    margin: 0 24px;
+    min-width: 2px;
+    height: 40px;
+}
+
+/* 反复记号样式 */
+.score-note[data-special="repeat-start"],
+.score-note[data-special="repeat-end"] {
+    font-weight: bold;
+    font-size: 24px;
+}
+
+/* 高音点样式 */
+.score-note .high-dot {
+    position: absolute;
+    top: 2px; /* 从-1px改为2px，更贴近音符 */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    line-height: 1;
+    z-index: 2;
+}
+
+/* 低音点样式 */
+.score-note .low-dot {
+    position: absolute;
+    bottom: 2px; /* 从-1px改为2px，更贴近音符 */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    line-height: 1;
+    z-index: 2;
+}
+
+/* 时值符号样式 */
+/* 基础时值标记样式 */
+.score-note .duration-mark {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+}
+
+/* 基础音符样式 */
+.score-note {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    height: 20px;  /* 增加统一的高度 */
+    margin: 0 4px;
+    position: relative;
+    vertical-align: middle;
+}
+
+/* 主音符容器样式 */
+.score-note[data-type="note"] {
+    padding-top: 12px;  /* 为上方的高音点留出空间 */
+    padding-bottom: 20px;  /* 为下方的时值符号留出空间 */
+}
+
+/* 延长线样式 */
+.score-note.extension-mark {
+    font-size: 24px;
+    color: #333;
+    width: 48px;
+    font-family: "Times New Roman", serif;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: flex-start;  /* 改为顶部对齐 */
+    justify-content: center;  /* 水平居中 */
+    padding: 0;
+    margin: 0 4px;
+    height: 60px;
+    vertical-align: middle;
+    position: relative;
+}
+
+/* 确保内部文本与音符对齐 */
+.score-note.extension-mark::before {
+    content: attr(data-content);
+    position: absolute;
+    top: 20px;  /* 与音符数字的位置对齐 */
+    left: 50%;
+    transform: translateX(-50%);
+    line-height: 24px;  /* 与音符数字的行高一致 */
+}
+
+/* 主音符样式 */
+.score-note .main-note {
+    font-size: 24px;
+    font-weight: bold;
+    display: inline-block;
+    text-align: center;
+    line-height: 40px;
+    height: 40px;
+}
+
+/* 快速音符的通用样式 */
+.score-note .duration-mark {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+/* 快速音符的横线基础样式 */
+.duration-line {
+    position: absolute;
+    width: 16px;
+    height: 2px;
+    background-color: #333;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* 八分音符 - 一条横线 */
+.score-note .duration-mark.eighth-note::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 2px;
+    background-color: #333;
+    top: 28px;  /* 统一的起始位置 */
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* 十六分音符 - 两条横线 */
+.score-note .duration-mark.sixteenth-note::before,
+.score-note .duration-mark.sixteenth-note::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 2px;
+    background-color: #333;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.score-note .duration-mark.sixteenth-note::before {
+    top: 28px;  /* 与八分音符同高度 */
+}
+
+.score-note .duration-mark.sixteenth-note::after {
+    top: 32px;  /* 第二条线 */
+}
+
+/* 三十二分音符 - 三条横线 */
+.score-note .duration-mark.thirty-second-note::before,
+.score-note .duration-mark.thirty-second-note::after,
+.score-note .duration-mark.thirty-second-note > span {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 2px;
+    background-color: #333;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.score-note .duration-mark.thirty-second-note::before {
+    top: 28px;  /* 与其他音符同高度 */
+}
+
+.score-note .duration-mark.thirty-second-note::after {
+    top: 32px;  /* 第二条线 */
+}
+
+.score-note .duration-mark.thirty-second-note > span {
+    top: 36px;  /* 第三条线 */
+}
+
+/* 确保音符有足够空间显示横线 */
+.score-note {
+    margin-bottom: 40px;  /* 为横线预留空间 */
+}
+
+/* 为音符容器添加足够的空间 */
+.score-note {
+    margin-top: 12px;  /* 为上方标记留出空间 */
+    margin-bottom: 12px;  /* 为下方标记留出空间 */
+}
+
+/* 优化音符和休止符的基本样式 */
+.score-note[data-type="note"],
+.score-note[data-type="rest"] {
+    font-weight: bold;
+    font-size: 24px;
+    padding: 4px 8px;
+    position: relative;
+}
+
+/* 修饰符号样式 */
+.score-note .modifier {
+    position: absolute;
+    font-size: 16px;
+}
+
+/* 升降号和还原号样式 */
+.score-note .modifier.sharp,
+.score-note .modifier.flat,
+.score-note .modifier.natural {
+    left: -6px; /* 从-12px改为-6px，更贴近音符 */
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* 点音符样式 */
+.score-note .modifier.dot {
+    position: absolute;
+    font-size: 20px;  /* 调整点的大小 */
+    right: -1px;      /* 从-4px改为-2px，更贴近音符 */
+    bottom: 10px;      /* 从底部往上移动10个像素 */
+    line-height: 1;   /* 确保点不会有额外空间 */
+    transform: translate(0, 0);  /* 移除之前的微调，使用bottom直接控制 */
+    color: #333;
+    font-weight: bold;
+}
+
+/* 确保主音符和休止符有足够空间容纳点音符 */
+.score-note[data-type="note"],
+.score-note[data-type="rest"] {
+    padding-right: 8px;  /* 为点音符预留空间 */
+}
+
+/* 主休止符样式 */
+.score-note .main-rest {
+    font-size: 24px;
+    font-weight: bold;
+    display: inline-block;
+    text-align: center;
+    line-height: 40px;
+    height: 40px;
+}
+
+/* 连音线样式 */
+.tie-line {
+    position: absolute;
+    height: 8px; /* 从12px减少到8px，让连音线更贴近音符 */
+    border-top: 2px solid #333;
+    border-radius: 100% 100% 0 0;
+    pointer-events: none;
+    z-index: 1;
+    min-width: 20px;
+    background: transparent;
+    transform-origin: center top;
+}
+
+/* 反向连音线样式 */
+.tie-line.reverse {
+    border-top: 2px solid #333;
+    border-radius: 100% 100% 0 0;
+}
+
+/* 连音线交互状态 - 优化动画性能 */
+.tie-source {
+    background-color: rgba(0, 255, 0, 0.1) !important;
+}
+
+.tie-target {
+    cursor: pointer;
+    background-color: rgba(0, 123, 255, 0.15);
+    transition: background-color 0.3s ease;
+}
+
+.tie-target:hover {
+    background-color: rgba(0, 123, 255, 0.25);
+}
+
+.score-note:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    border-radius: 4px;
+}
+
+.score-note.selected {
+    background-color: rgba(0, 123, 255, 0.2);
+    border-radius: 4px;
+}
+
+/* 歌词功能样式 */
+.lyrics-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* 歌词输入框样式 */
+.lyrics-input {
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 28px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 16px;
+    text-align: center;
+    background-color: #fff;
+    cursor: text;
+    z-index: 10;
+    padding: 0;
+    line-height: 26px;
+    font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', 'FangSong', '仿宋', 'STFangsong', '华文仿宋', serif;
+}
+
+/* 导出模式下的歌词输入框样式 */
+.export-mode .lyrics-input {
+    border: none !important;
+    background-color: var(--score-bg-color) !important;
+    color: var(--score-text-color) !important;
+    cursor: default !important;
+    pointer-events: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    resize: none !important;
+    overflow: hidden !important;
+}
+
+.lyrics-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.lyrics-input:hover {
+    border-color: #007bff;
+}
+
+/* 为有歌词输入框的音符增加底部空间 */
+.score-note.has-lyrics-input {
+    margin-bottom: 40px;
+}
+
+/* 歌词显示模式 */
+.lyrics-mode .lyrics-input {
+    display: block;
+}
+
+.lyrics-mode .score-note {
+    margin-bottom: 40px;
+}
+
+/* 非歌词模式隐藏输入框 */
+.lyrics-input {
+    display: none;
+}
+
+/* 指法图样式 */
+.fingering-container {
+    position: absolute;
+    top: -50px; /* 进一步贴近音符，从-80px改为-50px */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999; /* 使用更高的z-index */
+    min-width: 65px; /* 调整为图片宽度的一半 */
+    min-height: 45px; /* 调整为图片高度的一半 */
+    /* 确保容器可见 */
+    pointer-events: auto;
+    overflow: visible;
+}
+
+.fingering-image {
+    width: 59px; /* 62px * 0.95 = 58.9px，四舍五入为59px */
+    height: 40px; /* 42px * 0.95 = 39.9px，四舍五入为40px */
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: block !important; /* 强制显示 */
+    visibility: visible !important; /* 强制可见 */
+    opacity: 1 !important; /* 强制不透明 */
+    /* 调试样式 */
+    position: relative;
+    z-index: 10000;
+}
+
+.fingering-image:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    z-index: 10001; /* 悬停时更高 */
+}
+
+/* 指法图加载指示器样式 - 优化动画性能 */
+.fingering-loading {
+    position: absolute;
+    top: -50px; /* 与容器保持一致，从-80px改为-50px */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #17a2b8;
+    color: white;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 9999;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+    /* 调试样式 */
+    border: 2px solid #0056b3;
+}
+
+
+
+/* 指法图模式下的音符样式调整 */
+.fingering-mode .score-note[data-type="note"] {
+    margin-top: 80px; /* 进一步减少预留空间，从110px改为80px */
+    position: relative; /* 确保定位上下文正确 */
+}
+
+/* 指法图模式下的休止符样式调整 */
+.fingering-mode .score-note[data-type="rest"] {
+    margin-top: 80px; /* 进一步减少预留空间，从110px改为80px */
+    position: relative;
+}
+
+/* 指法图模式下的特殊符号样式调整 */
+.fingering-mode .score-note[data-type="special"] {
+    margin-top: 80px; /* 进一步减少预留空间，从110px改为80px */
+    position: relative;
+}
+
+/* 指法图模式下的延长线样式调整 */
+.fingering-mode .score-note.extension-mark {
+    margin-top: 80px; /* 进一步减少预留空间，从110px改为80px */
+    position: relative;
+}
+
+/* 确保指法图不与其他元素重叠 */
+.fingering-mode .score-container {
+    overflow: visible !important;
+}
+
+.fingering-mode .score-measure {
+    overflow: visible !important;
+}
+
+.fingering-mode .score-note {
+    overflow: visible !important;
+}
+
+/* 皮肤样式定义 */
+/* 白色皮肤（默认） */
+.skin-white {
+    --score-bg-color: white;
+    --score-border-color: #dee2e6;
+    --score-text-color: #333;
+    --score-note-color: #333;
+    --score-rest-color: #666;
+    --score-special-color: #333;
+    --score-header-border: #333;
+}
+
+/* 浅米色皮肤 */
+.skin-light-beige {
+    --score-bg-color: #F8F3E6;
+    --score-border-color: #E8E3D6;
+    --score-text-color: #5D5D5D;
+    --score-note-color: #5D5D5D;
+    --score-rest-color: #7D7D7D;
+    --score-special-color: #5D5D5D;
+    --score-header-border: #5D5D5D;
+}
+
+/* 浅蓝色皮肤 */
+.skin-light-blue {
+    --score-bg-color: #C6D7DB;
+    --score-border-color: #A6B7BB;
+    --score-text-color: #2C3E50;
+    --score-note-color: #2C3E50;
+    --score-rest-color: #34495E;
+    --score-special-color: #2C3E50;
+    --score-header-border: #2C3E50;
+}
