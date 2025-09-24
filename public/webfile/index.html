@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交互式简谱生成器</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 顶部工具栏 -->
+        <header class="toolbar">
+            <div class="tool-group">
+                <button id="exportImage" class="tool-btn">导出图片</button>
+            </div>
+            <div class="tool-group">
+                <input type="text" id="scoreTitle" class="title-input" placeholder="请输入乐谱标题">
+            </div>
+            <div class="tool-group">
+                <label>调号：
+                    <select id="keySignature">
+                        <option value="C">1=C</option>
+                        <option value="G">1=G</option>
+                        <option value="D">1=D</option>
+                        <option value="A">1=A</option>
+                        <option value="E">1=E</option>
+                        <option value="F">1=F</option>
+                        <option value="Bb">1=Bb</option>
+                        <option value="Eb">1=Eb</option>
+                    </select>
+                </label>
+                <label>拍号：
+                    <select id="timeSignature">
+                        <option value="4/4">4/4</option>
+                        <option value="3/4">3/4</option>
+                        <option value="2/4">2/4</option>
+                        <option value="6/8">6/8</option>
+                    </select>
+                </label>
+                <label>皮肤：
+                    <select id="scoreSkin">
+                        <option value="white">白色</option>
+                        <option value="light-beige">浅米色</option>
+                        <option value="light-blue">浅蓝色</option>
+                    </select>
+                </label>
+            </div>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <div class="main-content">
+            <!-- 左侧元素面板 -->
+            <aside class="elements-panel">
+                <div class="panel-section">
+                    <h3>基本音符</h3>
+                    <div class="element-grid">
+                        <button class="element-btn" data-note="1">1</button>
+                        <button class="element-btn" data-note="2">2</button>
+                        <button class="element-btn" data-note="3">3</button>
+                        <button class="element-btn" data-note="4">4</button>
+                        <button class="element-btn" data-note="5">5</button>
+                        <button class="element-btn" data-note="6">6</button>
+                        <button class="element-btn" data-note="7">7</button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>时值</h3>
+                    <div class="element-grid">
+                        <button class="element-btn" data-duration="1">全音符</button>
+                        <button class="element-btn" data-duration="1/2">1/2音符</button>
+                        <button class="element-btn" data-duration="1/4">1/4音符</button>
+                        <button class="element-btn" data-duration="1/8">1/8音符</button>
+                        <button class="element-btn" data-duration="1/16">1/16音符</button>
+                        <button class="element-btn" data-duration="1/32">1/32音符</button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>休止符</h3>
+                    <div class="element-grid">
+                        <button class="element-btn" data-rest="1">全休止符</button>
+                        <button class="element-btn" data-rest="1/2">1/2休止符</button>
+                        <button class="element-btn" data-rest="1/4">1/4休止符</button>
+                        <button class="element-btn" data-rest="1/8">1/8休止符</button>
+                        <button class="element-btn" data-rest="1/16">1/16休止符</button>
+                        <button class="element-btn" data-rest="1/32">1/32休止符</button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>修饰符号</h3>
+                    <div class="element-grid">
+                        <button class="element-btn" data-modifier="sharp">♯升</button>
+                        <button class="element-btn" data-modifier="flat">♭降</button>
+                        <button class="element-btn" data-modifier="natural">♮还原</button>
+                        <button class="element-btn" data-modifier="dot">点音符</button>
+                        <button class="element-btn" data-octave="high">高音点</button>
+                        <button class="element-btn" data-octave="low">低音点</button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>特殊符号</h3>
+                    <div class="element-grid">
+                        <button class="element-btn" data-special="tie">连音线</button>
+                        <button class="element-btn" data-special="repeat-start">反复开始</button>
+                        <button class="element-btn" data-special="repeat-end">反复结束</button>
+                        <button class="element-btn" data-special="bar">小节线</button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>歌词功能</h3>
+                    <div class="lyrics-controls">
+                        <button id="toggleLyrics" class="element-btn">显示歌词</button>
+                        <button id="clearLyrics" class="element-btn">清空歌词</button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>陶笛指法图</h3>
+                    <div class="fingering-controls">
+                        <button id="toggleFingering" class="element-btn">显示指法图</button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 中央编辑区域 -->
+            <main class="score-editor">
+                <div id="score-container" class="score-container">
+                    <!-- 简谱内容将在这里动态生成 -->
+                </div>
+            </main>
+        </div>
+
+        <!-- 底部控制面板 -->
+        <footer class="control-panel">
+            <div class="control-group">
+                <button id="undoBtn" class="control-btn">撤销</button>
+                <button id="redoBtn" class="control-btn">恢复</button>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
