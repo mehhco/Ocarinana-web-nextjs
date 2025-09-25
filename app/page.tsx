@@ -18,7 +18,7 @@ export default function Home() {
             <div className="hidden md:flex items-center gap-5 text-xl">
               <Link href="/" className="hover:underline">首页</Link>
               <Link href="#" className="hover:underline">乐曲</Link>
-              <Link href="#" className="hover:underline">我的</Link>
+              <Link href="/home" className="hover:underline">我的</Link>
             </div>
           </div>
           <div className="flex items-center gap-3">
