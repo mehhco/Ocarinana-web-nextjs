@@ -1,8 +1,27 @@
 // 数据模型
+// 简单 UUID 生成（避免引入外部依赖）
+function generateUuid() {
+    // 仅用于前端临时标识，不保证绝对唯一
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+}
+
+// 读取 URL 查询参数
+function getQueryParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+}
+
+// （已移除未使用的文档构造函数，以消除未使用警告）
+
+// 数据模型
 class ScoreModel {
     constructor() {
-        this.title = '未命名简谱'; // 添加标题属性
-        this.measures = [[]]; // 存储小节的数组
+        this.title = '未命名简谱';
+        this.measures = [[]];
         this.keySignature = 'C';
         this.timeSignature = '4/4';
         this.tempo = 120;
@@ -11,6 +30,8 @@ class ScoreModel {
         this.showLyrics = false; // 是否显示歌词输入框
         this.showFingering = false; // 是否显示陶笛指法图
         this.skin = 'white'; // 默认皮肤
+        this.scoreId = null; // 当前文档ID（命名空间键）
+        this.ownerUserId = ''; // 由父页面提供（可选）
         
         // 历史记录系统
         this.history = []; // 存储所有历史状态
@@ -107,12 +128,58 @@ class ScoreModel {
         }
     }
 
+    // 将当前模型转换为可持久化文档
+    toDocument() {
+        const now = new Date().toISOString();
+        return {
+            version: '1.0',
+            scoreId: this.scoreId || generateUuid(),
+            ownerUserId: this.ownerUserId || '',
+            title: this.title,
+            measures: JSON.parse(JSON.stringify(this.measures)),
+            ties: JSON.parse(JSON.stringify(this.ties)),
+            lyrics: JSON.parse(JSON.stringify(this.lyrics)),
+            settings: {
+                keySignature: this.keySignature,
+                timeSignature: this.timeSignature,
+                tempo: this.tempo,
+                skin: this.skin,
+                showLyrics: this.showLyrics
+                // 注意：根据要求，不保存 showFingering（指法图显示状态），用户可在页面手动开启
+            },
+            // 首次创建时 createdAt 由加载逻辑或父级注入，这里仅维护 updatedAt
+            createdAt: this.createdAt || now,
+            updatedAt: now
+        };
+    }
+
+    // 从文档加载到模型
+    loadFromDocument(doc) {
+        if (!doc) return;
+        this.scoreId = doc.scoreId || this.scoreId || generateUuid();
+        this.ownerUserId = doc.ownerUserId || this.ownerUserId || '';
+        this.createdAt = doc.createdAt || new Date().toISOString();
+        this.title = doc.title || '未命名简谱';
+        this.measures = doc.measures || [[]];
+        this.ties = doc.ties || [];
+        this.lyrics = doc.lyrics || [];
+        const s = doc.settings || {};
+        this.keySignature = s.keySignature || 'C';
+        this.timeSignature = s.timeSignature || '4/4';
+        this.tempo = typeof s.tempo === 'number' ? s.tempo : 120;
+        this.skin = s.skin || 'white';
+        this.showLyrics = !!s.showLyrics;
+        this.showFingering = !!s.showFingering;
+    }
+
     // 保存当前状态到历史记录
     saveState() {
         const currentState = {
+            title: this.title,
             measures: JSON.parse(JSON.stringify(this.measures)),
             keySignature: this.keySignature,
             timeSignature: this.timeSignature,
+            tempo: this.tempo,
             lyrics: JSON.parse(JSON.stringify(this.lyrics)),
             showLyrics: this.showLyrics,
             showFingering: this.showFingering,
@@ -135,8 +202,8 @@ class ScoreModel {
             this.historyIndex--;
         }
 
-        // 同时保存到本地存储
-        localStorage.setItem('scoreData', JSON.stringify(currentState));
+        // 注意：根据最新策略，saveState 仅维护内存历史，不进行持久化或发送自动保存。
+        // 持久化仅在用户手动点击“保存”或每隔 1 分钟的定时保存中进行。
     }
 
     // 撤销 - 回到上一步
@@ -184,24 +251,74 @@ class ScoreModel {
         return this.historyIndex < this.history.length - 1;
     }
 
-    // 从本地存储加载状态
-    loadState() {
-        const state = JSON.parse(localStorage.getItem('scoreData'));
-        if (state) {
+    // 生成命名空间本地存储键
+    getStorageKey() {
+        const scoreId = this.scoreId || 'default';
+        return `score:${scoreId}`;
+    }
+
+    // 从本地存储加载状态（优先使用命名空间文档；回退到旧格式）
+    loadStatePreferred(scoreIdFromUrl, ownerUserIdFromParent) {
+        this.ownerUserId = ownerUserIdFromParent || this.ownerUserId || '';
+
+        // 需求调整：进入编辑页面默认开启新的空白乐谱（不再默认打开上一次）
+        // 优先：URL 指定的 scoreId（显式打开既有乐谱）
+        let scoreId = scoreIdFromUrl || generateUuid();
+        this.scoreId = scoreId;
+
+        // 仅当 URL 显式提供 scoreId 时，尝试读取命名空间文档；否则保持为空白
+        if (scoreIdFromUrl) {
+            const key = this.getStorageKey();
+            const docRaw = localStorage.getItem(key);
+            if (docRaw) {
+                try {
+                    const doc = JSON.parse(docRaw);
+                    this.loadFromDocument(doc);
+                } catch (e) {
+                    console.warn('解析命名空间文档失败，尝试回退到旧格式:', e);
+                    this.loadStateLegacy();
+                }
+            }
+        }
+
+        // 确保保存一次，以建立文档与 lastOpenedScoreId
+        this.saveState();
+    }
+
+    // 旧格式恢复逻辑（兼容早期本地 key）
+    loadStateLegacy() {
+        const stateStr = localStorage.getItem('scoreData');
+        if (!stateStr) return;
+        try {
+            const state = JSON.parse(stateStr);
             this.measures = state.measures || [[]];
             this.keySignature = state.keySignature || 'C';
             this.timeSignature = state.timeSignature || '4/4';
+            this.tempo = typeof state.tempo === 'number' ? state.tempo : 120;
             this.lyrics = state.lyrics || [];
             this.showLyrics = state.showLyrics || false;
             this.showFingering = state.showFingering || false;
             this.skin = state.skin || 'white';
             this.ties = state.ties || [];
-            
-            // 重新初始化历史记录
+            // 重建历史
             this.history = [];
             this.historyIndex = -1;
-            this.saveState();
-        }
+        } catch {}
+    }
+
+    // 通知父页面进行自动保存（节流）
+    notifyParentAutosave(doc) {
+        try {
+            if (!this._autosaveScheduled) {
+                this._autosaveScheduled = true;
+                setTimeout(() => {
+                    this._autosaveScheduled = false;
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'score:autosave', payload: doc }, '*');
+                    }
+                }, 300);
+            }
+        } catch {}
     }
 }
 
@@ -513,6 +630,14 @@ class ScoreViewController {
             this.exportAsImage();
         });
 
+        // 手动保存事件
+        const saveBtn = document.getElementById('saveScore');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                this.persistNow('manual');
+            });
+        }
+
         // 歌词功能事件
         document.getElementById('toggleLyrics').addEventListener('click', () => {
             this.toggleLyricsDisplay();
@@ -538,6 +663,8 @@ class ScoreViewController {
             this.scrollToNewNote(e.detail.measureIndex);
         });
         
+        // 启动每分钟自动保存
+        this.startAutoPersist();
     }
 
     // 设置事件委托
@@ -555,6 +682,10 @@ class ScoreViewController {
         // 歌词输入事件委托
         container.addEventListener('input', (e) => {
             if (e.target.matches('.lyrics-input')) {
+                // 记录输入过程中的临时值，兼容中文输入法组合态
+                try {
+                    e.target.setAttribute('data-pending-value', e.target.value || '');
+                } catch {}
                 this.handleLyricsInputEvent(e);
             }
         });
@@ -572,18 +703,21 @@ class ScoreViewController {
         container.addEventListener('compositionstart', (e) => {
             if (e.target.matches('.lyrics-input')) {
                 e.target.setAttribute('data-composing', 'true');
+                try { e.target.setAttribute('data-pending-value', e.target.value || ''); } catch {}
             }
         });
 
         container.addEventListener('compositionupdate', (e) => {
             if (e.target.matches('.lyrics-input')) {
                 e.target.setAttribute('data-composing', 'true');
+                try { e.target.setAttribute('data-pending-value', e.target.value || ''); } catch {}
             }
         });
 
         container.addEventListener('compositionend', (e) => {
             if (e.target.matches('.lyrics-input')) {
                 e.target.removeAttribute('data-composing');
+                try { e.target.setAttribute('data-pending-value', e.target.value || ''); } catch {}
             }
         });
     }
@@ -616,7 +750,6 @@ class ScoreViewController {
 
     // 设置虚拟滚动
     setupVirtualScrolling() {
-        const container = document.getElementById('score-container');
         const editor = document.querySelector('.score-editor');
         
         // 监听滚动事件
@@ -715,7 +848,6 @@ class ScoreViewController {
 
     // 渲染可见的小节
     renderVisibleMeasures() {
-        const container = document.getElementById('score-container');
         
         // 移除不可见的小节
         this.measureElements.forEach((element, index) => {
@@ -785,7 +917,6 @@ class ScoreViewController {
         // 延迟执行，确保DOM已更新
         setTimeout(() => {
             const editor = document.querySelector('.score-editor');
-            const container = document.getElementById('score-container');
             
             if (this.model.measures.length <= this.maxVisibleMeasures) {
                 // 少量音符时，滚动到容器底部
@@ -1739,41 +1870,147 @@ class ScoreViewController {
             container.removeEventListener('keydown', this.handleKeydown);
         }
     }
+
+    // 简易轻提示
+    showToast(message, variant = 'manual') {
+        const existing = document.getElementById('toast-tip');
+        if (existing) existing.remove();
+        const tip = document.createElement('div');
+        tip.id = 'toast-tip';
+        tip.textContent = message;
+        tip.style.position = 'fixed';
+        tip.style.top = '18px';
+        tip.style.left = '50%';
+        tip.style.transform = 'translateX(-50%)';
+        tip.style.padding = '10px 14px';
+        tip.style.background = variant === 'auto' ? 'rgba(24,144,255,0.95)' : 'rgba(0,160,80,0.95)';
+        tip.style.color = '#fff';
+        tip.style.borderRadius = '10px';
+        tip.style.fontSize = '13px';
+        tip.style.lineHeight = '1';
+        tip.style.boxShadow = '0 6px 20px rgba(0,0,0,0.25)';
+        tip.style.zIndex = '99999';
+        document.body.appendChild(tip);
+        setTimeout(() => tip.remove(), 1600);
+    }
+
+    // 立即持久化当前文档（本地 + 通知父页面）
+    persistNow(kind = 'manual') {
+        // 若存在正在进行的中文输入（IME 组合态），先尝试提交
+        const hasComposing = this.commitActiveCompositions();
+        // 给浏览器一次微任务/帧机会完成值同步
+        setTimeout(() => {
+            // 在保存前同步所有歌词输入框的当前值到数据模型
+            this.syncLyricsFromInputs();
+            const doc = this.model.toDocument();
+            // 本地命名空间持久化
+            try {
+                localStorage.setItem(this.model.getStorageKey(), JSON.stringify(doc));
+                if (this.model.ownerUserId) {
+                    localStorage.setItem(`lastOpenedScoreId:${this.model.ownerUserId}`, doc.scoreId);
+                } else {
+                    localStorage.setItem(`lastOpenedScoreId`, doc.scoreId);
+                }
+            } catch {}
+            // 通知父页面保存
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'score:autosave', payload: doc }, '*');
+                }
+            } catch {}
+            this.showToast(kind === 'auto' ? '已自动保存' : '已保存', kind);
+        }, hasComposing ? 120 : 0);
+    }
+
+    // 每分钟定时持久化
+    startAutoPersist() {
+        if (this._autoPersistTimer) clearInterval(this._autoPersistTimer);
+        this._autoPersistTimer = setInterval(() => {
+            this.persistNow('auto');
+        }, 60 * 1000);
+    }
+
+    // 将页面上所有歌词输入框的值同步到模型（用于保存前兜底）
+    syncLyricsFromInputs() {
+        try {
+            const inputs = document.querySelectorAll('.lyrics-input');
+            inputs.forEach((input) => {
+                const el = input;
+                const measureIndex = parseInt(el.getAttribute('data-measure-index'));
+                const noteIndex = parseInt(el.getAttribute('data-note-index'));
+                // 优先使用 pending 值（IME 组合中/刚结束时更可靠）
+                const pending = el.getAttribute('data-pending-value');
+                const value = (pending !== null ? pending : el.value) || '';
+                // 与事件流保持一致的更新方式
+                this.model.addLyrics(measureIndex, noteIndex, value);
+            });
+        } catch {}
+    }
+
+    // 提交当前所有处于 IME 组合态的输入，返回是否存在组合态
+    commitActiveCompositions() {
+        let found = false;
+        const inputs = document.querySelectorAll('.lyrics-input[data-composing]');
+        inputs.forEach((el) => {
+            found = true;
+            try {
+                // 通过失焦触发组合提交
+                el.blur();
+            } catch {}
+        });
+        return found;
+    }
 }
 
 // 初始化应用
 document.addEventListener('DOMContentLoaded', () => {
     const scoreViewController = new ScoreViewController();
-    
-    // 加载保存的数据
-    scoreViewController.model.loadState();
-    
+
+    // 从 URL 读取 scoreId 与可选 ownerUserId
+    const scoreIdFromUrl = getQueryParam('scoreId');
+    const ownerFromUrl = getQueryParam('ownerUserId');
+
+    // 加载优先策略：URL -> lastOpened -> 旧格式
+    scoreViewController.model.loadStatePreferred(scoreIdFromUrl, ownerFromUrl);
+
     scoreViewController.render();
-    
+
     // 设置皮肤选择器的默认值
     const scoreSkin = document.getElementById('scoreSkin');
     if (scoreSkin) {
         scoreSkin.value = scoreViewController.model.skin;
     }
-    
+
     // 设置标题输入框的默认值
     const scoreTitle = document.getElementById('scoreTitle');
     if (scoreTitle) {
         scoreTitle.value = scoreViewController.model.title;
     }
-    
+
     // 设置调号选择器的默认值
     const keySignature = document.getElementById('keySignature');
     if (keySignature) {
         keySignature.value = scoreViewController.model.keySignature;
     }
-    
+
     // 设置拍号选择器的默认值
     const timeSignature = document.getElementById('timeSignature');
     if (timeSignature) {
         timeSignature.value = scoreViewController.model.timeSignature;
     }
-    
+
+    // 监听父页面消息（下发完整文档进行恢复）
+    window.addEventListener('message', (event) => {
+        const msg = event.data;
+        if (!msg || typeof msg !== 'object') return;
+        if (msg.type === 'score:load' && msg.payload) {
+            scoreViewController.model.loadFromDocument(msg.payload);
+            scoreViewController.model.saveState();
+            scoreViewController.render(true);
+            scoreViewController.updateUndoRedoButtons();
+        }
+    });
+
     // 更新按钮状态
     scoreViewController.updateUndoRedoButtons();
 });

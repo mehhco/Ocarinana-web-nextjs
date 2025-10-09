@@ -15,7 +15,14 @@ export function CtaStartButton() {
       const supabase = createClient();
       const { data } = await supabase.auth.getUser();
       if (data?.user) {
-        router.push("/protected/scores");
+        // 始终创建新乐谱再进入编辑器
+        const res = await fetch('/api/scores', { method: 'POST' });
+        if (res.ok) {
+          const { scoreId } = await res.json();
+          router.push(`/protected/scores?scoreId=${encodeURIComponent(scoreId)}`);
+        } else {
+          router.push('/protected/scores');
+        }
       } else {
         router.push("/auth/login");
       }

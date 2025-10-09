@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import NewScoreButton from "@/components/new-score-button";
 
 export default async function HomeDashboardPage() {
   const supabase = await createClient();
@@ -28,8 +29,12 @@ export default async function HomeDashboardPage() {
     );
   }
 
-  // 假数据：乐谱数量与可用点数
-  const fakeNotesCount = 12;
+  // 查询当前用户乐谱数量
+  const { count: notesCount } = await supabase
+    .from("scores")
+    .select("score_id", { count: "exact", head: true })
+    .eq("owner_user_id", user.id);
+  const fakeNotesCount = typeof notesCount === "number" ? notesCount : 0;
   const fakeCredits = 120;
   const userId = user.id;
 
@@ -62,9 +67,12 @@ export default async function HomeDashboardPage() {
             <CardTitle>我的乐谱</CardTitle>
           </CardHeader>
           <CardContent>
-            <Link href={`/${userId}/notes`} className="text-3xl font-extrabold hover:underline">
-              {fakeNotesCount}
-            </Link>
+            <div className="flex items-baseline gap-3">
+              <Link href={`/${userId}/notes`} className="text-3xl font-extrabold hover:underline">
+                {fakeNotesCount}
+              </Link>
+              <NewScoreButton />
+            </div>
             <div className="text-xs text-foreground/60 mt-1">点击查看全部乐谱</div>
           </CardContent>
         </Card>
@@ -91,7 +99,7 @@ export default async function HomeDashboardPage() {
           <CardContent className="space-y-3">
             <p className="text-sm text-foreground/70">直接前往编辑器创建新的乐谱。</p>
             <Button asChild>
-              <Link href="/protected/scores">打开编辑器</Link>
+              <Link href="/protected/scores/new">打开编辑器</Link>
             </Button>
           </CardContent>
         </Card>

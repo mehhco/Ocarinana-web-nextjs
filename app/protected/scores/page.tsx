@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { HomeIcon } from "lucide-react";
+import ScoresBridge from "@/components/scores-bridge";
 
 export default async function ScoresPage() {
   const supabase = await createClient();
@@ -21,7 +22,10 @@ export default async function ScoresPage() {
         </Button>
       </div>
       <div className="fixed inset-x-0 bottom-0 top-16 w-screen">
+        {/* 桥接组件：监听 iframe 消息并调用 API；同时在初次加载时尝试拉取云端数据 */}
+        <ScoresBridge iframeId="score-iframe" />
         <iframe
+          id="score-iframe"
           src="/webfile/index.html"
           title="交互式简谱生成器"
           className="w-full h-full border-0"
