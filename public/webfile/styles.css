@@ -828,7 +828,7 @@ input[type="range"] {
     bottom: -35px;
     left: 50%;
     transform: translateX(-50%);
-    width: 40px;
+    width: 45px; /* 更紧凑的宽度，避免重叠 */
     height: 28px;
     border: 1px solid #ccc;
     border-radius: 3px;
@@ -863,11 +863,6 @@ input[type="range"] {
 
 .lyrics-input:hover {
     border-color: #007bff;
-}
-
-/* 为有歌词输入框的音符增加底部空间 */
-.score-note.has-lyrics-input {
-    margin-bottom: 40px;
 }
 
 /* 歌词显示模式 */

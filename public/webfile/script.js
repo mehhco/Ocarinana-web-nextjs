@@ -405,7 +405,7 @@ class ScoreViewController {
                     duration: '1/4' // 默认为四分音符
                 };
                 this.model.addNote(note);
-                this.render();
+                this.safeRender();
                 this.updateUndoRedoButtons();
             }
         });
@@ -444,7 +444,7 @@ class ScoreViewController {
                     }
 
                     this.model.saveState();
-                    this.render();
+                    this.safeRender();
                     this.updateUndoRedoButtons();
                 }
             }
@@ -487,7 +487,7 @@ class ScoreViewController {
                     };
                     this.model.addNote(rest);
                 }
-                this.render();
+                this.safeRender();
                 this.updateUndoRedoButtons();
             }
         });
@@ -519,7 +519,7 @@ class ScoreViewController {
                     }
                     
                     this.model.saveState();
-                    this.render();
+                    this.safeRender();
                     this.updateUndoRedoButtons();
                 }
             });
@@ -545,7 +545,7 @@ class ScoreViewController {
                     }
                     
                     this.model.saveState();
-                    this.render();
+                    this.safeRender();
                     this.updateUndoRedoButtons();
                 } else {
                     alert('请先选择一个音符');
@@ -565,7 +565,7 @@ class ScoreViewController {
                         value: specialType
                     };
                     this.model.addNote(special);
-                    this.render();
+                    this.safeRender();
                     this.updateUndoRedoButtons();
                 }
             });
@@ -734,18 +734,9 @@ class ScoreViewController {
             return;
         }
         
-        // IME 完成后处理多字符输入
-        if (value.length > 1) {
-            const splitText = this.model.splitText(value);
-            const firstPart = splitText[0] || '';
-            input.value = firstPart;
-            this.model.addLyrics(measureIndex, noteIndex, firstPart);
-            
-            const remainingTexts = splitText.slice(1);
-            this.fillNextLyricsInputs(measureIndex, noteIndex, remainingTexts);
-        } else {
-            this.model.addLyrics(measureIndex, noteIndex, value);
-        }
+        // 直接保存输入的完整内容，不再自动拆分
+        // 每个输入框可以容纳一个完整的中文字符或英文单词
+        this.model.addLyrics(measureIndex, noteIndex, value);
     }
 
     // 设置虚拟滚动
@@ -1009,6 +1000,16 @@ class ScoreViewController {
         requestAnimationFrame(() => {
             this.renderTies(container);
         });
+
+        // 确保歌词显示状态与CSS类同步
+        this.syncLyricsDisplayState();
+    }
+
+    // 安全渲染方法：渲染前先同步歌词内容
+    safeRender() {
+        // 在重新渲染前，先同步所有歌词输入框的当前值到数据模型
+        this.syncLyricsFromInputs();
+        this.render();
     }
 
     // 设置虚拟滚动容器
@@ -1310,7 +1311,7 @@ class ScoreViewController {
         lyricsInput.value = this.model.getLyrics(measureIndex, noteIndex);
         lyricsInput.dataset.measureIndex = measureIndex;
         lyricsInput.dataset.noteIndex = noteIndex;
-        lyricsInput.maxLength = 1;
+        // 移除 maxLength 限制，允许输入完整的中文字符或英文单词
         
         // 使用事件委托，不在这里添加事件监听器
         noteElement.appendChild(lyricsInput);
@@ -1530,13 +1531,57 @@ class ScoreViewController {
         
         if (this.model.showLyrics) {
             toggleBtn.textContent = '隐藏歌词';
-            document.querySelector('.score-container').classList.add('lyrics-mode');
         } else {
             toggleBtn.textContent = '显示歌词';
-            document.querySelector('.score-container').classList.remove('lyrics-mode');
         }
         
-        this.render();
+        // 只更新显示状态，不重新渲染，避免丢失未保存的歌词输入
+        this.syncLyricsDisplayState();
+    }
+
+    // 同步歌词显示状态与CSS类
+    syncLyricsDisplayState() {
+        const container = document.querySelector('.score-container');
+        if (container) {
+            if (this.model.showLyrics) {
+                container.classList.add('lyrics-mode');
+                // 确保所有音符都有歌词输入框
+                this.ensureLyricsInputsExist();
+            } else {
+                container.classList.remove('lyrics-mode');
+                // 移除所有音符的 has-lyrics-input 类，确保底部空间完全收回
+                const noteElements = container.querySelectorAll('.score-note.has-lyrics-input');
+                noteElements.forEach(noteElement => {
+                    noteElement.classList.remove('has-lyrics-input');
+                });
+            }
+        }
+    }
+
+    // 确保所有音符都有歌词输入框
+    ensureLyricsInputsExist() {
+        const measures = this.model.measures;
+        measures.forEach((measure, measureIndex) => {
+            measure.forEach((note, noteIndex) => {
+                if (note.type === 'note' || note.type === 'rest') {
+                    // 查找对应的音符元素
+                    const noteElement = document.querySelector(
+                        `.score-note[data-measure-index="${measureIndex}"][data-note-index="${noteIndex}"]`
+                    );
+                    
+                    if (noteElement) {
+                        // 检查是否已有歌词输入框
+                        const existingInput = noteElement.querySelector('.lyrics-input');
+                        if (!existingInput) {
+                            // 如果没有，则创建
+                            this.addLyricsInput(noteElement, measureIndex, noteIndex);
+                        }
+                        // 确保音符元素有 has-lyrics-input 类
+                        noteElement.classList.add('has-lyrics-input');
+                    }
+                }
+            });
+        });
     }
 
     // 指法图相关方法
@@ -1597,7 +1642,7 @@ class ScoreViewController {
     clearAllLyrics() {
         if (confirm('确定要清空所有歌词吗？')) {
             this.model.clearLyrics();
-            this.render();
+            this.safeRender();
         }
     }
 
