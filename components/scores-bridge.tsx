@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { showSuccess, showError } from "@/lib/toast";
 
 type ScoreDocument = {
   version: string;
@@ -38,6 +39,14 @@ export default function ScoresBridge({ iframeId }: ScoresBridgeProps) {
   // 接收 iframe 消息，处理自动保存、创建记录等
   useEffect(() => {
     const handler = async (event: MessageEvent) => {
+      // 🔒 安全检查：验证消息来源
+      // 只接受来自同域的消息（iframe 加载的是 /webfile/index.html）
+      const allowedOrigin = window.location.origin;
+      if (event.origin !== allowedOrigin) {
+        console.warn('Rejected postMessage from unauthorized origin:', event.origin);
+        return;
+      }
+
       const msg = event.data;
       if (!msg || typeof msg !== "object") return;
       
@@ -45,14 +54,19 @@ export default function ScoresBridge({ iframeId }: ScoresBridgeProps) {
       if (msg.type === "score:autosave" && msg.payload) {
         const doc: ScoreDocument = msg.payload;
         try {
-          await fetch(`/api/scores/${encodeURIComponent(doc.scoreId)}`, {
+          const res = await fetch(`/api/scores/${encodeURIComponent(doc.scoreId)}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(doc),
           });
+          if (!res.ok) {
+            throw new Error(`自动保存失败: ${res.status}`);
+          }
+          // 自动保存成功（静默，不打扰用户）
         } catch (e) {
-          // 忽略网络/权限错误，前端仍有本地存储兜底
-          console.warn("Autosave failed:", e);
+          // 显示友好的错误提示
+          const errorMsg = e instanceof Error ? e.message : "自动保存失败";
+          showError(`${errorMsg}，数据已保存到本地`);
         }
       }
       
@@ -68,28 +82,32 @@ export default function ScoresBridge({ iframeId }: ScoresBridgeProps) {
           
           if (res.ok) {
             const { scoreId } = await res.json();
+            showSuccess('乐谱已保存到云端');
             // 通知iframe创建成功，返回真实ID
             iframeWindowRef.current?.postMessage({ 
               type: 'score:created',
               success: true,
               scoreId 
-            }, '*');
+            }, window.location.origin);
           } else {
+            const errorText = await res.text().catch(() => '未知错误');
+            showError(`保存失败: ${errorText}`);
             // 通知iframe创建失败
             iframeWindowRef.current?.postMessage({ 
               type: 'score:created',
               success: false,
               error: '创建失败'
-            }, '*');
+            }, window.location.origin);
           }
         } catch (e) {
-          console.warn("Create score failed:", e);
+          const errorMsg = e instanceof Error ? e.message : '网络错误';
+          showError(`保存失败: ${errorMsg}`);
           // 通知iframe创建失败
           iframeWindowRef.current?.postMessage({ 
             type: 'score:created',
             success: false,
-            error: e instanceof Error ? e.message : '创建失败'
-          }, '*');
+            error: errorMsg
+          }, window.location.origin);
         }
       }
       
@@ -117,7 +135,11 @@ export default function ScoresBridge({ iframeId }: ScoresBridgeProps) {
         const doc: ScoreDocument = await res.json();
         if (aborted) return;
         if (iframeWindowRef.current) {
-          iframeWindowRef.current.postMessage({ type: "score:load", payload: doc }, "*");
+          // 🔒 指定目标源，不使用通配符 "*"
+          iframeWindowRef.current.postMessage(
+            { type: "score:load", payload: doc },
+            window.location.origin
+          );
         }
       } catch {}
     })();

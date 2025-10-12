@@ -4,6 +4,11 @@ import { CtaStartButton } from "@/components/cta-start-button";
 import { AppNav } from "@/components/app-nav";
 import Image from "next/image";
 import { Metadata } from "next";
+import { 
+  WebSiteSchema, 
+  SoftwareApplicationSchema, 
+  OrganizationSchema 
+} from "@/components/seo/structured-data";
 
 export const metadata: Metadata = {
   title: "Ocarinana - 陶笛谱生成器",
@@ -11,8 +16,39 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  
   return (
     <main className="min-h-screen flex flex-col items-stretch">
+      {/* SEO: 结构化数据 */}
+      <WebSiteSchema
+        url={baseUrl}
+        name="Ocarinana - 陶笛谱生成器"
+        description="专业的在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配、歌词编辑、高清图片导出"
+      />
+      <SoftwareApplicationSchema
+        name="Ocarinana"
+        description="在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配"
+        url={baseUrl}
+        applicationCategory="MusicApplication"
+        operatingSystem="Web Browser"
+        offers={{
+          price: "0",
+          priceCurrency: "CNY",
+        }}
+      />
+      <OrganizationSchema
+        name="Ocarinana"
+        url={baseUrl}
+        logo={`${baseUrl}/opengraph-image.png`}
+        description="专业的在线音乐工具平台"
+        sameAs={[
+          // 可以添加社交媒体链接
+          // "https://twitter.com/ocarinana",
+          // "https://facebook.com/ocarinana",
+        ]}
+      />
+      
       {/* 顶部导航 */}
       <AppNav currentPath="/" />
 
@@ -151,9 +187,23 @@ export default function Home() {
       </section>
 
       {/* 页脚 */}
-      <footer className="w-full flex items-center justify-center border-t text-center text-xs gap-8 py-10">
-        <p>© {new Date().getFullYear()} Ocarinana · 陶笛谱生成器</p>
-        <ThemeSwitcher />
+      <footer className="w-full border-t">
+        <div className="max-w-6xl mx-auto px-5 py-10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-foreground/60">
+              © {new Date().getFullYear()} Ocarinana · 陶笛谱生成器
+            </p>
+            <div className="flex items-center gap-6 text-xs">
+              <Link href="/legal/privacy" className="text-foreground/60 hover:text-foreground transition-colors">
+                隐私政策
+              </Link>
+              <Link href="/legal/terms" className="text-foreground/60 hover:text-foreground transition-colors">
+                用户协议
+              </Link>
+              <ThemeSwitcher />
+            </div>
+          </div>
+        </div>
       </footer>
     </main>
   );

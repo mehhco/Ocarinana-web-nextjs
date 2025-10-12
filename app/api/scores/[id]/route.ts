@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { updateScoreSchema } from "@/lib/validations/score";
 
 export async function GET(
   _req: Request,
@@ -55,12 +56,40 @@ export async function POST(
   } = await supabase.auth.getUser();
   if (userErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
-  const scoreId = id;
-  const title = typeof body?.title === "string" && body.title.trim() ? body.title.trim() : "未命名简谱";
-  const document = body ?? {};
+  // 解析并验证请求体
+  let body;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "无效的 JSON 数据" }, { status: 400 });
+  }
 
-  // Upsert 用户自己的分数
+  // 验证数据格式
+  const validationResult = updateScoreSchema.safeParse(body);
+  if (!validationResult.success) {
+    return NextResponse.json(
+      { error: "数据验证失败", details: validationResult.error.errors },
+      { status: 400 }
+    );
+  }
+
+  const validatedData = validationResult.data;
+  const scoreId = id;
+  const title = validatedData.title;
+  const document = validatedData;
+
+  // 验证用户是否有权限更新此乐谱
+  const { data: existing } = await supabase
+    .from("scores")
+    .select("owner_user_id")
+    .eq("score_id", scoreId)
+    .maybeSingle();
+
+  if (existing && existing.owner_user_id !== user.id) {
+    return NextResponse.json({ error: "无权限更新此乐谱" }, { status: 403 });
+  }
+
+  // Upsert 用户自己的乐谱
   const { error } = await supabase.from("scores").upsert(
     {
       score_id: scoreId,

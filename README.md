@@ -1,110 +1,301 @@
-<<<<<<< HEAD
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# 🎵 Ocarinana - 陶笛谱生成器
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+<div align="center">
+  <img src="./public/webfile/static/Cfinger.png" alt="Ocarinana" width="200"/>
+  
+  <p><strong>在线数字简谱与陶笛指法谱生成器</strong></p>
+  <p>快速编排、实时预览、一键导出</p>
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+  [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
+  [![React](https://img.shields.io/badge/React-19-blue)](https://reactjs.org/)
+  [![Supabase](https://img.shields.io/badge/Supabase-Latest-green)](https://supabase.com/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
+  [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+</div>
 
-## Features
+---
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+## ✨ 功能特性
 
-## Demo
+### 核心功能
+- 🎼 **数字简谱生成** - 所见即所得的乐谱编辑器
+- 🎹 **陶笛指法联动** - 自动根据调号显示指法图（支持 C/F/G 调）
+- 📝 **歌词编辑** - 支持中英文歌词智能对齐
+- 💾 **自动保存** - 本地存储 + 云端同步
+- 🖼️ **图片导出** - 高质量 PNG 导出，适合打印分享
+- ↩️ **撤销/恢复** - 支持最多 50 步历史记录
+- 🎨 **多种皮肤** - 白色、米色、蓝色主题切换
+- 🌓 **暗黑模式** - 全局暗黑模式支持
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+### 技术特性
+- ⚡ 使用 Next.js 15 + React 19 构建
+- 🔒 Supabase 认证和数据库
+- 🎨 Tailwind CSS + shadcn/ui 组件库
+- 📱 完全响应式设计
+- 🔐 行级安全策略（RLS）
 
-## Deploy to Vercel
+---
 
-Vercel deployment will guide you through creating a Supabase account and project.
+## 🚀 快速开始
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+### 前置要求
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+- Node.js 20.x 或更高版本
+- npm / yarn / pnpm
+- Supabase 账号（[免费注册](https://supabase.com/dashboard)）
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+### 1. 克隆项目
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+```bash
+git clone <your-repo-url>
+cd with-supabase-app
+```
 
-## Clone and run locally
+### 2. 安装依赖
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+```bash
+npm install
+# 或
+yarn install
+# 或
+pnpm install
+```
 
-2. Create a Next.js app using the Supabase Starter template npx command
+### 3. 配置环境变量
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+创建 `.env.local` 文件（复制 `.env.example`）：
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+```bash
+cp .env.example .env.local
+```
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+编辑 `.env.local` 并填入你的 Supabase 配置：
 
-3. Use `cd` to change into the app's directory
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-project-url.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
 
-   ```bash
-   cd with-supabase-app
-   ```
+> 💡 在 [Supabase Dashboard](https://supabase.com/dashboard/project/_/settings/api) 获取 URL 和 Key
 
-4. Rename `.env.example` to `.env.local` and update the following:
+### 4. 设置数据库
 
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=[INSERT SUPABASE PROJECT API ANON KEY]
-   ```
+在 Supabase Dashboard 中运行迁移脚本：
 
-   Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+1. 进入 SQL Editor
+2. 复制 `supabase/migrations/0001_create_scores.sql` 的内容
+3. 执行 SQL
 
-5. You can now run the Next.js local development server:
+或使用 Supabase CLI：
 
-   ```bash
-   npm run dev
-   ```
+```bash
+npx supabase db push
+```
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+### 5. 启动开发服务器
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+```bash
+npm run dev
+```
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+打开 [http://localhost:3000](http://localhost:3000) 查看应用。
 
-## Feedback and issues
+---
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+## 📁 项目结构
 
-## More Supabase examples
+```
+with-supabase-app/
+├── app/                      # Next.js App Router
+│   ├── api/                  # API 路由
+│   │   └── scores/           # 乐谱 CRUD API
+│   ├── auth/                 # 认证页面
+│   ├── protected/            # 需要登录的页面
+│   │   └── scores/           # 乐谱编辑器
+│   ├── layout.tsx            # 根布局
+│   └── page.tsx              # 首页
+├── components/               # React 组件
+│   ├── ui/                   # shadcn/ui 组件
+│   ├── scores-bridge.tsx     # iframe 通信桥接
+│   └── ...
+├── lib/                      # 工具函数
+│   ├── supabase/             # Supabase 客户端
+│   └── utils.ts              # 通用工具
+├── public/                   # 静态资源
+│   └── webfile/              # 乐谱编辑器（原生 JS）
+│       ├── index.html        # 编辑器页面
+│       ├── script.js         # 核心逻辑
+│       ├── styles.css        # 样式
+│       └── static/           # 指法图资源
+├── supabase/                 # Supabase 配置
+│   └── migrations/           # 数据库迁移
+└── docs/                     # 项目文档
+```
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
-=======
-# Ocarinana-web-nextjs
-Ocarinana Web build by NextJs
->>>>>>> dd10680b8080755440871fded9a3e73305d5d0d1
+---
+
+## 🎯 使用指南
+
+### 创建乐谱
+
+1. 注册/登录账号
+2. 点击"立即开始"按钮
+3. 在编辑器中：
+   - 左侧面板选择音符、时值、休止符
+   - 点击编辑区域添加元素
+   - 使用顶部工具栏调整调号、拍号
+   - 点击"显示指法图"查看陶笛指法
+
+### 导出乐谱
+
+1. 点击顶部"导出图片"按钮
+2. 图片会自动下载到本地
+3. 支持高分辨率打印
+
+### 键盘快捷键
+
+- `Ctrl/Cmd + Z` - 撤销
+- `Ctrl/Cmd + Shift + Z` - 恢复
+- `1-7` - 快速输入音符
+- `Backspace` - 删除选中元素
+
+---
+
+## 🛠️ 开发指南
+
+### 可用脚本
+
+```bash
+# 开发模式（使用 Turbopack）
+npm run dev
+
+# 构建生产版本
+npm run build
+
+# 启动生产服务器
+npm run start
+
+# 代码检查
+npm run lint
+```
+
+### 技术栈
+
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| Next.js | 15 | React 框架 |
+| React | 19 | UI 库 |
+| TypeScript | 5 | 类型安全 |
+| Supabase | Latest | 后端服务 |
+| Tailwind CSS | 3 | 样式框架 |
+| shadcn/ui | Latest | 组件库 |
+| html2canvas | 1.4.1 | 图片导出 |
+
+### 添加新的 shadcn/ui 组件
+
+```bash
+npx shadcn@latest add [component-name]
+```
+
+---
+
+## 📚 文档
+
+- [部署指南](./docs/DEPLOYMENT.md) - 生产环境部署步骤
+- [开发指南](./docs/DEVELOPMENT.md) - 详细的开发文档
+- [API 文档](./docs/API.md) - API 接口说明
+- [商业化评估](./BUSINESS_READINESS_ASSESSMENT.md) - 商业化成熟度分析
+- [实施路线图](./IMPLEMENTATION_ROADMAP.md) - 功能开发计划
+
+---
+
+## 🚢 部署
+
+### Vercel（推荐）
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=<your-repo-url>)
+
+1. 点击上方按钮
+2. 连接你的 GitHub 仓库
+3. 配置环境变量
+4. 部署！
+
+详细步骤见 [部署文档](./docs/DEPLOYMENT.md)。
+
+### 其他平台
+
+- Netlify
+- Railway
+- 自托管服务器
+
+---
+
+## 🤝 贡献
+
+欢迎贡献！请遵循以下步骤：
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+### 开发规范
+
+- 使用 TypeScript
+- 遵循 ESLint 规则
+- 提交前运行 `npm run lint`
+- 编写清晰的 commit message
+
+---
+
+## 📝 许可证
+
+本项目基于 MIT 许可证开源 - 查看 [LICENSE](./LICENSE) 文件了解详情。
+
+---
+
+## 🙏 致谢
+
+- [Next.js](https://nextjs.org/) - React 框架
+- [Supabase](https://supabase.com/) - 开源 Firebase 替代品
+- [shadcn/ui](https://ui.shadcn.com/) - 美观的组件库
+- [Tailwind CSS](https://tailwindcss.com/) - CSS 框架
+- [Vercel](https://vercel.com/) - 托管平台
+
+---
+
+## 📧 联系方式
+
+- 项目主页: [https://ocarinana.com](https://ocarinana.com)
+- 问题反馈: [GitHub Issues](https://github.com/your-username/ocarinana/issues)
+- 邮箱: support@ocarinana.com
+
+---
+
+## 🗺️ 路线图
+
+### v1.0 (当前)
+- [x] 基础简谱编辑功能
+- [x] 陶笛指法图显示
+- [x] 用户认证系统
+- [x] 云端同步
+
+### v1.1 (计划中)
+- [ ] PDF 导出
+- [ ] MIDI 播放
+- [ ] 移动端优化
+- [ ] 社交分享
+
+### v2.0 (未来)
+- [ ] 多人协作编辑
+- [ ] 曲库分享平台
+- [ ] 更多乐器支持
+- [ ] AI 作曲辅助
+
+---
+
+<div align="center">
+  <p>用 ❤️ 打造 by Ocarinana Team</p>
+  <p>© 2025 Ocarinana. All rights reserved.</p>
+</div>
