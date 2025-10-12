@@ -1,4 +1,10 @@
 import { LoginForm } from "@/components/login-form";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "登录 - Ocarinana",
+  description: "登录到 Ocarinana 陶笛谱生成器",
+};
 
 export default function Page() {
   return (

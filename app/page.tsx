@@ -1,31 +1,20 @@
 import Link from "next/link";
-import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { CtaStartButton } from "@/components/cta-start-button";
+import { AppNav } from "@/components/app-nav";
 import Image from "next/image";
-import { Spicy_Rice } from "next/font/google";
+import { Metadata } from "next";
 
-const spicyRice = Spicy_Rice({ subsets: ["latin"], weight: "400", display: "swap" });
+export const metadata: Metadata = {
+  title: "Ocarinana - 陶笛谱生成器",
+  description: "在线数字简谱与陶笛指法谱生成器，快速编排、实时预览、一键导出",
+};
 
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-stretch">
       {/* 顶部导航 */}
-      <nav className="w-full border-b border-b-foreground/10 h-16 flex items-center">
-        <div className="w-full max-w-6xl mx-auto px-5 flex justify-between items-center">
-          <div className="flex items-center gap-6">
-            <Link href="/" className={`${spicyRice.className} font-bold text-4xl text-emerald-600 drop-shadow`}>Ocarinana</Link>
-            <div className="hidden md:flex items-center gap-5 text-xl">
-              <Link href="/" className="hover:underline">首页</Link>
-              <Link href="#" className="hover:underline">乐曲</Link>
-              <Link href="/home" className="hover:underline">我的</Link>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <AuthButton />
-          </div>
-        </div>
-      </nav>
+      <AppNav currentPath="/" />
 
       {/* Hero */}
       <section className="w-full border-b">
@@ -87,11 +76,12 @@ export default function Home() {
               <h3 className="font-semibold mb-2">快速上手</h3>
               <p className="text-sm text-foreground/70">打开即用，内置常用节拍与调号模版。</p>
             </div>
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1507838153414-b4b713384a76?q=80&w=1200&auto=format&fit=crop"
               alt="Music notes"
+              width={1200}
+              height={400}
               className="rounded-lg object-cover w-full h-40"
-              loading="lazy"
             />
           </div>
           <div className="rounded-xl border p-6 bg-background">

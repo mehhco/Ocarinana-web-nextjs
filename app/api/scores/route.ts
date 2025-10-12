@@ -26,7 +26,7 @@ export async function GET() {
 }
 
 // 创建一个空白乐谱，返回 scoreId
-export async function POST() {
+export async function POST(req: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -34,8 +34,14 @@ export async function POST() {
   } = await supabase.auth.getUser();
   if (userErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // 生成一个 scoreId（由数据库生成也可，这里使用 RPC insert returning）
-  const emptyDoc = {
+  // 解析请求体（可选）
+  let body = null;
+  try {
+    body = await req.json();
+  } catch {}
+
+  // 如果前端传入了完整文档，使用它；否则创建空白文档
+  const document = body || {
     version: "1.0",
     title: "未命名简谱",
     measures: [[]],
@@ -51,9 +57,11 @@ export async function POST() {
     },
   };
 
+  const title = document.title || "未命名简谱";
+
   const { data, error } = await supabase
     .from("scores")
-    .insert({ owner_user_id: user.id, title: emptyDoc.title, document: emptyDoc })
+    .insert({ owner_user_id: user.id, title, document })
     .select("score_id")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -15,14 +15,9 @@ export function CtaStartButton() {
       const supabase = createClient();
       const { data } = await supabase.auth.getUser();
       if (data?.user) {
-        // 始终创建新乐谱再进入编辑器
-        const res = await fetch('/api/scores', { method: 'POST' });
-        if (res.ok) {
-          const { scoreId } = await res.json();
-          router.push(`/protected/scores?scoreId=${encodeURIComponent(scoreId)}`);
-        } else {
-          router.push('/protected/scores');
-        }
+        // 生成临时草稿ID，不立即创建云端记录
+        const tempId = `draft-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        router.push(`/protected/scores?scoreId=${encodeURIComponent(tempId)}&isDraft=true`);
       } else {
         router.push("/auth/login");
       }

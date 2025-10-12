@@ -1,4 +1,10 @@
 import { SignUpForm } from "@/components/sign-up-form";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "注册 - Ocarinana",
+  description: "注册 Ocarinana 账户开始创作",
+};
 
 export default function Page() {
   return (

@@ -33,6 +33,10 @@ class ScoreModel {
         this.scoreId = null; // 当前文档ID（命名空间键）
         this.ownerUserId = ''; // 由父页面提供（可选）
         
+        // 新增：持久化状态标记
+        this.isPersisted = false; // 是否已持久化到云端
+        this.isDraft = false; // 是否是草稿状态
+        
         // 历史记录系统
         this.history = []; // 存储所有历史状态
         this.historyIndex = -1; // 当前状态在历史记录中的索引
@@ -170,6 +174,13 @@ class ScoreModel {
         this.skin = s.skin || 'white';
         this.showLyrics = !!s.showLyrics;
         this.showFingering = !!s.showFingering;
+        
+        // 根据 scoreId 格式判断是否已持久化
+        // 如果不是 draft- 开头，说明是从云端加载的已持久化乐谱
+        if (this.scoreId && !this.scoreId.startsWith('draft-')) {
+            this.isPersisted = true;
+            this.isDraft = false;
+        }
     }
 
     // 保存当前状态到历史记录
@@ -257,17 +268,63 @@ class ScoreModel {
         return `score:${scoreId}`;
     }
 
+    // 新增：判断是否需要持久化到云端
+    shouldPersist() {
+        // 如果已经持久化过，后续自动保存也会更新云端
+        if (this.isPersisted) {
+            return true;
+        }
+        
+        // 如果还是草稿，不管有没有内容，都不自动触发云端保存
+        // 只有用户手动点击"保存"按钮时才会触发
+        return false;
+    }
+    
+    // 新增：生成乐谱的显示名称（用于确认对话框）
+    getDisplayName() {
+        // 如果标题不是默认值，使用标题
+        if (this.title && this.title !== '未命名简谱' && this.title.trim() !== '') {
+            return this.title;
+        }
+        
+        // 如果是默认标题，生成描述性名称
+        const noteCount = this.measures.reduce((count, measure) => {
+            return count + measure.filter(note => note.type === 'note').length;
+        }, 0);
+        
+        if (noteCount > 0) {
+            return `未命名简谱（${noteCount}个音符）`;
+        }
+        
+        return `未命名简谱（${this.keySignature}调 ${this.timeSignature}拍）`;
+    }
+
     // 从本地存储加载状态（优先使用命名空间文档；回退到旧格式）
     loadStatePreferred(scoreIdFromUrl, ownerUserIdFromParent) {
         this.ownerUserId = ownerUserIdFromParent || this.ownerUserId || '';
 
-        // 需求调整：进入编辑页面默认开启新的空白乐谱（不再默认打开上一次）
-        // 优先：URL 指定的 scoreId（显式打开既有乐谱）
-        let scoreId = scoreIdFromUrl || generateUuid();
-        this.scoreId = scoreId;
-
-        // 仅当 URL 显式提供 scoreId 时，尝试读取命名空间文档；否则保持为空白
-        if (scoreIdFromUrl) {
+        // 识别是否是草稿ID
+        if (scoreIdFromUrl && scoreIdFromUrl.startsWith('draft-')) {
+            this.isDraft = true;
+            this.isPersisted = false;
+            this.scoreId = scoreIdFromUrl; // 使用临时草稿ID
+            // 尝试从localStorage恢复草稿
+            const key = this.getStorageKey();
+            const docRaw = localStorage.getItem(key);
+            if (docRaw) {
+                try {
+                    const doc = JSON.parse(docRaw);
+                    this.loadFromDocument(doc);
+                } catch (e) {
+                    console.warn('解析草稿文档失败:', e);
+                }
+            }
+        } else if (scoreIdFromUrl) {
+            // 真实ID，标记为已持久化
+            this.isPersisted = true;
+            this.isDraft = false;
+            this.scoreId = scoreIdFromUrl;
+            // 正常加载逻辑
             const key = this.getStorageKey();
             const docRaw = localStorage.getItem(key);
             if (docRaw) {
@@ -279,9 +336,14 @@ class ScoreModel {
                     this.loadStateLegacy();
                 }
             }
+        } else {
+            // 无ID，生成新草稿
+            this.isDraft = true;
+            this.isPersisted = false;
+            this.scoreId = `draft-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         }
 
-        // 确保保存一次，以建立文档与 lastOpenedScoreId
+        // 确保保存一次，以建立文档与历史记录
         this.saveState();
     }
 
@@ -1920,6 +1982,7 @@ class ScoreViewController {
     showToast(message, variant = 'manual') {
         const existing = document.getElementById('toast-tip');
         if (existing) existing.remove();
+        
         const tip = document.createElement('div');
         tip.id = 'toast-tip';
         tip.textContent = message;
@@ -1928,27 +1991,56 @@ class ScoreViewController {
         tip.style.left = '50%';
         tip.style.transform = 'translateX(-50%)';
         tip.style.padding = '10px 14px';
-        tip.style.background = variant === 'auto' ? 'rgba(24,144,255,0.95)' : 'rgba(0,160,80,0.95)';
-        tip.style.color = '#fff';
         tip.style.borderRadius = '10px';
         tip.style.fontSize = '13px';
         tip.style.lineHeight = '1';
         tip.style.boxShadow = '0 6px 20px rgba(0,0,0,0.25)';
         tip.style.zIndex = '99999';
+        tip.style.color = '#fff';
+        
+        // 根据不同类型设置背景色
+        switch (variant) {
+            case 'auto':
+                tip.style.background = 'rgba(24,144,255,0.95)'; // 蓝色
+                break;
+            case 'manual':
+                tip.style.background = 'rgba(0,160,80,0.95)'; // 绿色
+                break;
+            case 'draft':
+                tip.style.background = 'rgba(150,150,150,0.95)'; // 灰色
+                break;
+            case 'loading':
+                tip.style.background = 'rgba(255,165,0,0.95)'; // 橙色
+                break;
+            case 'error':
+                tip.style.background = 'rgba(245,34,45,0.95)'; // 红色
+                break;
+            default:
+                tip.style.background = 'rgba(0,160,80,0.95)';
+        }
+        
         document.body.appendChild(tip);
-        setTimeout(() => tip.remove(), 1600);
+        
+        // loading状态不自动消失
+        if (variant !== 'loading') {
+            setTimeout(() => tip.remove(), 1600);
+        }
     }
 
     // 立即持久化当前文档（本地 + 通知父页面）
-    persistNow(kind = 'manual') {
+    async persistNow(kind = 'manual') {
         // 若存在正在进行的中文输入（IME 组合态），先尝试提交
         const hasComposing = this.commitActiveCompositions();
+        
         // 给浏览器一次微任务/帧机会完成值同步
-        setTimeout(() => {
+        setTimeout(async () => {
             // 在保存前同步所有歌词输入框的当前值到数据模型
             this.syncLyricsFromInputs();
+            
+            // 生成文档
             const doc = this.model.toDocument();
-            // 本地命名空间持久化
+            
+            // 始终保存到localStorage（草稿兜底）
             try {
                 localStorage.setItem(this.model.getStorageKey(), JSON.stringify(doc));
                 if (this.model.ownerUserId) {
@@ -1957,14 +2049,143 @@ class ScoreViewController {
                     localStorage.setItem(`lastOpenedScoreId`, doc.scoreId);
                 }
             } catch {}
-            // 通知父页面保存
-            try {
-                if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'score:autosave', payload: doc }, '*');
+            
+            // ========== 关键修改：只有手动保存才考虑云端持久化 ==========
+            
+            // 如果是自动保存，仅本地保存，不触发云端
+            if (kind === 'auto') {
+                // 区分提示信息
+                if (this.model.isPersisted) {
+                    // 已持久化的乐谱，自动保存会更新云端
+                    await this.saveToCloud(doc);
+                    this.showToast('已自动保存到云端', 'auto');
+                } else {
+                    // 草稿状态，自动保存只保存到本地
+                    this.showToast('草稿已自动保存到本地', 'draft');
                 }
-            } catch {}
-            this.showToast(kind === 'auto' ? '已自动保存' : '已保存', kind);
+                return;
+            }
+            
+            // 手动保存：判断是否需要首次持久化
+            if (!this.model.isPersisted && this.model.isDraft) {
+                // 首次手动保存，弹出确认对话框
+                const displayName = this.model.getDisplayName();
+                const confirmed = confirm(`是否确认创建乐谱「${displayName}」？\n\n创建后将保存到云端，可在所有设备访问。`);
+                
+                if (!confirmed) {
+                    // 用户取消，仅本地保存
+                    this.showToast('已保存到本地（未同步云端）', 'draft');
+                    return;
+                }
+                
+                // 用户确认，创建云端记录
+                const success = await this.createCloudScore(doc);
+                
+                if (success) {
+                    this.showToast('已创建并保存到云端', 'manual');
+                } else {
+                    this.showToast('创建失败，已保存到本地', 'error');
+                }
+            } else if (this.model.isPersisted) {
+                // 已持久化的乐谱，直接更新云端
+                await this.saveToCloud(doc);
+                this.showToast('已保存到云端', 'manual');
+            }
+            
         }, hasComposing ? 120 : 0);
+    }
+
+    // 新增：保存到云端（已持久化的乐谱）
+    async saveToCloud(doc) {
+        try {
+            if (window.parent && window.parent !== window && this.model.isPersisted) {
+                window.parent.postMessage({ 
+                    type: 'score:autosave', 
+                    payload: doc 
+                }, '*');
+                return true;
+            }
+        } catch (e) {
+            console.warn('保存到云端失败:', e);
+            return false;
+        }
+    }
+
+    // 新增：首次创建云端记录（添加更详细的错误处理）
+    async createCloudScore(doc) {
+        try {
+            // 显示加载提示
+            this.showToast('正在创建乐谱...', 'loading');
+            
+            // 通知父页面创建新记录
+            window.parent.postMessage({ 
+                type: 'score:create', 
+                payload: doc 
+            }, '*');
+            
+            // 等待父页面返回真实scoreId（超时5秒）
+            const realScoreId = await this.waitForRealScoreId();
+            
+            if (realScoreId) {
+                // 更新为真实ID
+                const oldId = this.model.scoreId;
+                this.model.scoreId = realScoreId;
+                this.model.isPersisted = true;
+                this.model.isDraft = false;
+                
+                // 保存更新后的状态到localStorage
+                const updatedDoc = this.model.toDocument();
+                try {
+                    localStorage.setItem(this.model.getStorageKey(), JSON.stringify(updatedDoc));
+                    // 清理旧的草稿
+                    if (oldId !== realScoreId) {
+                        localStorage.removeItem(`score:${oldId}`);
+                    }
+                } catch {}
+                
+                // 更新URL（不刷新页面）
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ 
+                        type: 'score:updateUrl', 
+                        payload: { scoreId: realScoreId } 
+                    }, '*');
+                }
+                
+                return true;
+            } else {
+                // 超时或失败
+                console.warn('创建云端记录超时');
+                return false;
+            }
+        } catch (e) {
+            console.error('创建云端记录失败:', e);
+            return false;
+        }
+    }
+
+    // 新增：等待父页面返回真实scoreId
+    waitForRealScoreId() {
+        return new Promise((resolve) => {
+            const timeout = setTimeout(() => {
+                console.warn('等待scoreId超时');
+                resolve(null);
+            }, 5000); // 5秒超时
+            
+            const handler = (event) => {
+                if (event.data?.type === 'score:created') {
+                    clearTimeout(timeout);
+                    window.removeEventListener('message', handler);
+                    
+                    if (event.data.success && event.data.scoreId) {
+                        resolve(event.data.scoreId);
+                    } else {
+                        resolve(null);
+                    }
+                }
+            };
+            
+            window.addEventListener('message', handler);
+        });
     }
 
     // 每分钟定时持久化

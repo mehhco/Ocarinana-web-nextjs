@@ -3,8 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = await createClient();
   const {
     data: { user },
@@ -15,7 +16,7 @@ export async function GET(
   const { data, error } = await supabase
     .from("scores")
     .select("score_id, owner_user_id, title, document, created_at, updated_at")
-    .eq("score_id", params.id)
+    .eq("score_id", id)
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -44,8 +45,9 @@ export async function GET(
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = await createClient();
   const {
     data: { user },
@@ -54,7 +56,7 @@ export async function POST(
   if (userErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const scoreId = params.id;
+  const scoreId = id;
   const title = typeof body?.title === "string" && body.title.trim() ? body.title.trim() : "未命名简谱";
   const document = body ?? {};
 
@@ -70,6 +72,29 @@ export async function POST(
   );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userErr,
+  } = await supabase.auth.getUser();
+  if (userErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // 验证所有权后删除
+  const { error } = await supabase
+    .from("scores")
+    .delete()
+    .eq("score_id", id)
+    .eq("owner_user_id", user.id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true });
 }
 
 

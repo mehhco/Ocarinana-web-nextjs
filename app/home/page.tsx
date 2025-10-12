@@ -3,6 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import NewScoreButton from "@/components/new-score-button";
+import { Metadata } from "next";
+import { AppNav } from "@/components/app-nav";
+import { ThemeSwitcher } from "@/components/theme-switcher";
+
+export const metadata: Metadata = {
+  title: "我的 - Ocarinana",
+  description: "管理你的账户与作品",
+};
 
 export default async function HomeDashboardPage() {
   const supabase = await createClient();
@@ -11,21 +19,32 @@ export default async function HomeDashboardPage() {
 
   if (!user) {
     return (
-      <div className="w-full max-w-5xl mx-auto px-5 py-16">
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl font-bold">欢迎来到 Ocarinana</h1>
-          <p className="text-foreground/70">登录后即可创建、保存并管理你的数字简谱与陶笛指法谱。</p>
-          <div className="flex items-center justify-center gap-4 pt-2">
-            <Button asChild>
-              <Link href="/auth/login">登录</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/auth/sign-up">注册</Link>
-            </Button>
+      <main className="min-h-screen flex flex-col">
+        {/* 顶部导航 */}
+        <AppNav currentPath="/home" />
+        
+        <div className="flex-1 w-full max-w-5xl mx-auto px-5 py-16">
+          <div className="text-center space-y-4">
+            <h1 className="text-3xl font-bold">欢迎来到 Ocarinana</h1>
+            <p className="text-foreground/70">登录后即可创建、保存并管理你的数字简谱与陶笛指法谱。</p>
+            <div className="flex items-center justify-center gap-4 pt-2">
+              <Button asChild>
+                <Link href="/auth/login">登录</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/auth/sign-up">注册</Link>
+              </Button>
+            </div>
+            <p className="text-xs text-foreground/60">无需安装，打开即用；支持图片导出与本地保存。</p>
           </div>
-          <p className="text-xs text-foreground/60">无需安装，打开即用；支持图片导出与本地保存。</p>
         </div>
-      </div>
+
+        {/* 页脚 */}
+        <footer className="w-full flex items-center justify-center border-t text-center text-xs gap-8 py-10">
+          <p>© {new Date().getFullYear()} Ocarinana · 陶笛谱生成器</p>
+          <ThemeSwitcher />
+        </footer>
+      </main>
     );
   }
 
@@ -39,11 +58,15 @@ export default async function HomeDashboardPage() {
   const userId = user.id;
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-5 py-12 grid gap-8">
-      <div>
-        <h1 className="text-2xl font-bold">我的</h1>
-        <p className="text-sm text-foreground/60 mt-1">管理你的账户与作品</p>
-      </div>
+    <main className="min-h-screen flex flex-col">
+      {/* 顶部导航 */}
+      <AppNav currentPath="/home" />
+
+      <div className="flex-1 w-full max-w-6xl mx-auto px-5 py-12 grid gap-8">
+        <div>
+          <h1 className="text-2xl font-bold">我的</h1>
+          <p className="text-sm text-foreground/60 mt-1">管理你的账户与作品</p>
+        </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
@@ -115,6 +138,13 @@ export default async function HomeDashboardPage() {
         </Card>
       </div>
     </div>
+
+    {/* 页脚 */}
+    <footer className="w-full flex items-center justify-center border-t text-center text-xs gap-8 py-10">
+      <p>© {new Date().getFullYear()} Ocarinana · 陶笛谱生成器</p>
+      <ThemeSwitcher />
+    </footer>
+  </main>
   );
 }
 

@@ -4,6 +4,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { HomeIcon } from "lucide-react";
 import ScoresBridge from "@/components/scores-bridge";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "乐谱编辑器 - Ocarinana",
+  description: "在线编辑数字简谱与陶笛指法谱",
+};
 
 export default async function ScoresPage() {
   const supabase = await createClient();
