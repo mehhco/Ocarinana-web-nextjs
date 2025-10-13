@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // 性能优化：图片配置
   images: {
     remotePatterns: [
       {
@@ -8,6 +9,22 @@ const nextConfig: NextConfig = {
         hostname: 'images.unsplash.com',
       },
     ],
+    // 图片格式优化
+    formats: ['image/webp', 'image/avif'],
+  },
+
+  // 性能优化：编译器选项
+  compiler: {
+    // 生产环境移除 console.log
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
+
+  // 性能优化：实验性功能
+  experimental: {
+    // 优化包导入（tree shaking）
+    optimizePackageImports: ['lucide-react', '@/components/ui'],
   },
 
   // 安全响应头配置

@@ -4,6 +4,7 @@ import { createScoreSchema } from "@/lib/validations/score";
 import { checkRateLimit, getIdentifier, RATE_LIMITS, rateLimitResponse } from "@/lib/rate-limit";
 
 // 列表当前用户的乐谱（精简字段）
+// 性能优化：添加分页、缓存、计数
 export async function GET(req: Request) {
   // Rate Limiting - 读取操作使用宽松限制
   const identifier = getIdentifier(req);
@@ -19,19 +20,42 @@ export async function GET(req: Request) {
   } = await supabase.auth.getUser();
   if (userErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data, error } = await supabase
+  // 解析分页参数
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100); // 最大 100 条
+  const offset = (page - 1) * limit;
+
+  // 优化查询：只查询需要的字段，添加分页，获取总数
+  const { data, error, count } = await supabase
     .from("scores")
-    .select("score_id, title, updated_at")
+    .select("score_id, title, updated_at", { count: 'exact' })
     .eq("owner_user_id", user.id)
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(
-    (data || []).map((row) => ({
+
+  // 返回数据和分页信息
+  const response = NextResponse.json({
+    data: (data || []).map((row) => ({
       scoreId: row.score_id,
       title: row.title,
       updatedAt: row.updated_at,
-    }))
-  );
+    })),
+    pagination: {
+      page,
+      limit,
+      total: count || 0,
+      totalPages: Math.ceil((count || 0) / limit),
+    }
+  });
+
+  // 性能优化：添加缓存头
+  // 用户数据可以短暂缓存（10秒），减少数据库压力
+  response.headers.set('Cache-Control', 'private, s-maxage=10, stale-while-revalidate=30');
+
+  return response;
 }
 
 // 创建一个空白乐谱，返回 scoreId

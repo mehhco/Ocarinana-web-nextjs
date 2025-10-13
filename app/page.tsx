@@ -75,7 +75,7 @@ export default function Home() {
             </div>
           </div>
           <div className="rounded-xl overflow-hidden shadow border bg-muted/20">
-            {/* 开源无版权配图：来自 unsplash 源。仅作占位图片引用链接，不下载到项目中。*/}
+            {/* Hero 图片：首屏可见，使用 priority 优先加载 */}
             <Image
               src="/webfile/static/Cfinger.png"
               alt="Ocarina and sheet music"
@@ -112,12 +112,14 @@ export default function Home() {
               <h3 className="font-semibold mb-2">快速上手</h3>
               <p className="text-sm text-foreground/70">打开即用，内置常用节拍与调号模版。</p>
             </div>
+            {/* 性能优化：下方图片懒加载，减少初始加载时间 */}
             <Image
               src="https://images.unsplash.com/photo-1507838153414-b4b713384a76?q=80&w=1200&auto=format&fit=crop"
               alt="Music notes"
               width={1200}
               height={400}
               className="rounded-lg object-cover w-full h-40"
+              loading="lazy"
             />
           </div>
           <div className="rounded-xl border p-6 bg-background">

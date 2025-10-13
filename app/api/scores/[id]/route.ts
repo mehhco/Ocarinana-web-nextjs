@@ -22,16 +22,18 @@ export async function GET(
   } = await supabase.auth.getUser();
   if (userErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // 性能优化：使用组合索引查询（user_id + score_id）
   const { data, error } = await supabase
     .from("scores")
     .select("score_id, owner_user_id, title, document, created_at, updated_at")
+    .eq("owner_user_id", user.id)  // 先按用户过滤，利用索引
     .eq("score_id", id)
     .maybeSingle();
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (data.owner_user_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     version: data.document?.version || "1.0",
     scoreId: data.score_id,
     ownerUserId: data.owner_user_id,
@@ -50,6 +52,14 @@ export async function GET(
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   });
+
+  // 性能优化：添加缓存头
+  // 单个乐谱可以缓存稍长时间（30秒）
+  response.headers.set('Cache-Control', 'private, s-maxage=30, stale-while-revalidate=60');
+  // 添加 ETag 用于条件请求
+  response.headers.set('ETag', `"${data.score_id}-${new Date(data.updated_at).getTime()}"`);
+
+  return response;
 }
 
 export async function POST(

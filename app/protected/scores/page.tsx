@@ -3,8 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { HomeIcon } from "lucide-react";
-import ScoresBridge from "@/components/scores-bridge";
 import { Metadata } from "next";
+import { EditorClientWrapper } from "@/components/editor-client-wrapper";
 
 export const metadata: Metadata = {
   title: "乐谱编辑器 - Ocarinana",
@@ -28,14 +28,8 @@ export default async function ScoresPage() {
         </Button>
       </div>
       <div className="fixed inset-x-0 bottom-0 top-16 w-screen">
-        {/* 桥接组件：监听 iframe 消息并调用 API；同时在初次加载时尝试拉取云端数据 */}
-        <ScoresBridge iframeId="score-iframe" />
-        <iframe
-          id="score-iframe"
-          src="/webfile/index.html"
-          title="交互式简谱生成器"
-          className="w-full h-full border-0"
-        />
+        {/* 性能优化：编辑器在 Client Component 中动态加载 */}
+        <EditorClientWrapper iframeId="score-iframe" />
       </div>
     </>
   );
