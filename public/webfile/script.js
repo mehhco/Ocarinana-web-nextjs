@@ -1,4 +1,41 @@
+// =========================================
+// 性能优化：WebP 图片支持
+// =========================================
+
+// 检测浏览器是否支持 WebP 格式
+(function() {
+    'use strict';
+    
+    // 检测 WebP 支持
+    function checkWebPSupport() {
+        const canvas = document.createElement('canvas');
+        if (canvas.getContext && canvas.getContext('2d')) {
+            // 创建一个很小的 WebP 图片并检查是否能正常解码
+            return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+        }
+        return false;
+    }
+    
+    // 全局变量：标记是否支持 WebP
+    window.supportsWebP = checkWebPSupport();
+    
+    // 性能优化日志
+    console.log('🖼️ 图片格式支持:', window.supportsWebP ? 'WebP ✅' : 'PNG 📦');
+    
+    // 辅助函数：获取优化后的图片路径
+    // 如果浏览器支持 WebP，自动将 .png 替换为 .webp
+    window.getOptimizedImagePath = function(path) {
+        if (window.supportsWebP && path && path.endsWith('.png')) {
+            return path.replace('.png', '.webp');
+        }
+        return path;
+    };
+})();
+
+// =========================================
 // 数据模型
+// =========================================
+
 // 简单 UUID 生成（避免引入外部依赖）
 function generateUuid() {
     // 仅用于前端临时标识，不保证绝对唯一
@@ -384,7 +421,7 @@ class ScoreModel {
     }
 }
 
-// 陶笛指法图映射
+// 陶笛指法图映射（PNG 格式，会自动转换为 WebP）
 const FINGERING_MAPS = {
     'C': {
         "1": "./static/C-graph/1.png",
@@ -432,6 +469,30 @@ const FINGERING_MAPS = {
         "7-low": "./static/G-graph/7l.png"
     }
 };
+
+// 性能优化：自动将所有图片路径转换为 WebP（如果浏览器支持）
+(function() {
+    'use strict';
+    
+    // 遍历所有调号
+    Object.keys(FINGERING_MAPS).forEach(function(key) {
+        const fingeringMap = FINGERING_MAPS[key];
+        
+        // 遍历该调号下的所有音符
+        Object.keys(fingeringMap).forEach(function(note) {
+            // 将 PNG 路径转换为优化后的路径（WebP 或 PNG）
+            fingeringMap[note] = window.getOptimizedImagePath(fingeringMap[note]);
+        });
+    });
+    
+    // 性能优化日志
+    const totalImages = Object.values(FINGERING_MAPS).reduce(function(sum, map) {
+        return sum + Object.keys(map).length;
+    }, 0);
+    
+    console.log('🎵 指法图已优化:', totalImages, '张图片', 
+                window.supportsWebP ? '(使用 WebP 格式)' : '(使用 PNG 格式)');
+})();
 
 // 视图控制器
 class ScoreViewController {
