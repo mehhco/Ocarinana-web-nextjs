@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { ToastProvider } from "@/components/providers/toast-provider";
+import { CookieConsent } from "@/components/cookie-consent";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { BaiduAnalytics } from "@/components/analytics/baidu-analytics";
 import "./globals.css";
@@ -96,17 +98,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <ToastProvider />
-        </ThemeProvider>
+        <ErrorBoundary>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+            <ToastProvider />
+            <CookieConsent />
+          </ThemeProvider>
+        </ErrorBoundary>
         
-        {/* Analytics */}
+        {/* Analytics - 仅在用户同意后加载 */}
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
         )}

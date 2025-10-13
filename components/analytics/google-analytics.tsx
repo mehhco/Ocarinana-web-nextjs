@@ -1,6 +1,7 @@
 "use client";
 
 import Script from "next/script";
+import { useState, useEffect } from "react";
 
 interface GoogleAnalyticsProps {
   gaId: string;
@@ -8,10 +9,40 @@ interface GoogleAnalyticsProps {
 
 /**
  * Google Analytics 组件
- * 仅在生产环境且提供了 GA ID 时加载
+ * 仅在生产环境、提供了 GA ID 且用户同意 Cookie 时加载
  */
 export function GoogleAnalytics({ gaId }: GoogleAnalyticsProps) {
-  if (!gaId || process.env.NODE_ENV !== "production") {
+  const [hasConsent, setHasConsent] = useState(false);
+
+  useEffect(() => {
+    // 检查初始同意状态
+    const checkConsent = () => {
+      const consent = localStorage.getItem("cookie-consent");
+      setHasConsent(consent === "accepted");
+    };
+
+    checkConsent();
+
+    // 监听同意状态变化
+    const handleConsentAccepted = () => {
+      setHasConsent(true);
+    };
+
+    const handleConsentRejected = () => {
+      setHasConsent(false);
+    };
+
+    window.addEventListener("cookie-consent-accepted", handleConsentAccepted);
+    window.addEventListener("cookie-consent-rejected", handleConsentRejected);
+
+    return () => {
+      window.removeEventListener("cookie-consent-accepted", handleConsentAccepted);
+      window.removeEventListener("cookie-consent-rejected", handleConsentRejected);
+    };
+  }, []);
+
+  // 不加载的条件
+  if (!gaId || process.env.NODE_ENV !== "production" || !hasConsent) {
     return null;
   }
 
@@ -29,8 +60,12 @@ export function GoogleAnalytics({ gaId }: GoogleAnalyticsProps) {
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
+            
+            // 启用 IP 匿名化（GDPR 要求）
             gtag('config', '${gaId}', {
               page_path: window.location.pathname,
+              anonymize_ip: true,
+              cookie_flags: 'SameSite=None;Secure'
             });
           `,
         }}
@@ -48,12 +83,15 @@ export function sendGAEvent(
   label?: string,
   value?: number
 ) {
-  if (typeof window !== "undefined" && (window as Window & { gtag?: Function }).gtag) {
-    ((window as Window & { gtag: Function }).gtag)("event", action, {
-      event_category: category,
-      event_label: label,
-      value: value,
-    });
+  if (typeof window !== "undefined") {
+    const w = window as unknown as Window & { gtag?: Function };
+    if (w.gtag) {
+      w.gtag("event", action, {
+        event_category: category,
+        event_label: label,
+        value: value,
+      });
+    }
   }
 }
 
@@ -61,10 +99,13 @@ export function sendGAEvent(
  * 发送页面浏览事件
  */
 export function sendPageView(url: string) {
-  if (typeof window !== "undefined" && (window as Window & { gtag?: Function }).gtag) {
-    ((window as Window & { gtag: Function }).gtag)("config", process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID, {
-      page_path: url,
-    });
+  if (typeof window !== "undefined") {
+    const w = window as unknown as Window & { gtag?: Function };
+    if (w.gtag) {
+      w.gtag("config", process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID, {
+        page_path: url,
+      });
+    }
   }
 }
 

@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { updateScoreSchema } from "@/lib/validations/score";
+import { checkRateLimit, getIdentifier, RATE_LIMITS, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Rate Limiting - 读取操作使用宽松限制
+  const identifier = getIdentifier(req);
+  const rateLimit = checkRateLimit(identifier, RATE_LIMITS.LENIENT);
+  if (!rateLimit.success) {
+    return rateLimitResponse(rateLimit);
+  }
+
   const { id } = await params;
   const supabase = await createClient();
   const {
@@ -48,6 +56,13 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Rate Limiting - 更新操作使用中等限制
+  const identifier = getIdentifier(req);
+  const rateLimit = checkRateLimit(identifier, RATE_LIMITS.MODERATE);
+  if (!rateLimit.success) {
+    return rateLimitResponse(rateLimit);
+  }
+
   const { id } = await params;
   const supabase = await createClient();
   const {
@@ -68,7 +83,7 @@ export async function POST(
   const validationResult = updateScoreSchema.safeParse(body);
   if (!validationResult.success) {
     return NextResponse.json(
-      { error: "数据验证失败", details: validationResult.error.errors },
+      { error: "数据验证失败", details: validationResult.error.issues },
       { status: 400 }
     );
   }
@@ -104,9 +119,16 @@ export async function POST(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Rate Limiting - 删除操作使用中等限制
+  const identifier = getIdentifier(req);
+  const rateLimit = checkRateLimit(identifier, RATE_LIMITS.MODERATE);
+  if (!rateLimit.success) {
+    return rateLimitResponse(rateLimit);
+  }
+
   const { id } = await params;
   const supabase = await createClient();
   const {

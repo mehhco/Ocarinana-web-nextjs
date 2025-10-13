@@ -46,7 +46,7 @@ export const sentryConfig = {
   ],
   
   // 附加上下文
-  beforeSend(event, _hint) {
+  beforeSend(event: any, _hint: any) {
     // 在生产环境中过滤敏感信息
     if (process.env.NODE_ENV === 'production') {
       // 移除可能包含敏感信息的 headers
