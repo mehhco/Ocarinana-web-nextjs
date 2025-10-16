@@ -16,9 +16,9 @@ export default function NewScoreButton() {
       if (!res.ok) throw new Error("Create failed");
       const { scoreId } = await res.json();
       router.push(`/protected/scores?scoreId=${encodeURIComponent(scoreId)}`);
-    } catch (e) {
+    } catch (error) {
       // 可加入 toast，这里简化
-      console.warn(e);
+      console.error('创建乐谱失败:', error);
     } finally {
       setLoading(false);
     }

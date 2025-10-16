@@ -19,8 +19,7 @@
     // 全局变量：标记是否支持 WebP
     window.supportsWebP = checkWebPSupport();
     
-    // 性能优化日志
-    console.log('🖼️ 图片格式支持:', window.supportsWebP ? 'WebP ✅' : 'PNG 📦');
+    // 性能优化：检测WebP支持
     
     // 辅助函数：获取优化后的图片路径
     // 如果浏览器支持 WebP，自动将 .png 替换为 .webp
@@ -403,6 +402,7 @@ class ScoreModel {
             this.history = [];
             this.historyIndex = -1;
         } catch {}
+        
     }
 
     // 通知父页面进行自动保存（节流）
@@ -485,13 +485,7 @@ const FINGERING_MAPS = {
         });
     });
     
-    // 性能优化日志
-    const totalImages = Object.values(FINGERING_MAPS).reduce(function(sum, map) {
-        return sum + Object.keys(map).length;
-    }, 0);
-    
-    console.log('🎵 指法图已优化:', totalImages, '张图片', 
-                window.supportsWebP ? '(使用 WebP 格式)' : '(使用 PNG 格式)');
+    // 指法图优化完成
 })();
 
 // 视图控制器
@@ -696,7 +690,6 @@ class ScoreViewController {
 
         // 调号选择事件
         document.getElementById('keySignature').addEventListener('change', (e) => {
-            console.log('调号选择事件触发:', e.target.value);
             this.model.keySignature = e.target.value;
             this.model.saveState();
             this.render();
@@ -705,7 +698,6 @@ class ScoreViewController {
 
         // 拍号选择事件
         document.getElementById('timeSignature').addEventListener('change', (e) => {
-            console.log('拍号选择事件触发:', e.target.value);
             this.model.timeSignature = e.target.value;
             this.model.saveState();
             this.render();
@@ -723,7 +715,6 @@ class ScoreViewController {
 
         // 标题输入事件
         document.getElementById('scoreTitle').addEventListener('input', (e) => {
-            console.log('标题输入事件触发:', e.target.value);
             this.model.title = e.target.value;
             this.model.saveState();
             this.render();
@@ -946,7 +937,6 @@ class ScoreViewController {
         
         // 如果渲染模式需要切换，强制重新渲染
         if (shouldUseVirtualScrolling !== currentlyUsingVirtual) {
-            console.log('检测到渲染模式切换，重新渲染...');
             this.render(true); // 强制全量渲染
         }
     }
@@ -1113,8 +1103,7 @@ class ScoreViewController {
             this.updateContainerHeightForTraditional();
         }
         
-        // 记录当前渲染模式，用于调试
-        console.log(`渲染模式: ${shouldUseVirtualScrolling ? '虚拟滚动' : '传统渲染'}, 小节数: ${this.model.measures.length}`);
+        // 渲染模式：虚拟滚动或传统渲染
 
         // 检查是否需要切换渲染模式
         this.checkRenderModeSwitch();
@@ -1455,7 +1444,6 @@ class ScoreViewController {
                     end: { measureIndex: endMeasureIndex, noteIndex: endNoteIndex }
                 };
                 
-                console.log('Adding new tie:', newTie);
                 this.model.ties.push(newTie);
                 
                 // 清除连音线创建状态
@@ -1572,14 +1560,7 @@ class ScoreViewController {
                     
                     container.appendChild(tieLine);
                     
-                    // 添加调试信息
-                    console.log('Rendered tie line:', {
-                        left: leftPoint.x,
-                        width: width,
-                        isReverse: endRect.left < startRect.left,
-                        startNote: tie.start,
-                        endNote: tie.end
-                    });
+                    // 渲染连音线
                 }
             });
         }, 0);
@@ -1712,16 +1693,12 @@ class ScoreViewController {
         this.model.showFingering = !this.model.showFingering;
         const toggleBtn = document.getElementById('toggleFingering');
         
-        console.log('切换指法图显示:', this.model.showFingering);
-        
         if (this.model.showFingering) {
             toggleBtn.textContent = '隐藏指法图';
             document.querySelector('.score-container').classList.add('fingering-mode');
-            console.log('已启用指法图模式');
         } else {
             toggleBtn.textContent = '显示指法图';
             document.querySelector('.score-container').classList.remove('fingering-mode');
-            console.log('已禁用指法图模式');
         }
         
         this.render();
@@ -1730,17 +1707,13 @@ class ScoreViewController {
     // 获取音符对应的指法图URL
     getFingeringUrl(note) {
         if (note.type !== 'note') {
-            console.log('getFingeringUrl: 不是音符类型', note.type);
             return null;
         }
 
         const keySignature = this.model.keySignature;
         const fingeringMap = FINGERING_MAPS[keySignature];
         
-        console.log('getFingeringUrl: 调号', keySignature, '音符', note.value, '八度', note.octave);
-        
         if (!fingeringMap) {
-            console.log('getFingeringUrl: 未找到调号映射', keySignature);
             return null;
         }
 
@@ -1753,11 +1726,7 @@ class ScoreViewController {
             noteKey = `${note.value}-low`;
         }
 
-        console.log('getFingeringUrl: 查找键', noteKey, '在映射中:', Object.keys(fingeringMap));
-        
         const result = fingeringMap[noteKey] || null;
-        console.log('getFingeringUrl: 结果', result);
-        
         return result;
     }
 
@@ -1804,33 +1773,25 @@ class ScoreViewController {
         const input = e.target;
         const value = input.value;
         
-        console.log('歌词输入事件:', { measureIndex, noteIndex, value, isComposing: input.isComposing, hasComposingAttr: input.hasAttribute('data-composing') });
-        
         // 检查是否正在使用输入法（IME）- 只有当明确标记为正在输入时才跳过
         if (input.hasAttribute('data-composing')) {
-            console.log('正在使用输入法，跳过处理');
             return; // 如果正在输入法状态，不处理
         }
         
         // 如果输入的是多个字符，进行智能拆分
         if (value.length > 1) {
-            console.log('检测到多个字符输入:', value);
             const splitText = this.model.splitText(value);
-            console.log('拆分后的文本:', splitText);
             
             // 保存第一个字符到当前输入框
             const firstChar = splitText[0] || '';
             input.value = firstChar;
             this.model.addLyrics(measureIndex, noteIndex, firstChar);
-            console.log('已保存第一个字符:', firstChar);
             
             // 将剩余的字符填充到后面的输入框
             const remainingTexts = splitText.slice(1);
-            console.log('准备填充剩余字符:', remainingTexts);
             this.fillNextLyricsInputs(measureIndex, noteIndex, remainingTexts);
         } else {
             // 单个字符直接保存
-            console.log('单个字符输入:', value);
             this.model.addLyrics(measureIndex, noteIndex, value);
         }
     }
@@ -1860,23 +1821,16 @@ class ScoreViewController {
 
     // 填充后续的歌词输入框
     fillNextLyricsInputs(startMeasureIndex, startNoteIndex, texts) {
-        console.log('开始填充歌词:', { startMeasureIndex, startNoteIndex, texts });
-        
         let currentMeasureIndex = startMeasureIndex;
         let currentNoteIndex = startNoteIndex;
         
         for (let i = 0; i < texts.length; i++) {
-            console.log(`处理第 ${i + 1} 个字符: "${texts[i]}"`);
-            
             // 获取下一个输入框的位置
             const nextPosition = this.getNextLyricsInputPosition(currentMeasureIndex, currentNoteIndex);
-            console.log('下一个位置:', nextPosition);
             
             if (nextPosition) {
                 currentMeasureIndex = nextPosition.measureIndex;
                 currentNoteIndex = nextPosition.noteIndex;
-                
-                console.log(`保存歌词到位置: ${currentMeasureIndex}-${currentNoteIndex}, 内容: "${texts[i]}"`);
                 
                 // 保存歌词
                 this.model.addLyrics(currentMeasureIndex, currentNoteIndex, texts[i]);
@@ -1885,16 +1839,11 @@ class ScoreViewController {
                 const nextInput = document.querySelector(
                     `.lyrics-input[data-measure-index="${currentMeasureIndex}"][data-note-index="${currentNoteIndex}"]`
                 );
-                console.log('找到的输入框:', nextInput);
                 
                 if (nextInput) {
                     nextInput.value = texts[i];
-                    console.log(`已设置输入框值: "${texts[i]}"`);
-                } else {
-                    console.log('未找到对应的输入框');
                 }
             } else {
-                console.log('没有更多输入框位置，停止填充');
                 // 如果没有更多输入框，停止填充
                 break;
             }
@@ -2215,7 +2164,6 @@ class ScoreViewController {
                 return true;
             } else {
                 // 超时或失败
-                console.warn('创建云端记录超时');
                 return false;
             }
         } catch (e) {
@@ -2228,7 +2176,6 @@ class ScoreViewController {
     waitForRealScoreId() {
         return new Promise((resolve) => {
             const timeout = setTimeout(() => {
-                console.warn('等待scoreId超时');
                 resolve(null);
             }, 5000); // 5秒超时
             

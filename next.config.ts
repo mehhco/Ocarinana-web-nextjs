@@ -25,7 +25,12 @@ const nextConfig: NextConfig = {
   experimental: {
     // 优化包导入（tree shaking）
     optimizePackageImports: ['lucide-react', '@/components/ui'],
+    // CSS 优化暂时禁用（Next.js 15 中不稳定）
+    // optimizeCss: true,
   },
+
+  // 服务端组件外部包（已移动到根级别）
+  serverExternalPackages: ['sharp'],
 
   // 安全响应头配置
   async headers() {

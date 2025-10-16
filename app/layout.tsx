@@ -6,6 +6,7 @@ import { CookieConsent } from "@/components/cookie-consent";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { BaiduAnalytics } from "@/components/analytics/baidu-analytics";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -84,10 +85,22 @@ export const metadata: Metadata = {
   },
 };
 
+// 性能优化：字体优化配置
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  display: "swap",
+  display: "swap", // 防止字体闪烁
   subsets: ["latin"],
+  preload: true, // 预加载字体
+  fallback: [
+    "system-ui",
+    "-apple-system",
+    "BlinkMacSystemFont",
+    "Segoe UI",
+    "Roboto",
+    "Helvetica Neue",
+    "Arial",
+    "sans-serif",
+  ],
 });
 
 export default function RootLayout({
@@ -118,6 +131,9 @@ export default function RootLayout({
         {process.env.NEXT_PUBLIC_BAIDU_ANALYTICS_ID && (
           <BaiduAnalytics baiduId={process.env.NEXT_PUBLIC_BAIDU_ANALYTICS_ID} />
         )}
+        
+        {/* Service Worker - 性能优化：离线访问支持 */}
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

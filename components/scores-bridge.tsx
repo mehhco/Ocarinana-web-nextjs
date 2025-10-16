@@ -43,7 +43,6 @@ export default function ScoresBridge({ iframeId }: ScoresBridgeProps) {
       // 只接受来自同域的消息（iframe 加载的是 /webfile/index.html）
       const allowedOrigin = window.location.origin;
       if (event.origin !== allowedOrigin) {
-        console.warn('Rejected postMessage from unauthorized origin:', event.origin);
         return;
       }
 

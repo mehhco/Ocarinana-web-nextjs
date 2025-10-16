@@ -54,8 +54,8 @@ export function ScoreCard({
       if (!res.ok) throw new Error("删除失败");
       onDelete(scoreId);
     } catch (error) {
+      console.error('删除乐谱失败:', error);
       alert("删除失败，请重试");
-      console.error(error);
     } finally {
       setIsDeleting(false);
     }

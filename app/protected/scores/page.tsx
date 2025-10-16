@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { HomeIcon } from "lucide-react";
+import { ArrowLeftIcon } from "lucide-react";
 import { Metadata } from "next";
 import { EditorClientWrapper } from "@/components/editor-client-wrapper";
 
@@ -13,17 +13,20 @@ export const metadata: Metadata = {
 
 export default async function ScoresPage() {
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
-  if (error || !data?.claims) {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user) {
     redirect("/auth/login");
   }
+
+  // 获取用户 ID 用于构建乐谱列表链接
+  const userId = data.user.id;
 
   return (
     <>
       <div className="fixed top-2 left-4 z-50">
         <Button asChild size="sm" variant="secondary" className="shadow">
-          <Link href="/" aria-label="返回主页">
-            <HomeIcon className="mr-2 h-4 w-4" /> 返回主页
+          <Link href={`/${userId}/notes`} aria-label="返回我的乐谱列表">
+            <ArrowLeftIcon className="mr-2 h-4 w-4" /> 返回我的乐谱列表
           </Link>
         </Button>
       </div>
