@@ -32,6 +32,28 @@ const nextConfig: NextConfig = {
   // 服务端组件外部包（已移动到根级别）
   serverExternalPackages: ['sharp'],
 
+  // 优化 webpack 缓存配置，减少构建警告
+  webpack: (config, { dev, isServer }) => {
+    // 在开发环境中禁用持久化缓存以减少警告
+    if (dev) {
+      config.cache = false;
+    }
+    
+    // 优化缓存策略
+    if (!dev && !isServer) {
+      config.cache = {
+        type: 'filesystem',
+        buildDependencies: {
+          config: [__filename],
+        },
+        // 减少缓存文件大小
+        maxMemoryGenerations: 1,
+      };
+    }
+    
+    return config;
+  },
+
   // 安全响应头配置
   async headers() {
     return [

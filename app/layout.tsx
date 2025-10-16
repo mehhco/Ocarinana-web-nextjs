@@ -7,6 +7,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { BaiduAnalytics } from "@/components/analytics/baidu-analytics";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
+import { ResourceHints, COMMON_RESOURCE_HINTS } from "@/components/resource-hints";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -134,6 +135,9 @@ export default function RootLayout({
         
         {/* Service Worker - 性能优化：离线访问支持 */}
         <ServiceWorkerRegister />
+        
+        {/* 资源提示 - 性能优化：DNS预解析、预连接、预加载 */}
+        <ResourceHints {...COMMON_RESOURCE_HINTS} />
       </body>
     </html>
   );

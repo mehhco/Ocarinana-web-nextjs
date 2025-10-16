@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ThemeSwitcher } from "@/components/theme-switcher";
+import { LazyThemeSwitcher } from "@/components/lazy-components";
 import { CtaStartButton } from "@/components/cta-start-button";
 import { AppNav } from "@/components/app-nav";
 import Image from "next/image";
@@ -9,6 +9,7 @@ import {
   SoftwareApplicationSchema, 
   OrganizationSchema 
 } from "@/components/seo/structured-data";
+import { ImagePreloader, CRITICAL_IMAGES } from "@/components/image-preloader";
 
 export const metadata: Metadata = {
   title: "Ocarinana - 陶笛谱生成器",
@@ -20,6 +21,9 @@ export default function Home() {
   
   return (
     <main className="min-h-screen flex flex-col items-stretch">
+      {/* 性能优化：关键图片预加载 */}
+      <ImagePreloader images={CRITICAL_IMAGES} priority={true} />
+      
       {/* SEO: 结构化数据 */}
       <WebSiteSchema
         url={baseUrl}
@@ -202,7 +206,7 @@ export default function Home() {
               <Link href="/legal/terms" className="text-foreground/60 hover:text-foreground transition-colors">
                 用户协议
               </Link>
-              <ThemeSwitcher />
+              <LazyThemeSwitcher />
             </div>
           </div>
         </div>

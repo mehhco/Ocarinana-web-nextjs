@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppNav } from "@/components/app-nav";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { ScoreListClient } from "@/components/score-list-client";
+import { LazyThemeSwitcher, LazyScoreListClient } from "@/components/lazy-components";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -73,14 +72,14 @@ export default async function UserNotesPage({ params }: PageProps) {
           </p>
         </div>
 
-        {/* 乐谱列表（客户端组件） */}
-        <ScoreListClient initialScores={scores} />
+        {/* 乐谱列表（懒加载客户端组件） */}
+        <LazyScoreListClient initialScores={scores} />
       </div>
 
       {/* 页脚 */}
       <footer className="w-full flex items-center justify-center border-t text-center text-xs gap-8 py-10 mt-12">
         <p>© {new Date().getFullYear()} Ocarinana · 陶笛谱生成器</p>
-        <ThemeSwitcher />
+        <LazyThemeSwitcher />
       </footer>
     </main>
   );

@@ -2,6 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { EditorLoading } from "@/components/editor-loading";
+import { ImagePreloader, EDITOR_IMAGES } from "@/components/image-preloader";
+import { ResourceHints, EDITOR_RESOURCE_HINTS } from "@/components/resource-hints";
 
 // 性能优化：动态导入 ScoresBridge 组件
 // 这个组件是客户端组件，包含较多逻辑，延迟加载可以减少初始 Bundle
@@ -20,6 +22,12 @@ interface EditorClientWrapperProps {
 export function EditorClientWrapper({ iframeId }: EditorClientWrapperProps) {
   return (
     <>
+      {/* 性能优化：编辑器图片预加载 */}
+      <ImagePreloader images={EDITOR_IMAGES} priority={false} />
+      
+      {/* 性能优化：编辑器资源提示 */}
+      <ResourceHints {...EDITOR_RESOURCE_HINTS} />
+      
       {/* 性能优化：ScoresBridge 组件已动态导入，只在需要时加载 */}
       <ScoresBridge iframeId={iframeId} />
       <iframe
