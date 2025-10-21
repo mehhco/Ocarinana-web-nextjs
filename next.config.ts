@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+// Bundle Analyzer 配置
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 const nextConfig: NextConfig = {
   // 性能优化：图片配置
   images: {
@@ -87,7 +92,7 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // 静态资源缓存
+      // 静态资源缓存 - 长期缓存
       {
         source: '/webfile/static/:path*',
         headers: [
@@ -95,15 +100,65 @@ const nextConfig: NextConfig = {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',
           },
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding',
+          },
         ],
       },
-      // 图片缓存
+      // 图片缓存 - 优化策略
       {
-        source: '/:all*(svg|jpg|jpeg|png|gif|ico|webp)',
+        source: '/:all*(svg|jpg|jpeg|png|gif|ico|webp|avif)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=86400, must-revalidate',
+            value: 'public, max-age=2592000, must-revalidate',
+          },
+          {
+            key: 'Vary',
+            value: 'Accept',
+          },
+        ],
+      },
+      // API 路由缓存
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=300, s-maxage=300, stale-while-revalidate=60',
+          },
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding, Authorization',
+          },
+        ],
+      },
+      // 字体文件缓存
+      {
+        source: '/:all*(woff|woff2|eot|ttf|otf)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding',
+          },
+        ],
+      },
+      // CSS/JS 文件缓存
+      {
+        source: '/:all*(css|js)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding',
           },
         ],
       },
@@ -111,4 +166,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

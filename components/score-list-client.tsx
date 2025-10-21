@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
+import { useDebounce } from "@/components/performance-optimized";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,7 @@ const SORT_OPTIONS = [
   { value: "title", label: "标题" },
 ];
 
-export function ScoreListClient({ initialScores }: ScoreListClientProps) {
+export const ScoreListClient = memo(function ScoreListClient({ initialScores }: ScoreListClientProps) {
   const [scores, setScores] = useState<Score[]>(initialScores);
   const [searchQuery, setSearchQuery] = useState("");
   const [keyFilter, setKeyFilter] = useState("all");
@@ -64,12 +65,15 @@ export function ScoreListClient({ initialScores }: ScoreListClientProps) {
   const [sortBy, setSortBy] = useState("updated_at");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // 筛选和排序
+  // 防抖搜索优化
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // 筛选和排序 - 使用防抖搜索
   const filteredAndSortedScores = useMemo(() => {
     const filtered = scores.filter((score) => {
       const matchesSearch = score.title
         .toLowerCase()
-        .includes(searchQuery.toLowerCase());
+        .includes(debouncedSearchQuery.toLowerCase());
       const matchesKey =
         keyFilter === "all" || score.settings.keySignature === keyFilter;
       const matchesTime =
@@ -87,7 +91,7 @@ export function ScoreListClient({ initialScores }: ScoreListClientProps) {
     });
 
     return filtered;
-  }, [scores, searchQuery, keyFilter, timeFilter, sortBy]);
+  }, [scores, debouncedSearchQuery, keyFilter, timeFilter, sortBy]);
 
   // 分页
   const totalPages = Math.ceil(filteredAndSortedScores.length / ITEMS_PER_PAGE);
@@ -362,5 +366,5 @@ export function ScoreListClient({ initialScores }: ScoreListClientProps) {
       )}
     </div>
   );
-}
+});
 
