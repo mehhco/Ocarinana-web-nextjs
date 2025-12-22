@@ -1746,8 +1746,8 @@ class ScoreViewController {
         // 移除所有现有的皮肤类
         container.classList.remove('skin-white', 'skin-light-beige', 'skin-light-blue');
         
-        // 根据选择的皮肤添加对应的类
-        const selectedSkin = scoreSkin.value;
+        // 优先使用 model 中的 skin 值（而不是 UI 控件的值）
+        const selectedSkin = this.model.skin || (scoreSkin ? scoreSkin.value : 'white');
         let skinClass = 'skin-white'; // 默认白色皮肤
         
         switch (selectedSkin) {
@@ -1764,8 +1764,37 @@ class ScoreViewController {
         
         container.classList.add(skinClass);
         
-        // 更新皮肤选择器的值
-        scoreSkin.value = selectedSkin;
+        // 同步皮肤选择器的值到UI控件
+        if (scoreSkin) {
+            scoreSkin.value = selectedSkin;
+        }
+    }
+
+    // 同步UI控件值（从model同步到UI控件）
+    syncUIControls() {
+        // 同步皮肤选择器
+        const scoreSkin = document.getElementById('scoreSkin');
+        if (scoreSkin) {
+            scoreSkin.value = this.model.skin || 'white';
+        }
+
+        // 同步调号选择器
+        const keySignature = document.getElementById('keySignature');
+        if (keySignature) {
+            keySignature.value = this.model.keySignature || 'C';
+        }
+
+        // 同步拍号选择器
+        const timeSignature = document.getElementById('timeSignature');
+        if (timeSignature) {
+            timeSignature.value = this.model.timeSignature || '4/4';
+        }
+
+        // 同步标题输入框
+        const scoreTitle = document.getElementById('scoreTitle');
+        if (scoreTitle) {
+            scoreTitle.value = this.model.title || '未命名简谱';
+        }
     }
 
     // 处理歌词输入
@@ -2280,6 +2309,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (msg.type === 'score:load' && msg.payload) {
             scoreViewController.model.loadFromDocument(msg.payload);
             scoreViewController.model.saveState();
+            // 同步UI控件值（确保settings配置正确显示在UI上）
+            scoreViewController.syncUIControls();
             scoreViewController.render(true);
             scoreViewController.updateUndoRedoButtons();
         }
