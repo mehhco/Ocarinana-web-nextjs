@@ -162,10 +162,40 @@ class ScoreModel {
 
     // 删除音符
     deleteNote(measureIndex, noteIndex) {
-        if (this.measures[measureIndex]) {
-            this.measures[measureIndex].splice(noteIndex, 1);
-            this.saveState();
+        if (!this.measures[measureIndex] || !this.measures[measureIndex][noteIndex]) {
+            return;
         }
+        
+        const note = this.measures[measureIndex][noteIndex];
+        
+        // 如果是音符或休止符，删除它及其相关的延长线
+        if (note.type === 'note' || note.type === 'rest') {
+            // 先检查并删除后面的延长线（在删除音符之前检查，避免索引错乱）
+            let deleteCount = 1; // 至少删除音符本身
+            
+            // 检查后面的延长线（如果存在）
+            for (let i = noteIndex + 1; i < this.measures[measureIndex].length; i++) {
+                const nextItem = this.measures[measureIndex][i];
+                if (nextItem && nextItem.type === 'extension') {
+                    deleteCount++; // 需要删除这个延长线
+                } else {
+                    break; // 遇到非延长线元素，停止
+                }
+            }
+            
+            // 一次性删除音符和所有相关的延长线
+            this.measures[measureIndex].splice(noteIndex, deleteCount);
+        } else {
+            // 其他类型（如延长线）直接删除
+            this.measures[measureIndex].splice(noteIndex, 1);
+        }
+        
+        // 如果小节为空，保留一个空数组
+        if (this.measures[measureIndex].length === 0) {
+            this.measures[measureIndex] = [];
+        }
+        
+        this.saveState();
     }
 
     // 将当前模型转换为可持久化文档
@@ -513,17 +543,53 @@ class ScoreViewController {
     }
 
     initializeEventListeners() {
+        const self = this; // 保存 this 引用
+        
+        // 调试：确认代码已加载（可以删除）
+        console.log('编辑器事件监听器已初始化 - 删除和替换功能已启用');
+        
         // 使用事件委托优化音符按钮事件
-        document.addEventListener('click', (e) => {
+        document.addEventListener('click', function(e) {
             if (e.target.matches('.element-btn[data-note]')) {
-                const note = {
-                    type: 'note',
-                    value: e.target.dataset.note,
-                    duration: '1/4' // 默认为四分音符
-                };
-                this.model.addNote(note);
-                this.safeRender();
-                this.updateUndoRedoButtons();
+                const selectedNote = document.querySelector('.score-note.selected');
+                
+                // 如果有选中的音符，替换它；否则添加新音符
+                if (selectedNote) {
+                    const measureIndex = parseInt(selectedNote.dataset.measureIndex);
+                    const noteIndex = parseInt(selectedNote.dataset.noteIndex);
+                    
+                    // 确保索引有效
+                    if (self.model.measures[measureIndex] && self.model.measures[measureIndex][noteIndex]) {
+                        const note = self.model.measures[measureIndex][noteIndex];
+                        
+                        // 只替换音符类型，保持其他属性
+                        if (note.type === 'note') {
+                            // 替换音符值
+                            note.value = e.target.dataset.note;
+                        } else {
+                            // 如果选中的不是音符（如休止符），则替换整个对象
+                            self.model.measures[measureIndex][noteIndex] = {
+                                type: 'note',
+                                value: e.target.dataset.note,
+                                duration: note.duration || '1/4'
+                            };
+                        }
+                        
+                        self.model.saveState();
+                        self.safeRender();
+                        self.updateUndoRedoButtons();
+                    }
+                } else {
+                    // 没有选中音符时，添加新音符
+                    const note = {
+                        type: 'note',
+                        value: e.target.dataset.note,
+                        duration: '1/4' // 默认为四分音符
+                    };
+                    self.model.addNote(note);
+                    self.safeRender();
+                    self.updateUndoRedoButtons();
+                }
             }
         });
 
@@ -570,42 +636,94 @@ class ScoreViewController {
         // 使用事件委托优化休止符按钮事件
         document.addEventListener('click', (e) => {
             if (e.target.matches('.element-btn[data-rest]')) {
+                const selectedNote = document.querySelector('.score-note.selected');
                 const duration = e.target.dataset.rest;
                 
-                // 根据用户需求优化全休止符和二分休止符
-                if (duration === '1') {
-                    // 全休止符：生成4个0，每个0占据一个位格
-                    for (let i = 0; i < 4; i++) {
+                // 如果有选中的音符，替换它；否则添加新休止符
+                if (selectedNote) {
+                    const measureIndex = parseInt(selectedNote.dataset.measureIndex);
+                    const noteIndex = parseInt(selectedNote.dataset.noteIndex);
+                    
+                    // 删除原音符（deleteNote 会删除音符及其延长线）
+                    this.model.deleteNote(measureIndex, noteIndex);
+                    
+                    // 重新获取删除后的索引（因为删除可能改变了数组）
+                    // 由于我们删除了一个或多个元素，noteIndex 现在指向删除位置
+                    const insertIndex = Math.min(noteIndex, this.model.measures[measureIndex].length);
+                    
+                    // 根据用户需求优化全休止符和二分休止符
+                    if (duration === '1') {
+                        // 全休止符：生成4个0，每个0占据一个位格
+                        for (let i = 0; i < 4; i++) {
+                            const rest = {
+                                type: 'rest',
+                                value: '0',
+                                duration: '1/4', // 每个0都是四分休止符
+                                restGroup: 'full' // 标记为全休止符组
+                            };
+                            this.model.measures[measureIndex].splice(insertIndex + i, 0, rest);
+                        }
+                    } else if (duration === '1/2') {
+                        // 二分休止符：生成2个0，每个0占据一个位格
+                        for (let i = 0; i < 2; i++) {
+                            const rest = {
+                                type: 'rest',
+                                value: '0',
+                                duration: '1/4', // 每个0都是四分休止符
+                                restGroup: 'half' // 标记为二分休止符组
+                            };
+                            this.model.measures[measureIndex].splice(insertIndex + i, 0, rest);
+                        }
+                    } else {
+                        // 其他休止符保持原有实现
                         const rest = {
                             type: 'rest',
                             value: '0',
-                            duration: '1/4', // 每个0都是四分休止符
-                            restGroup: 'full' // 标记为全休止符组
+                            duration: duration
                         };
-                        this.model.addNote(rest);
+                        this.model.measures[measureIndex].splice(insertIndex, 0, rest);
                     }
-                } else if (duration === '1/2') {
-                    // 二分休止符：生成2个0，每个0占据一个位格
-                    for (let i = 0; i < 2; i++) {
-                        const rest = {
-                            type: 'rest',
-                            value: '0',
-                            duration: '1/4', // 每个0都是四分休止符
-                            restGroup: 'half' // 标记为二分休止符组
-                        };
-                        this.model.addNote(rest);
-                    }
+                    
+                    this.model.saveState();
+                    this.safeRender();
+                    this.updateUndoRedoButtons();
                 } else {
-                    // 其他休止符保持原有实现
-                    const rest = {
-                        type: 'rest',
-                        value: '0',
-                        duration: duration
-                    };
-                    this.model.addNote(rest);
+                    // 没有选中音符时，添加新休止符
+                    // 根据用户需求优化全休止符和二分休止符
+                    if (duration === '1') {
+                        // 全休止符：生成4个0，每个0占据一个位格
+                        for (let i = 0; i < 4; i++) {
+                            const rest = {
+                                type: 'rest',
+                                value: '0',
+                                duration: '1/4', // 每个0都是四分休止符
+                                restGroup: 'full' // 标记为全休止符组
+                            };
+                            this.model.addNote(rest);
+                        }
+                    } else if (duration === '1/2') {
+                        // 二分休止符：生成2个0，每个0占据一个位格
+                        for (let i = 0; i < 2; i++) {
+                            const rest = {
+                                type: 'rest',
+                                value: '0',
+                                duration: '1/4', // 每个0都是四分休止符
+                                restGroup: 'half' // 标记为二分休止符组
+                            };
+                            this.model.addNote(rest);
+                        }
+                    } else {
+                        // 其他休止符保持原有实现
+                        const rest = {
+                            type: 'rest',
+                            value: '0',
+                            duration: duration
+                        };
+                        this.model.addNote(rest);
+                    }
+                    this.safeRender();
+                    this.updateUndoRedoButtons();
                 }
-                this.safeRender();
-                this.updateUndoRedoButtons();
             }
         });
 
@@ -783,13 +901,17 @@ class ScoreViewController {
 
     // 设置事件委托
     setupEventDelegation() {
+        const self = this; // 保存 this 引用
         const container = document.getElementById('score-container');
         
+        // 调试：确认键盘事件已注册（可以删除）
+        console.log('键盘事件监听器已注册 - Backspace/Delete 键可用');
+        
         // 音符点击事件委托
-        container.addEventListener('click', (e) => {
+        container.addEventListener('click', function(e) {
             if (e.target.matches('.score-note') || e.target.closest('.score-note')) {
                 const noteElement = e.target.matches('.score-note') ? e.target : e.target.closest('.score-note');
-                this.selectNote(noteElement);
+                self.selectNote(noteElement);
             }
         });
 
@@ -810,6 +932,40 @@ class ScoreViewController {
                 const measureIndex = parseInt(e.target.dataset.measureIndex);
                 const noteIndex = parseInt(e.target.dataset.noteIndex);
                 this.handleLyricsKeydown(e, measureIndex, noteIndex);
+            }
+        });
+
+        // 全局键盘事件：删除选中的音符（Backspace 或 Delete）
+        // 注意：不要在输入框中触发（避免干扰文本输入）
+        document.addEventListener('keydown', function(e) {
+            // 如果当前焦点在输入框、文本区域或其他可输入元素中，不处理删除
+            const activeElement = document.activeElement;
+            const isInputElement = activeElement && (
+                activeElement.tagName === 'INPUT' ||
+                activeElement.tagName === 'TEXTAREA' ||
+                activeElement.isContentEditable ||
+                activeElement.classList.contains('lyrics-input')
+            );
+            
+            if (isInputElement) {
+                return; // 让输入框正常处理退格和删除
+            }
+
+            // 处理 Backspace 或 Delete 键删除选中的音符
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                const selectedNote = document.querySelector('.score-note.selected');
+                if (selectedNote) {
+                    e.preventDefault(); // 防止浏览器后退等默认行为
+                    e.stopPropagation(); // 阻止事件冒泡
+                    
+                    const measureIndex = parseInt(selectedNote.dataset.measureIndex);
+                    const noteIndex = parseInt(selectedNote.dataset.noteIndex);
+                    
+                    // 删除选中的音符
+                    self.model.deleteNote(measureIndex, noteIndex);
+                    self.safeRender();
+                    self.updateUndoRedoButtons();
+                }
             }
         });
 
@@ -1772,29 +1928,32 @@ class ScoreViewController {
 
     // 同步UI控件值（从model同步到UI控件）
     syncUIControls() {
-        // 同步皮肤选择器
-        const scoreSkin = document.getElementById('scoreSkin');
-        if (scoreSkin) {
-            scoreSkin.value = this.model.skin || 'white';
-        }
+        // 使用 requestAnimationFrame 确保 DOM 已完全渲染
+        requestAnimationFrame(() => {
+            // 同步皮肤选择器
+            const scoreSkin = document.getElementById('scoreSkin');
+            if (scoreSkin) {
+                scoreSkin.value = this.model.skin || 'white';
+            }
 
-        // 同步调号选择器
-        const keySignature = document.getElementById('keySignature');
-        if (keySignature) {
-            keySignature.value = this.model.keySignature || 'C';
-        }
+            // 同步调号选择器
+            const keySignature = document.getElementById('keySignature');
+            if (keySignature) {
+                keySignature.value = this.model.keySignature || 'C';
+            }
 
-        // 同步拍号选择器
-        const timeSignature = document.getElementById('timeSignature');
-        if (timeSignature) {
-            timeSignature.value = this.model.timeSignature || '4/4';
-        }
+            // 同步拍号选择器
+            const timeSignature = document.getElementById('timeSignature');
+            if (timeSignature) {
+                timeSignature.value = this.model.timeSignature || '4/4';
+            }
 
-        // 同步标题输入框
-        const scoreTitle = document.getElementById('scoreTitle');
-        if (scoreTitle) {
-            scoreTitle.value = this.model.title || '未命名简谱';
-        }
+            // 同步标题输入框
+            const scoreTitle = document.getElementById('scoreTitle');
+            if (scoreTitle) {
+                scoreTitle.value = this.model.title || '未命名简谱';
+            }
+        });
     }
 
     // 处理歌词输入
@@ -2309,13 +2468,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (msg.type === 'score:load' && msg.payload) {
             scoreViewController.model.loadFromDocument(msg.payload);
             scoreViewController.model.saveState();
-            // 同步UI控件值（确保settings配置正确显示在UI上）
-            scoreViewController.syncUIControls();
+            // 先渲染（applySkin 会使用 model 中的值）
             scoreViewController.render(true);
+            // 然后同步UI控件值（确保settings配置正确显示在UI控件上）
+            // 使用 setTimeout 确保在 render 完成后再同步
+            setTimeout(() => {
+                scoreViewController.syncUIControls();
+            }, 0);
             scoreViewController.updateUndoRedoButtons();
         }
     });
 
     // 更新按钮状态
     scoreViewController.updateUndoRedoButtons();
+
+    // 通知父页面 iframe 已准备好接收消息
+    // 这确保在生产环境中，父页面知道 iframe 已经完全加载
+    if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'score:iframe:ready' }, window.location.origin);
+    }
 });
