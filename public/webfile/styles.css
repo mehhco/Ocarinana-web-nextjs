@@ -242,8 +242,9 @@ body {
     color: #495057;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     min-height: 36px;
+    min-width: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -253,6 +254,34 @@ body {
     contain: layout style paint;
     backface-visibility: hidden;
     transform: translateZ(0);
+}
+
+/* 音符数字样式（主要元素，居中显示） */
+.element-btn .note-number {
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1.2;
+    color: #495057;
+    position: relative;
+    z-index: 1;
+    display: block;
+}
+
+/* 音名角标样式（次要元素，位于按钮内部右下角） */
+.element-btn .note-name {
+    position: absolute;
+    bottom: 3px;
+    right: 4px;
+    font-size: 0.55rem;
+    font-weight: 300;
+    line-height: 1;
+    color: #a0a9b5;
+    opacity: 0.55;
+    text-transform: lowercase;
+    letter-spacing: 0.2px;
+    z-index: 0;
+    pointer-events: none;
+    font-family: 'Arial', sans-serif;
 }
 
 .element-btn:hover {
@@ -279,14 +308,28 @@ body {
 .element-btn[data-note] {
     background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
     border-color: #90caf9;
+}
+
+.element-btn[data-note] .note-number {
     color: #1976d2;
     font-weight: 600;
     font-size: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.element-btn[data-note] .note-name {
+    color: #6b8db8;
+    opacity: 0.5;
+    font-size: 0.55rem;
 }
 
 .element-btn[data-note]:hover {
     background: linear-gradient(135deg, #bbdefb 0%, #e1bee7 100%);
     border-color: #1976d2;
+}
+
+.element-btn[data-note]:hover .note-number {
     color: #0d47a1;
 }
 
