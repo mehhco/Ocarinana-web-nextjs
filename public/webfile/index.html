@@ -5,6 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>交互式简谱生成器</title>
+    <!-- 预连接 Google Fonts 以优化加载性能 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- 使用 Playfair Display 作为英文标题字体 -->
+    <!-- display=swap 确保在字体加载期间使用系统字体，避免文本不可见 -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -53,6 +59,22 @@
         <div class="main-content">
             <!-- 左侧元素面板 -->
             <aside class="elements-panel">
+                <!-- 核心功能：陶笛指法图和歌词功能 - 移到顶部突出显示 -->
+                <div class="panel-section featured-section">
+                    <h3 class="featured-title">🎵 陶笛指法图</h3>
+                    <div class="fingering-controls">
+                        <button id="toggleFingering" class="element-btn featured-btn fingering-btn">显示指法图</button>
+                    </div>
+                </div>
+
+                <div class="panel-section featured-section">
+                    <h3 class="featured-title">📝 歌词功能</h3>
+                    <div class="lyrics-controls">
+                        <button id="toggleLyrics" class="element-btn featured-btn lyrics-btn">显示歌词</button>
+                        <button id="clearLyrics" class="element-btn featured-btn lyrics-btn-secondary">清空歌词</button>
+                    </div>
+                </div>
+
                 <div class="panel-section">
                     <h3>基本音符</h3>
                     <div class="element-grid">
@@ -112,20 +134,6 @@
                     </div>
                 </div>
 
-                <div class="panel-section">
-                    <h3>歌词功能</h3>
-                    <div class="lyrics-controls">
-                        <button id="toggleLyrics" class="element-btn">显示歌词</button>
-                        <button id="clearLyrics" class="element-btn">清空歌词</button>
-                    </div>
-                </div>
-
-                <div class="panel-section">
-                    <h3>陶笛指法图</h3>
-                    <div class="fingering-controls">
-                        <button id="toggleFingering" class="element-btn">显示指法图</button>
-                    </div>
-                </div>
             </aside>
 
             <!-- 中央编辑区域 -->

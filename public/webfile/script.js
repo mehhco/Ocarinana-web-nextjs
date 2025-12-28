@@ -64,7 +64,7 @@ class ScoreModel {
         this.ties = []; // 存储连音线信息，格式：[{start: {measureIndex, noteIndex}, end: {measureIndex, noteIndex}}]
         this.lyrics = []; // 存储歌词信息，格式：[{measureIndex, noteIndex, text}]
         this.showLyrics = false; // 是否显示歌词输入框
-        this.showFingering = false; // 是否显示陶笛指法图
+        this.showFingering = true; // 是否显示陶笛指法图（默认开启）
         this.skin = 'white'; // 默认皮肤
         this.scoreId = null; // 当前文档ID（命名空间键）
         this.ownerUserId = ''; // 由父页面提供（可选）
@@ -239,7 +239,8 @@ class ScoreModel {
         this.tempo = typeof s.tempo === 'number' ? s.tempo : 120;
         this.skin = s.skin || 'white';
         this.showLyrics = !!s.showLyrics;
-        this.showFingering = !!s.showFingering;
+        // 如果加载的状态中没有 showFingering，则使用默认值 true
+        this.showFingering = s.showFingering !== undefined ? !!s.showFingering : true;
         
         // 根据 scoreId 格式判断是否已持久化
         // 如果不是 draft- 开头，说明是从云端加载的已持久化乐谱
@@ -312,7 +313,8 @@ class ScoreModel {
             this.timeSignature = state.timeSignature;
             this.lyrics = JSON.parse(JSON.stringify(state.lyrics));
             this.showLyrics = state.showLyrics;
-            this.showFingering = state.showFingering;
+            // 如果历史状态中没有 showFingering，则使用默认值 true
+            this.showFingering = state.showFingering !== undefined ? state.showFingering : true;
             this.skin = state.skin;
             this.ties = JSON.parse(JSON.stringify(state.ties));
         }
@@ -425,7 +427,8 @@ class ScoreModel {
             this.tempo = typeof state.tempo === 'number' ? state.tempo : 120;
             this.lyrics = state.lyrics || [];
             this.showLyrics = state.showLyrics || false;
-            this.showFingering = state.showFingering || false;
+            // 如果localStorage状态中没有 showFingering，则使用默认值 true
+            this.showFingering = state.showFingering !== undefined ? state.showFingering : true;
             this.skin = state.skin || 'white';
             this.ties = state.ties || [];
             // 重建历史
@@ -549,8 +552,12 @@ class ScoreViewController {
         console.log('编辑器事件监听器已初始化 - 删除和替换功能已启用');
         
         // 使用事件委托优化音符按钮事件
+        // 使用 once: false 和 passive: false 确保可以阻止默认行为
         document.addEventListener('click', function(e) {
             if (e.target.matches('.element-btn[data-note]')) {
+                // 阻止事件冒泡，防止重复触发
+                e.stopPropagation();
+                
                 const selectedNote = document.querySelector('.score-note.selected');
                 
                 // 如果有选中的音符，替换它；否则添加新音符
@@ -591,7 +598,7 @@ class ScoreViewController {
                     self.updateUndoRedoButtons();
                 }
             }
-        });
+        }, { once: false, passive: false });
 
         // 使用事件委托优化时值按钮事件
         document.addEventListener('click', (e) => {
@@ -1214,15 +1221,10 @@ class ScoreViewController {
             });
         }
 
-        // 如果是强制全量渲染或首次渲染，清空容器
-        if (forceFullRender || container.children.length === 0) {
-            container.innerHTML = '';
-            this.domCache.clear();
-            this.measureElements.clear();
-            this.visibleMeasures.clear();
-        }
-
-        // 更新乐谱标题（每次渲染都更新）
+        // 根据音符数量决定渲染策略
+        const shouldUseVirtualScrolling = this.model.measures.length > this.maxVisibleMeasures;
+        
+        // 更新乐谱标题（每次渲染都更新，在清空之前先创建/更新）
         let titleHeader = container.querySelector('.score-title');
         if (!titleHeader) {
             titleHeader = this.getOrCreateElement('h1', 'score-title');
@@ -1230,21 +1232,35 @@ class ScoreViewController {
         }
         titleHeader.textContent = this.model.title;
 
-        // 更新调号和拍号（每次渲染都更新）
+        // 更新调号和拍号（每次渲染都更新，在清空之前先创建/更新）
         let header = container.querySelector('.score-header');
         if (!header) {
             header = this.getOrCreateElement('div', 'score-header');
             container.insertBefore(header, titleHeader.nextSibling);
         }
         header.textContent = `${this.model.keySignature} ${this.model.timeSignature}`;
+        
+        // 如果是强制全量渲染或首次渲染，只清空小节元素（保留标题和调号拍号）
+        // 或者如果使用传统渲染（非虚拟滚动），也需要清空小节以避免重复元素
+        if (forceFullRender || container.querySelectorAll('.score-measure').length === 0 || !shouldUseVirtualScrolling) {
+            // 对于传统渲染，每次都清空小节元素以确保没有重复元素
+            if (!shouldUseVirtualScrolling) {
+                const existingMeasures = container.querySelectorAll('.score-measure');
+                existingMeasures.forEach(measure => measure.remove());
+                this.measureElements.clear();
+            } else if (forceFullRender || container.querySelectorAll('.score-measure').length === 0) {
+                const existingMeasures = container.querySelectorAll('.score-measure');
+                existingMeasures.forEach(measure => measure.remove());
+                this.domCache.clear();
+                this.measureElements.clear();
+                this.visibleMeasures.clear();
+            }
+        }
 
         // 如果是强制全量渲染或首次渲染，设置虚拟滚动
         if (forceFullRender || container.children.length === 2) {
             this.setupVirtualScrollContainer();
         }
-
-        // 根据音符数量决定渲染策略
-        const shouldUseVirtualScrolling = this.model.measures.length > this.maxVisibleMeasures;
         
         if (shouldUseVirtualScrolling) {
             // 大量音符时使用虚拟滚动
@@ -1293,15 +1309,20 @@ class ScoreViewController {
 
     // 渲染所有小节（传统方式）
     renderAllMeasures(container) {
+        // 只清空小节元素，保留标题和调号拍号
+        const existingMeasures = container.querySelectorAll('.score-measure');
+        existingMeasures.forEach(measure => measure.remove());
+        this.measureElements.clear();
+        
         // 使用DocumentFragment进行批量DOM操作
         const fragment = document.createDocumentFragment();
         
         // 渲染小节 - 使用增量渲染
         this.model.measures.forEach((measure, measureIndex) => {
-            const measureElement = this.getOrCreateMeasureElement(measureIndex);
-            
-            // 清空现有音符
-            measureElement.innerHTML = '';
+            // 每次都创建新的小节元素，避免重复
+            const measureElement = document.createElement('div');
+            measureElement.className = 'score-measure';
+            measureElement.dataset.measureIndex = measureIndex;
             
             // 批量创建音符元素
             const noteFragment = document.createDocumentFragment();
@@ -1312,11 +1333,25 @@ class ScoreViewController {
             
             measureElement.appendChild(noteFragment);
             fragment.appendChild(measureElement);
+            
+            // 更新缓存
+            this.measureElements.set(measureIndex, measureElement);
         });
 
-        // 批量添加到容器
+        // 批量添加到容器（在标题和调号拍号之后）
         if (fragment.children.length > 0) {
-            container.appendChild(fragment);
+            // 找到调号拍号元素，在其后插入小节
+            const header = container.querySelector('.score-header');
+            if (header && header.nextSibling) {
+                // 在header之后插入
+                container.insertBefore(fragment, header.nextSibling);
+            } else if (header) {
+                // 如果header是最后一个元素，直接append
+                container.appendChild(fragment);
+            } else {
+                // 如果没有header，直接append（向后兼容）
+                container.appendChild(fragment);
+            }
         }
     }
 
@@ -1953,6 +1988,30 @@ class ScoreViewController {
             if (scoreTitle) {
                 scoreTitle.value = this.model.title || '未命名简谱';
             }
+
+            // 同步指法图按钮状态
+            const toggleFingeringBtn = document.getElementById('toggleFingering');
+            if (toggleFingeringBtn) {
+                if (this.model.showFingering) {
+                    toggleFingeringBtn.textContent = '隐藏指法图';
+                    document.querySelector('.score-container')?.classList.add('fingering-mode');
+                } else {
+                    toggleFingeringBtn.textContent = '显示指法图';
+                    document.querySelector('.score-container')?.classList.remove('fingering-mode');
+                }
+            }
+
+            // 同步歌词按钮状态
+            const toggleLyricsBtn = document.getElementById('toggleLyrics');
+            if (toggleLyricsBtn) {
+                if (this.model.showLyrics) {
+                    toggleLyricsBtn.textContent = '隐藏歌词';
+                    document.querySelector('.score-container')?.classList.add('lyrics-mode');
+                } else {
+                    toggleLyricsBtn.textContent = '显示歌词';
+                    document.querySelector('.score-container')?.classList.remove('lyrics-mode');
+                }
+            }
         });
     }
 
@@ -2481,6 +2540,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 更新按钮状态
     scoreViewController.updateUndoRedoButtons();
+
+    // 初始化指法图显示状态（默认开启）
+    // 如果模型中没有保存的状态，则默认显示指法图
+    if (scoreViewController.model.showFingering === undefined || scoreViewController.model.showFingering === true) {
+        scoreViewController.model.showFingering = true;
+        const toggleFingeringBtn = document.getElementById('toggleFingering');
+        if (toggleFingeringBtn) {
+            toggleFingeringBtn.textContent = '隐藏指法图';
+            document.querySelector('.score-container')?.classList.add('fingering-mode');
+        }
+        // 重新渲染以显示指法图
+        scoreViewController.render();
+    } else {
+        // 同步按钮状态
+        scoreViewController.syncUIControls();
+    }
 
     // 通知父页面 iframe 已准备好接收消息
     // 这确保在生产环境中，父页面知道 iframe 已经完全加载

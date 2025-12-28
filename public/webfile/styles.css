@@ -165,6 +165,44 @@ body {
     border-radius: 1px;
 }
 
+/* 突出显示的核心功能区域 */
+.panel-section.featured-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.6rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    position: relative;
+    overflow: hidden;
+}
+
+.panel-section.featured-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #28a745, #20c997, #17a2b8);
+    border-radius: 8px 8px 0 0;
+}
+
+.panel-section.featured-section h3.featured-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.35rem;
+}
+
+.panel-section.featured-section h3.featured-title::after {
+    width: 40px;
+    height: 2px;
+    background: linear-gradient(90deg, #28a745, #20c997);
+}
+
 .element-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
@@ -467,11 +505,29 @@ input[type="range"] {
 /* 简谱元素样式 */
 .score-title {
     font-size: 24px;
-    font-weight: bold;
+    font-weight: 600;
     text-align: center;
     margin-bottom: 6px;  /* 减少底部边距 */
     color: var(--score-text-color);
-    font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', 'FangSong', '仿宋', 'STFangsong', '华文仿宋', serif;
+    /* 字体栈：英文使用优雅的 Web 字体，中文保持原来的系统字体 */
+    /* 英文：Playfair Display (优雅的 serif 字体) -> Georgia -> Times New Roman */
+    /* 中文：保持原来的楷体、仿宋等系统字体 */
+    font-family: 
+        /* 英文 Web 字体（仅支持拉丁字符，中文会自动跳过） */
+        'Playfair Display',
+        /* 系统 serif 字体（英文降级） */
+        Georgia, 'Times New Roman', Times,
+        /* 中文字体（保持原来的字体栈） */
+        'KaiTi', '楷体', 'STKaiti', '华文楷体', 
+        'FangSong', '仿宋', 'STFangsong', '华文仿宋',
+        /* 最终回退 */
+        serif;
+    /* 优化字体渲染 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* 确保中英文混合显示时的字距 */
+    letter-spacing: 0.01em;
 }
 
 .score-header {
@@ -818,8 +874,68 @@ input[type="range"] {
 /* 歌词功能样式 */
 .lyrics-controls {
     display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0;
+}
+
+.fingering-controls {
+    display: flex;
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
+}
+
+.lyrics-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0;
+}
+
+/* 突出显示的按钮样式 */
+.element-btn.featured-btn {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    border: 1px solid transparent;
+}
+
+.element-btn.fingering-btn {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-color: #28a745;
+}
+
+.element-btn.fingering-btn:hover {
+    background: linear-gradient(135deg, #218838 0%, #1ea080 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.25);
+}
+
+.element-btn.lyrics-btn {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    border-color: #007bff;
+}
+
+.element-btn.lyrics-btn:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.25);
+}
+
+.element-btn.lyrics-btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    color: white;
+    border-color: #6c757d;
+}
+
+.element-btn.lyrics-btn-secondary:hover {
+    background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.25);
 }
 
 /* 歌词输入框样式 */

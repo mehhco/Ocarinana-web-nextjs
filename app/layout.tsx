@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     siteName: "Ocarinana",
     images: [
       {
-        url: `${defaultUrl}/opengraph-image.png`,
+        url: `${defaultUrl}/opengraph-image.webp`,
         width: 1200,
         height: 630,
         alt: "Ocarinana - 陶笛谱生成器",
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Ocarinana - 陶笛谱生成器",
     description: "专业的在线陶笛谱生成器，支持数字简谱编辑、指法图自动匹配",
-    images: [`${defaultUrl}/twitter-image.png`],
+    images: [`${defaultUrl}/twitter-image.webp`],
     creator: "@ocarinana",
   },
   robots: {
@@ -76,9 +76,12 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: [
+      { url: "/icon.png", type: "image/png" },
+      { url: "/favicon.ico", type: "image/x-icon" },
+    ],
+    shortcut: "/icon.png",
+    apple: "/apple-icon.png",
   },
   manifest: "/manifest.json",
   alternates: {

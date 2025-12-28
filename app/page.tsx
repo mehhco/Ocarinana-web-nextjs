@@ -44,7 +44,7 @@ export default function Home() {
       <OrganizationSchema
         name="Ocarinana"
         url={baseUrl}
-        logo={`${baseUrl}/opengraph-image.png`}
+        logo={`${baseUrl}/opengraph-image.webp`}
         description="专业的在线音乐工具平台"
         sameAs={[
           // 可以添加社交媒体链接

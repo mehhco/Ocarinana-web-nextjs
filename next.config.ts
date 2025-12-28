@@ -13,9 +13,51 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      // 电商平台图片域名支持
+      // 淘宝/天猫 - 阿里CDN
+      {
+        protocol: 'https',
+        hostname: 'img.alicdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.alicdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.taobao.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.tmall.com',
+      },
+      // 京东
+      {
+        protocol: 'https',
+        hostname: '**.jd.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img**.jd.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.jdimg.com',
+      },
+      // 拼多多
+      {
+        protocol: 'https',
+        hostname: '**.pddpic.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.yangkeduo.com',
+      },
     ],
     // 图片格式优化
     formats: ['image/webp', 'image/avif'],
+    // 允许未优化的图片（对于不支持优化的外部图片）
+    unoptimized: false,
   },
 
   // 性能优化：编译器选项

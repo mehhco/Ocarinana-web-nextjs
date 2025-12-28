@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AuthButton } from "@/components/auth-button";
-import { Button } from "@/components/ui/button";
 import { Spicy_Rice } from "next/font/google";
-import { Plus } from "lucide-react";
+import { isShopEnabled } from "@/lib/supabase/config";
 
 const spicyRice = Spicy_Rice({ subsets: ["latin"], weight: "400", display: "swap" });
 
@@ -17,6 +16,8 @@ export async function AppNav({ currentPath = "/" }: AppNavProps) {
   const user = data?.user;
 
   const isNotesPage = currentPath.includes("/notes");
+  const isShopPage = currentPath.includes("/shop");
+  const shopEnabled = await isShopEnabled();
 
   return (
     <nav className="w-full border-b border-b-foreground/10 h-16 flex items-center">
@@ -41,17 +42,21 @@ export async function AppNav({ currentPath = "/" }: AppNavProps) {
                 我的乐谱
               </Link>
             )}
+            {shopEnabled && (
+              <Link 
+                href="/shop"
+                className={`hover:underline transition-colors ${
+                  isShopPage 
+                    ? "text-emerald-600 font-semibold" 
+                    : "text-foreground hover:text-emerald-600"
+                }`}
+              >
+                精选陶笛
+              </Link>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {user && (
-            <Button asChild size="sm" className="hidden sm:flex">
-              <Link href="/protected/scores/new">
-                <Plus className="mr-1 h-4 w-4" />
-                新建
-              </Link>
-            </Button>
-          )}
           <AuthButton />
         </div>
       </div>

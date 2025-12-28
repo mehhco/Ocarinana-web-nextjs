@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { AppNav } from "@/components/app-nav";
 import { LazyThemeSwitcher, LazyScoreListClient } from "@/components/lazy-components";
 import { Metadata } from "next";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "我的乐谱 - Ocarinana",
@@ -65,11 +68,19 @@ export default async function UserNotesPage({ params }: PageProps) {
       {/* 主内容区域 */}
       <div className="flex-1 w-full max-w-6xl mx-auto px-5 py-8 space-y-6">
         {/* 标题区域 */}
-        <div>
-          <h1 className="text-3xl font-bold">我的乐谱</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            管理你的数字简谱与陶笛指法谱
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">我的乐谱</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              管理你的数字简谱与陶笛指法谱
+            </p>
+          </div>
+          <Button asChild size="lg" className="gap-2">
+            <Link href="/protected/scores/new">
+              <Plus className="h-5 w-5" />
+              新建
+            </Link>
+          </Button>
         </div>
 
         {/* 乐谱列表（懒加载客户端组件） */}
