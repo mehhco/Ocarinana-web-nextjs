@@ -40,7 +40,7 @@ export function SignUpForm({
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -48,6 +48,13 @@ export function SignUpForm({
         },
       });
       if (error) throw error;
+      
+      // 如果用户已经自动登录，先登出，确保用户需要手动登录
+      if (data.user && data.session) {
+        await supabase.auth.signOut();
+      }
+      
+      // 无论是否自动登录，都跳转到成功页面，让用户手动登录
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "发生错误");

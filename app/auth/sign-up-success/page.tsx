@@ -5,6 +5,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function Page() {
   return (
@@ -14,14 +16,19 @@ export default function Page() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">
-                感谢您的注册！
+                注册成功！
               </CardTitle>
-              <CardDescription>请查收邮件以确认账户</CardDescription>
+              <CardDescription>您的账户已创建成功</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-4">
               <p className="text-sm text-muted-foreground">
-                您已成功注册。请查收邮件并确认账户后即可登录。
+                恭喜您，账户注册成功！现在可以使用您的邮箱和密码登录了。
               </p>
+              <Link href="/auth/login" className="w-full">
+                <Button className="w-full">
+                  立即登录
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
