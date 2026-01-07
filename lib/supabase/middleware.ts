@@ -3,6 +3,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { hasEnvVars } from "../utils";
 
 export async function updateSession(request: NextRequest) {
+  // 跳过百度验证文件的处理，直接返回
+  if (request.nextUrl.pathname.includes('baidu_verify_') && request.nextUrl.pathname.endsWith('.html')) {
+    return NextResponse.next({
+      request,
+    });
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
