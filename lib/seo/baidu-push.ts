@@ -107,10 +107,11 @@ export async function pushUrlsToBaidu(
   }
 
   try {
-    // 确保site URL格式正确（移除尾部斜杠）
-    const siteUrl = site.replace(/\/$/, '');
+    // 确保site URL格式正确（移除尾部斜杠和前后空格）
+    const siteUrl = site.trim().replace(/\/$/, '');
+    const cleanToken = token.trim();
     
-    const apiUrl = `http://data.zz.baidu.com/urls?site=${encodeURIComponent(siteUrl)}&token=${token}`;
+    const apiUrl = `http://data.zz.baidu.com/urls?site=${encodeURIComponent(siteUrl)}&token=${encodeURIComponent(cleanToken)}`;
     
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -219,13 +220,16 @@ export async function pushSitemapToBaidu(
  * 获取默认的百度推送配置（从环境变量）
  */
 export function getBaiduPushConfig(): BaiduPushOptions | null {
-  const site = process.env.BAIDU_PUSH_SITE;
-  const token = process.env.BAIDU_PUSH_TOKEN;
+  const site = process.env.BAIDU_PUSH_SITE?.trim();
+  const token = process.env.BAIDU_PUSH_TOKEN?.trim();
 
   if (!site || !token) {
     return null;
   }
 
-  return { site, token };
+  // 移除尾部斜杠，但保留协议
+  const cleanSite = site.replace(/\/$/, '');
+
+  return { site: cleanSite, token };
 }
 
