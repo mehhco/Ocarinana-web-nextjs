@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { PlatformBadge } from "./platform-badge";
 import { ExternalLink } from "lucide-react";
 import type { Product } from "@/lib/supabase/products";
-import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   product: Product;

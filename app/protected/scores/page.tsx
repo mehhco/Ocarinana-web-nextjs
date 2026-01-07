@@ -8,7 +8,18 @@ import { EditorClientWrapper } from "@/components/editor-client-wrapper";
 
 export const metadata: Metadata = {
   title: "乐谱编辑器 - Ocarinana",
-  description: "在线编辑数字简谱与陶笛指法谱",
+  description: "在线编辑数字简谱与陶笛指法谱，支持实时预览、自动指法匹配、高清导出",
+  keywords: [
+    "乐谱编辑器",
+    "数字简谱编辑",
+    "陶笛指法谱",
+    "在线乐谱制作",
+    "简谱生成器",
+  ],
+  robots: {
+    index: false, // 编辑器页面不需要被索引
+    follow: false,
+  },
 };
 
 export default async function ScoresPage() {

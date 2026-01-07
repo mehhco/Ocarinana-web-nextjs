@@ -9,7 +9,19 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export const metadata: Metadata = {
   title: "我的 - Ocarinana",
-  description: "管理你的账户与作品",
+  description: "管理你的账户与作品，查看你的乐谱收藏，管理账户信息和设置",
+  keywords: [
+    "我的账户",
+    "乐谱管理",
+    "个人中心",
+    "账户设置",
+    "Ocarinana",
+  ],
+  openGraph: {
+    title: "我的 - Ocarinana",
+    description: "管理你的账户与作品，查看你的乐谱收藏",
+    type: "website",
+  },
 };
 
 export default async function HomeDashboardPage() {

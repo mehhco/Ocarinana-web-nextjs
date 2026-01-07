@@ -1,15 +1,36 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { AppNav } from "@/components/app-nav";
+import { BreadcrumbSchema } from "@/components/seo/structured-data";
 
 export const metadata: Metadata = {
-  title: "Cookie 政策",
-  description: "Ocarinana Cookie 政策 - 我们如何使用 Cookie 及其他追踪技术",
+  title: "Cookie 政策 - Ocarinana",
+  description: "Ocarinana Cookie 政策 - 我们如何使用 Cookie 及其他追踪技术。了解我们使用的Cookie类型和管理方式。",
+  keywords: [
+    "Cookie政策",
+    "Cookie使用",
+    "追踪技术",
+    "数据收集",
+    "Ocarinana Cookie",
+  ],
+  openGraph: {
+    title: "Cookie 政策 - Ocarinana",
+    description: "了解Ocarinana如何使用Cookie和其他追踪技术",
+    type: "website",
+  },
 };
 
 export default function CookiePolicy() {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  
   return (
     <main className="min-h-screen flex flex-col">
+      <BreadcrumbSchema
+        items={[
+          { name: "首页", url: baseUrl },
+          { name: "Cookie政策", url: `${baseUrl}/legal/cookies` },
+        ]}
+      />
       <AppNav currentPath="/legal/cookies" />
       
       <div className="max-w-4xl mx-auto px-5 py-16">

@@ -10,6 +10,10 @@ import { Plus } from "lucide-react";
 export const metadata: Metadata = {
   title: "我的乐谱 - Ocarinana",
   description: "管理你的数字简谱与陶笛指法谱",
+  robots: {
+    index: false, // 用户个人页面不应被搜索引擎索引
+    follow: false,
+  },
 };
 
 interface PageProps {

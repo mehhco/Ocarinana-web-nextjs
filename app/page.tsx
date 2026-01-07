@@ -7,13 +7,35 @@ import { Metadata } from "next";
 import { 
   WebSiteSchema, 
   SoftwareApplicationSchema, 
-  OrganizationSchema 
+  OrganizationSchema,
+  FAQPageSchema
 } from "@/components/seo/structured-data";
 import { ImagePreloader, CRITICAL_IMAGES } from "@/components/image-preloader";
 
 export const metadata: Metadata = {
-  title: "Ocarinana - 陶笛谱生成器",
-  description: "在线数字简谱与陶笛指法谱生成器，快速编排、实时预览、一键导出",
+  title: "Ocarinana - 陶笛谱生成器 | 在线数字简谱编辑工具",
+  description: "Ocarinana 是专业的在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配、歌词编辑、高清图片导出。适合音乐爱好者、陶笛学习者和音乐教师使用。",
+  keywords: [
+    "陶笛谱生成器",
+    "数字简谱编辑器",
+    "在线乐谱制作",
+    "陶笛指法图",
+    "简谱编辑工具",
+    "音乐制作软件",
+    "陶笛学习工具",
+    "乐谱导出",
+    "数字简谱",
+    "陶笛谱",
+  ],
+  openGraph: {
+    title: "Ocarinana - 陶笛谱生成器 | 在线数字简谱编辑工具",
+    description: "专业的在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配、歌词编辑、高清图片导出",
+    type: "website",
+    url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  },
+  alternates: {
+    canonical: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  },
 };
 
 export default function Home() {
@@ -52,6 +74,26 @@ export default function Home() {
           // "https://facebook.com/ocarinana",
         ]}
       />
+      <FAQPageSchema
+        faqs={[
+          { 
+            question: "需要登录才能使用吗？", 
+            answer: "浏览与了解功能不需要登录；点击立即开始时会根据状态跳转。" 
+          },
+          { 
+            question: "支持哪些导出格式？", 
+            answer: "当前支持高质量 PNG 图片导出，其他格式待支持。" 
+          },
+          { 
+            question: "数据会保存在云端吗？", 
+            answer: "导出图片默认保存在浏览器本地，登录后可选择云端同步（筹备中）。" 
+          },
+          { 
+            question: "是否收费？", 
+            answer: "当前免费，后续可能根据使用情况调整价格。" 
+          },
+        ]}
+      />
       
       {/* 顶部导航 */}
       <AppNav currentPath="/" />
@@ -82,7 +124,7 @@ export default function Home() {
             {/* Hero 图片：首屏可见，使用 priority 优先加载 */}
             <Image
               src="/webfile/static/Cfinger.png"
-              alt="Ocarina and sheet music"
+              alt="陶笛和数字简谱 - Ocarinana陶笛谱生成器展示图"
               width={1200}
               height={800}
               className="w-full h-full object-cover"
@@ -119,7 +161,7 @@ export default function Home() {
             {/* 性能优化：下方图片懒加载，减少初始加载时间 */}
             <Image
               src="https://images.unsplash.com/photo-1507838153414-b4b713384a76?q=80&w=1200&auto=format&fit=crop"
-              alt="Music notes"
+              alt="音乐乐谱和音符 - 在线数字简谱编辑工具"
               width={1200}
               height={400}
               className="rounded-lg object-cover w-full h-40"

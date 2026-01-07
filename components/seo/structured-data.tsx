@@ -155,8 +155,6 @@ interface ProductSchemaProps {
 }
 
 export function ProductSchema({ products }: ProductSchemaProps) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
@@ -202,5 +200,168 @@ function getPlatformName(platform: string): string {
     pdd: '拼多多',
   };
   return platformMap[platform] || platform;
+}
+
+interface ArticleSchemaProps {
+  headline: string;
+  description: string;
+  url: string;
+  image?: string;
+  datePublished: string;
+  dateModified?: string;
+  author?: {
+    name: string;
+    url?: string;
+  };
+  publisher?: {
+    name: string;
+    logo?: string;
+  };
+}
+
+/**
+ * 文章类型结构化数据
+ * 用于博客、教程、帮助文档等文章内容
+ */
+export function ArticleSchema({
+  headline,
+  description,
+  url,
+  image,
+  datePublished,
+  dateModified,
+  author,
+  publisher,
+}: ArticleSchemaProps) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline,
+    description,
+    url,
+    image: image ? (image.startsWith('http') ? image : `${baseUrl}${image}`) : undefined,
+    datePublished,
+    dateModified: dateModified || datePublished,
+    author: author
+      ? {
+          '@type': 'Person',
+          name: author.name,
+          url: author.url,
+        }
+      : {
+          '@type': 'Organization',
+          name: 'Ocarinana',
+        },
+    publisher: publisher
+      ? {
+          '@type': 'Organization',
+          name: publisher.name,
+          logo: publisher.logo
+            ? {
+                '@type': 'ImageObject',
+                url: publisher.logo.startsWith('http')
+                  ? publisher.logo
+                  : `${baseUrl}${publisher.logo}`,
+              }
+            : undefined,
+        }
+      : {
+          '@type': 'Organization',
+          name: 'Ocarinana',
+          logo: {
+            '@type': 'ImageObject',
+            url: `${baseUrl}/opengraph-image.webp`,
+          },
+        },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
+interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+interface FAQPageSchemaProps {
+  faqs: FAQItem[];
+}
+
+/**
+ * FAQ页面结构化数据
+ * 用于常见问题页面，帮助搜索引擎显示FAQ富文本结果
+ */
+export function FAQPageSchema({ faqs }: FAQPageSchemaProps) {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
+interface VideoSchemaProps {
+  name: string;
+  description: string;
+  thumbnailUrl: string;
+  uploadDate: string;
+  duration?: string; // ISO 8601格式，如 "PT1M33S"
+  contentUrl?: string;
+  embedUrl?: string;
+}
+
+/**
+ * 视频内容结构化数据
+ * 用于视频教程、演示等内容
+ */
+export function VideoSchema({
+  name,
+  description,
+  thumbnailUrl,
+  uploadDate,
+  duration,
+  contentUrl,
+  embedUrl,
+}: VideoSchemaProps) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name,
+    description,
+    thumbnailUrl: thumbnailUrl.startsWith('http') ? thumbnailUrl : `${baseUrl}${thumbnailUrl}`,
+    uploadDate,
+    duration,
+    contentUrl,
+    embedUrl,
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
 }
 

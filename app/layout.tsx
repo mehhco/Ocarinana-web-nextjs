@@ -87,6 +87,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: defaultUrl,
   },
+  // 百度站长工具验证
+  other: process.env.NEXT_PUBLIC_BAIDU_SITE_VERIFICATION
+    ? {
+        'baidu-site-verification': process.env.NEXT_PUBLIC_BAIDU_SITE_VERIFICATION,
+      }
+    : {},
 };
 
 // 性能优化：字体优化配置
@@ -113,7 +119,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="zh-CN" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
         <ErrorBoundary>
           <ThemeProvider

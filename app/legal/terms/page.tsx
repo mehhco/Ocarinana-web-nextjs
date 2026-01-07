@@ -1,15 +1,36 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { AppNav } from "@/components/app-nav";
+import { BreadcrumbSchema } from "@/components/seo/structured-data";
 
 export const metadata: Metadata = {
-  title: "用户协议",
-  description: "Ocarinana 用户协议 - 使用条款和服务条件",
+  title: "用户协议 - Ocarinana",
+  description: "Ocarinana 用户协议 - 使用条款和服务条件。了解使用Ocarinana服务的权利和义务。",
+  keywords: [
+    "用户协议",
+    "服务条款",
+    "使用条款",
+    "Ocarinana协议",
+    "服务条件",
+  ],
+  openGraph: {
+    title: "用户协议 - Ocarinana",
+    description: "Ocarinana用户协议和使用条款",
+    type: "website",
+  },
 };
 
 export default function TermsOfService() {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  
   return (
     <main className="min-h-screen flex flex-col">
+      <BreadcrumbSchema
+        items={[
+          { name: "首页", url: baseUrl },
+          { name: "用户协议", url: `${baseUrl}/legal/terms` },
+        ]}
+      />
       <AppNav currentPath="/legal/terms" />
       
       <div className="max-w-4xl mx-auto px-5 py-16">

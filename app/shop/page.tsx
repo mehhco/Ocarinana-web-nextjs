@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { AppNav } from "@/components/app-nav";
 import { ProductList } from "@/components/shop/product-list";
 import { getActiveProducts, type Product } from "@/lib/supabase/products";
-import { ProductSchema } from "@/components/seo/structured-data";
+import { ProductSchema, BreadcrumbSchema } from "@/components/seo/structured-data";
 import { isShopEnabled } from "@/lib/supabase/config";
 
 export const metadata: Metadata = {
@@ -26,6 +26,8 @@ export const metadata: Metadata = {
 };
 
 export default async function ShopPage() {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ocarinana.com';
+  
   // 检查功能是否启用
   const shopEnabled = await isShopEnabled();
   if (!shopEnabled) {
@@ -61,6 +63,12 @@ export default async function ShopPage() {
       </section>
 
       {/* SEO: 结构化数据 */}
+      <BreadcrumbSchema
+        items={[
+          { name: "首页", url: baseUrl },
+          { name: "精选陶笛", url: `${baseUrl}/shop` },
+        ]}
+      />
       {products.length > 0 && (
         <ProductSchema products={products} />
       )}

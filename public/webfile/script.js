@@ -734,9 +734,11 @@ class ScoreViewController {
             }
         });
 
-        // 修饰符号按钮事件
-        document.querySelectorAll('.element-btn[data-modifier]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        // 修饰符号按钮事件 - 使用事件委托
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.element-btn[data-modifier]');
+            if (btn) {
+                e.stopPropagation();
                 const selectedNote = document.querySelector('.score-note.selected');
                 if (selectedNote) {
                     const measureIndex = parseInt(selectedNote.dataset.measureIndex);
@@ -747,7 +749,7 @@ class ScoreViewController {
                         note.modifiers = [];
                     }
                     
-                    const modifier = e.target.dataset.modifier;
+                    const modifier = btn.dataset.modifier;
                     if (!note.modifiers.includes(modifier)) {
                         // 移除冲突的修饰符（如果有升号，就移除降号和还原号）
                         if (modifier === 'sharp') {
@@ -764,19 +766,34 @@ class ScoreViewController {
                     this.safeRender();
                     this.updateUndoRedoButtons();
                 }
-            });
+            }
         });
 
-        // 高音点和低音点按钮事件
-        document.querySelectorAll('.element-btn[data-octave]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        // 高音点和低音点按钮事件 - 使用事件委托，修复点击失效问题
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.element-btn[data-octave]');
+            if (btn) {
+                e.stopPropagation();
+                e.preventDefault();
+                
                 const selectedNote = document.querySelector('.score-note.selected');
                 if (selectedNote && selectedNote.dataset.type === 'note') {
                     const measureIndex = parseInt(selectedNote.dataset.measureIndex);
                     const noteIndex = parseInt(selectedNote.dataset.noteIndex);
+                    
+                    // 确保索引有效
+                    if (!this.model.measures[measureIndex] || !this.model.measures[measureIndex][noteIndex]) {
+                        return;
+                    }
+                    
                     const note = this.model.measures[measureIndex][noteIndex];
                     
-                    const octave = e.target.dataset.octave;
+                    // 使用 closest 确保获取正确的按钮元素，避免点击子元素时获取不到 dataset
+                    const octave = btn.dataset.octave;
+                    
+                    if (!octave) {
+                        return; // 如果无法获取 octave 值，直接返回
+                    }
                     
                     // 如果点击的是相同的高音点或低音点，则移除它
                     if (note.octave === octave) {
@@ -787,12 +804,14 @@ class ScoreViewController {
                     }
                     
                     this.model.saveState();
-                    this.safeRender();
+                    // 强制渲染，避免节流导致的延迟
+                    this.syncLyricsFromInputs();
+                    this.render(true);
                     this.updateUndoRedoButtons();
                 } else {
                     alert('请先选择一个音符');
                 }
-            });
+            }
         });
 
         // 特殊符号按钮事件

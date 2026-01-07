@@ -3,7 +3,17 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "注册 - Ocarinana",
-  description: "注册 Ocarinana 账户开始创作",
+  description: "注册 Ocarinana 账户，免费使用专业的在线陶笛谱生成器，开始创作你的数字简谱与陶笛指法谱",
+  keywords: [
+    "Ocarinana注册",
+    "陶笛谱生成器注册",
+    "免费注册",
+    "在线乐谱工具注册",
+  ],
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function Page() {

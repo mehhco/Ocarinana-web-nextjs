@@ -30,6 +30,28 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: ['/api/', '/protected/'],
       },
+      // 百度爬虫特殊规则
+      {
+        userAgent: 'Baiduspider',
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/protected/',
+          '/auth/confirm',
+          '/auth/error',
+        ],
+      },
+      // 百度移动爬虫
+      {
+        userAgent: 'Baiduspider-mobile',
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/protected/',
+          '/auth/confirm',
+          '/auth/error',
+        ],
+      },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
   };

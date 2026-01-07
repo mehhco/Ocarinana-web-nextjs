@@ -1,15 +1,37 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { AppNav } from "@/components/app-nav";
+import { BreadcrumbSchema } from "@/components/seo/structured-data";
 
 export const metadata: Metadata = {
-  title: "隐私政策",
-  description: "Ocarinana 隐私政策 - 我们如何收集、使用和保护您的个人信息",
+  title: "隐私政策 - Ocarinana",
+  description: "Ocarinana 隐私政策 - 我们如何收集、使用和保护您的个人信息。了解我们的数据保护措施和您的隐私权利。",
+  keywords: [
+    "隐私政策",
+    "数据保护",
+    "个人信息",
+    "GDPR",
+    "CCPA",
+    "Ocarinana隐私",
+  ],
+  openGraph: {
+    title: "隐私政策 - Ocarinana",
+    description: "了解Ocarinana如何保护您的个人信息和隐私",
+    type: "website",
+  },
 };
 
 export default function PrivacyPolicy() {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  
   return (
     <main className="min-h-screen flex flex-col">
+      <BreadcrumbSchema
+        items={[
+          { name: "首页", url: baseUrl },
+          { name: "隐私政策", url: `${baseUrl}/legal/privacy` },
+        ]}
+      />
       <AppNav currentPath="/legal/privacy" />
       
       <div className="max-w-4xl mx-auto px-5 py-16">
