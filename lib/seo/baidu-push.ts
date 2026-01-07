@@ -34,10 +34,12 @@ export async function pushUrlToBaidu(
   }
 
   try {
-    // 确保site URL格式正确（移除尾部斜杠）
-    const siteUrl = site.replace(/\/$/, '');
+    // 确保site URL格式正确（移除尾部斜杠和前后空格）
+    const siteUrl = site.trim().replace(/\/$/, '');
+    const cleanToken = token.trim();
     
-    const apiUrl = `http://data.zz.baidu.com/urls?site=${encodeURIComponent(siteUrl)}&token=${token}`;
+    // 直接拼接URL，不需要任何编码
+    const apiUrl = `http://data.zz.baidu.com/urls?site=${siteUrl}&token=${cleanToken}`;
     
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -111,7 +113,8 @@ export async function pushUrlsToBaidu(
     const siteUrl = site.trim().replace(/\/$/, '');
     const cleanToken = token.trim();
     
-    const apiUrl = `http://data.zz.baidu.com/urls?site=${encodeURIComponent(siteUrl)}&token=${encodeURIComponent(cleanToken)}`;
+    // 直接拼接URL，不需要任何编码
+    const apiUrl = `http://data.zz.baidu.com/urls?site=${siteUrl}&token=${cleanToken}`;
     
     const response = await fetch(apiUrl, {
       method: 'POST',
