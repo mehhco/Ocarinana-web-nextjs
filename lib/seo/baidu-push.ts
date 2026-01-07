@@ -34,19 +34,31 @@ export async function pushUrlToBaidu(
   }
 
   try {
-    const response = await fetch(
-      `http://data.zz.baidu.com/urls?site=${encodeURIComponent(site)}&token=${token}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain',
-        },
-        body: url,
-      }
-    );
+    // 确保site URL格式正确（移除尾部斜杠）
+    const siteUrl = site.replace(/\/$/, '');
+    
+    const apiUrl = `http://data.zz.baidu.com/urls?site=${encodeURIComponent(siteUrl)}&token=${token}`;
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+      body: url,
+    });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // 尝试获取详细的错误信息
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorText = await response.text();
+        if (errorText) {
+          errorMessage += ` - ${errorText}`;
+        }
+      } catch {
+        // 忽略解析错误
+      }
+      throw new Error(errorMessage);
     }
 
     const data: BaiduPushResponse = await response.json();
@@ -95,19 +107,31 @@ export async function pushUrlsToBaidu(
   }
 
   try {
-    const response = await fetch(
-      `http://data.zz.baidu.com/urls?site=${encodeURIComponent(site)}&token=${token}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain',
-        },
-        body: urls.join('\n'),
-      }
-    );
+    // 确保site URL格式正确（移除尾部斜杠）
+    const siteUrl = site.replace(/\/$/, '');
+    
+    const apiUrl = `http://data.zz.baidu.com/urls?site=${encodeURIComponent(siteUrl)}&token=${token}`;
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+      body: urls.join('\n'),
+    });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // 尝试获取详细的错误信息
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorText = await response.text();
+        if (errorText) {
+          errorMessage += ` - ${errorText}`;
+        }
+      } catch {
+        // 忽略解析错误
+      }
+      throw new Error(errorMessage);
     }
 
     const data: BaiduPushResponse = await response.json();
