@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/seo/auto-push",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}
+
