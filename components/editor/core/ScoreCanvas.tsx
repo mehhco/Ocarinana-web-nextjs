@@ -127,8 +127,8 @@ function MeasureComponent({
       {/* 小节序号 - 底部对齐 */}
       <span className="text-xs text-muted-foreground w-6 shrink-0 mb-1">{index + 1}</span>
       
-      {/* 音符容器 - 横向排列，自动换行，底部对齐 */}
-      <div className="flex flex-wrap items-end gap-x-1 gap-y-0 flex-1">
+      {/* 音符容器 - A4纸宽度，自动换行 */}
+      <div className="flex flex-wrap items-end gap-x-1 gap-y-0" style={{ width: '794px', maxWidth: '100%' }}>
         {measure.elements.map((element, noteIndex) => (
           <NoteElementComponent
             key={element.id}
@@ -199,7 +199,7 @@ export function ScoreCanvas() {
       )}
     >
       {/* 乐谱头部信息 */}
-      <div className="max-w-4xl mx-auto mb-6 text-center space-y-2">
+      <div className="mx-auto mb-6 text-center space-y-2" style={{ width: '794px', maxWidth: '100%' }}>
         <h1 className="text-2xl font-bold text-foreground">{document.title}</h1>
         <div className="flex items-center justify-center gap-4 md:gap-6 text-sm text-muted-foreground flex-wrap">
           <span className="px-3 py-1 bg-muted rounded-full">调号: 1={document.settings.keySignature}</span>
@@ -208,8 +208,8 @@ export function ScoreCanvas() {
         </div>
       </div>
 
-      {/* 乐谱内容 */}
-      <div className="max-w-4xl mx-auto bg-white shadow-sm rounded-xl border border-border overflow-hidden pb-4">
+      {/* 乐谱内容 - A4纸宽度 */}
+      <div className="mx-auto bg-white shadow-sm rounded-xl border border-border overflow-hidden pb-4" style={{ width: '794px', maxWidth: '100%' }}>
         {document.measures.map((measure, index) => (
           <div 
             key={measure.id} 
@@ -231,7 +231,7 @@ export function ScoreCanvas() {
       </div>
 
       {/* 添加小节按钮 */}
-      <div className="max-w-4xl mx-auto mt-6 flex justify-center">
+      <div className="mx-auto mt-6 flex justify-center" style={{ width: '794px', maxWidth: '100%' }}>
         <button
           onClick={addMeasure}
           className="px-6 py-3 border-2 border-dashed border-muted-foreground/30 rounded-xl text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all duration-200 flex items-center gap-2"
