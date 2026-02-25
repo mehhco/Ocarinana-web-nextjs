@@ -33,31 +33,16 @@ function NoteElementComponent({
     return (
       <div
         className={cn(
-          "flex flex-col items-center justify-start w-14 cursor-pointer transition-all rounded-lg",
+          "flex flex-col items-center cursor-pointer transition-all rounded-lg py-1",
           isSelected 
             ? "bg-primary/10 shadow-md ring-2 ring-primary" 
             : "hover:bg-muted/50"
         )}
         onClick={onClick}
       >
-        {/* 高音点 */}
-        {element.hasHighDot && (
-          <span className="text-lg leading-none h-4">·</span>
-        )}
-        
-        {/* 音符值容器 */}
-        <div className="relative flex items-center justify-center w-full h-12">
-          <span className="text-3xl font-bold">{element.value}</span>
-          
-          {/* 低音点 */}
-          {element.hasLowDot && (
-            <span className="absolute bottom-0 text-lg">·</span>
-          )}
-        </div>
-
-        {/* 指法图 - 放在音符下方 */}
+        {/* 指法图 - 放在最上方 */}
         {fingeringUrl && (
-          <div className="w-12 h-12 mt-1">
+          <div className="w-14 h-14 mb-1">
             <img 
               src={fingeringUrl} 
               alt={`指法 ${element.value}`}
@@ -65,6 +50,21 @@ function NoteElementComponent({
               loading="lazy"
             />
           </div>
+        )}
+
+        {/* 高音点 */}
+        {element.hasHighDot && (
+          <span className="text-base leading-none">·</span>
+        )}
+        
+        {/* 音符值 */}
+        <div className="relative flex items-center justify-center">
+          <span className="text-2xl font-bold leading-tight">{element.value}</span>
+        </div>
+
+        {/* 低音点 */}
+        {element.hasLowDot && (
+          <span className="text-base leading-none">·</span>
         )}
       </div>
     );
@@ -74,14 +74,14 @@ function NoteElementComponent({
     return (
       <div
         className={cn(
-          "flex flex-col items-center justify-center w-14 h-16 cursor-pointer transition-all rounded-lg",
+          "flex flex-col items-center justify-center w-14 py-3 cursor-pointer transition-all rounded-lg",
           isSelected 
             ? "bg-primary/10 shadow-md ring-2 ring-primary" 
             : "hover:bg-muted/50"
         )}
         onClick={onClick}
       >
-        <span className="text-3xl font-bold text-muted-foreground">0</span>
+        <span className="text-2xl font-bold text-muted-foreground">0</span>
       </div>
     );
   }
@@ -90,7 +90,7 @@ function NoteElementComponent({
     return (
       <div
         className={cn(
-          "flex items-center justify-center w-8 h-16 cursor-pointer transition-all rounded-lg",
+          "flex items-center justify-center w-8 py-3 cursor-pointer transition-all rounded-lg",
           isSelected 
             ? "bg-primary/10 ring-2 ring-primary" 
             : "hover:bg-muted/50"
@@ -123,12 +123,12 @@ function MeasureComponent({
   onSelectNote,
 }: MeasureComponentProps) {
   return (
-    <div className="flex items-start gap-3 p-4 border-b border-dashed border-muted-foreground/20">
-      {/* 小节序号 */}
-      <span className="text-xs text-muted-foreground w-6 shrink-0 pt-2">{index + 1}</span>
+    <div className="flex items-end gap-3 px-4 py-3 border-b border-dashed border-muted-foreground/20">
+      {/* 小节序号 - 底部对齐 */}
+      <span className="text-xs text-muted-foreground w-6 shrink-0 mb-1">{index + 1}</span>
       
-      {/* 音符容器 - 横向排列，自动换行 */}
-      <div className="flex flex-wrap items-start gap-2 flex-1 min-h-[80px]">
+      {/* 音符容器 - 横向排列，自动换行，底部对齐 */}
+      <div className="flex flex-wrap items-end gap-x-1 gap-y-0 flex-1">
         {measure.elements.map((element, noteIndex) => (
           <NoteElementComponent
             key={element.id}
@@ -151,7 +151,7 @@ function MeasureComponent({
       </div>
 
       {/* 小节线 */}
-      <div className="w-0.5 h-full min-h-[80px] bg-muted-foreground/20 ml-2" />
+      <div className="w-0.5 h-16 bg-muted-foreground/20 ml-2" />
     </div>
   );
 }
@@ -190,11 +190,6 @@ export function ScoreCanvas() {
     }
   };
 
-  // 计算是否需要额外空间显示指法图
-  const getContentPadding = () => {
-    return document.settings.showFingering ? 'pb-8' : 'pb-4';
-  };
-
   return (
     <div 
       ref={containerRef}
@@ -214,10 +209,7 @@ export function ScoreCanvas() {
       </div>
 
       {/* 乐谱内容 */}
-      <div className={cn(
-        "max-w-4xl mx-auto bg-white shadow-sm rounded-xl border border-border overflow-hidden",
-        getContentPadding()
-      )}>
+      <div className="max-w-4xl mx-auto bg-white shadow-sm rounded-xl border border-border overflow-hidden pb-4">
         {document.measures.map((measure, index) => (
           <div 
             key={measure.id} 
