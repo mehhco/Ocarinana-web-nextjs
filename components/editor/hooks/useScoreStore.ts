@@ -284,9 +284,8 @@ export const useScoreStore = create<ScoreStore>()(
         const lastMeasure = document.measures[document.measures.length - 1];
         lastMeasure.elements.push(newNote);
         
-        // 选中新添加的音符
-        state.selectedMeasureIndex = document.measures.length - 1;
-        state.selectedNoteIndex = lastMeasure.elements.length - 1;
+        // 不再自动选中新添加的音符，避免影响下一次添加
+        // 用户需要手动点击音符才能选中
       }
       
       document.updatedAt = new Date().toISOString();

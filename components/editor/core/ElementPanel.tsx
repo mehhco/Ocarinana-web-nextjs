@@ -30,15 +30,21 @@ export function ElementPanel() {
     updateNoteDuration,
     updateSettings,
     clearAllLyrics,
+    clearSelection,
   } = useScoreStore();
 
   const [selectedDuration, setSelectedDuration] = useState<Duration>('1/4');
 
   const handleNoteClick = (noteValue: string) => {
+    // 清除选中状态，确保添加新音符而不是替换
+    clearSelection();
+    // 直接添加新音符
     addNote(noteValue as NoteValue, selectedDuration);
   };
 
   const handleRestClick = (duration: string) => {
+    // 清除选中状态，确保添加新休止符而不是替换
+    clearSelection();
     addRest(duration as Duration);
   };
 
