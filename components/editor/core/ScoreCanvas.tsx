@@ -16,6 +16,7 @@ interface NoteElementProps {
   onClick: () => void;
 }
 
+// 音符组件 - 固定宽度，不缩放
 function NoteElementComponent({ 
   element, 
   measureIndex, 
@@ -33,16 +34,17 @@ function NoteElementComponent({
     return (
       <div
         className={cn(
-          "flex flex-col items-center cursor-pointer transition-all rounded-lg py-1",
+          "inline-flex flex-col items-center cursor-pointer transition-all rounded flex-shrink-0",
+          "w-16", // 固定宽度
           isSelected 
             ? "bg-primary/10 shadow-md ring-2 ring-primary" 
             : "hover:bg-muted/50"
         )}
         onClick={onClick}
       >
-        {/* 指法图 - 放在最上方 */}
+        {/* 指法图 - 固定大小 */}
         {fingeringUrl && (
-          <div className="w-14 h-14 mb-1">
+          <div className="w-14 h-14 flex-shrink-0">
             <img 
               src={fingeringUrl} 
               alt={`指法 ${element.value}`}
@@ -54,17 +56,17 @@ function NoteElementComponent({
 
         {/* 高音点 */}
         {element.hasHighDot && (
-          <span className="text-base leading-none">·</span>
+          <span className="text-base leading-none h-4">·</span>
         )}
         
         {/* 音符值 */}
-        <div className="relative flex items-center justify-center">
-          <span className="text-2xl font-bold leading-tight">{element.value}</span>
+        <div className="flex items-center justify-center h-8">
+          <span className="text-2xl font-bold">{element.value}</span>
         </div>
 
         {/* 低音点 */}
         {element.hasLowDot && (
-          <span className="text-base leading-none">·</span>
+          <span className="text-base leading-none h-4">·</span>
         )}
       </div>
     );
@@ -74,7 +76,8 @@ function NoteElementComponent({
     return (
       <div
         className={cn(
-          "flex flex-col items-center justify-center w-14 py-3 cursor-pointer transition-all rounded-lg",
+          "inline-flex flex-col items-center justify-center cursor-pointer transition-all rounded flex-shrink-0",
+          "w-16 h-20", // 固定宽度和高度
           isSelected 
             ? "bg-primary/10 shadow-md ring-2 ring-primary" 
             : "hover:bg-muted/50"
@@ -90,7 +93,8 @@ function NoteElementComponent({
     return (
       <div
         className={cn(
-          "flex items-center justify-center w-8 py-3 cursor-pointer transition-all rounded-lg",
+          "inline-flex items-center justify-center cursor-pointer transition-all rounded flex-shrink-0",
+          "w-10 h-20", // 固定宽度和高度
           isSelected 
             ? "bg-primary/10 ring-2 ring-primary" 
             : "hover:bg-muted/50"
@@ -114,6 +118,7 @@ interface MeasureComponentProps {
   onSelectNote: (noteIndex: number) => void;
 }
 
+// 小节组件 - 音符固定大小，自动换行
 function MeasureComponent({
   measure,
   index,
@@ -123,12 +128,12 @@ function MeasureComponent({
   onSelectNote,
 }: MeasureComponentProps) {
   return (
-    <div className="flex items-end gap-3 px-4 py-3 border-b border-dashed border-muted-foreground/20">
-      {/* 小节序号 - 底部对齐 */}
-      <span className="text-xs text-muted-foreground w-6 shrink-0 mb-1">{index + 1}</span>
+    <div className="flex items-stretch gap-2 px-4 py-2 border-b border-dashed border-muted-foreground/20 min-h-[100px]">
+      {/* 小节序号 */}
+      <span className="text-xs text-muted-foreground w-6 flex-shrink-0 pt-1">{index + 1}</span>
       
-      {/* 音符容器 - 横向排列，自动换行，底部对齐 */}
-      <div className="flex flex-wrap items-end gap-x-1 gap-y-0 flex-1">
+      {/* 音符容器 - 使用 flex-wrap，音符固定大小自动换行 */}
+      <div className="flex flex-wrap content-start gap-1 flex-1">
         {measure.elements.map((element, noteIndex) => (
           <NoteElementComponent
             key={element.id}
@@ -151,7 +156,7 @@ function MeasureComponent({
       </div>
 
       {/* 小节线 */}
-      <div className="w-0.5 h-16 bg-muted-foreground/20 ml-2" />
+      <div className="w-0.5 self-stretch bg-muted-foreground/20 ml-1 flex-shrink-0" />
     </div>
   );
 }
@@ -199,7 +204,7 @@ export function ScoreCanvas() {
       )}
     >
       {/* 乐谱头部信息 */}
-      <div className="max-w-4xl mx-auto mb-6 text-center space-y-2">
+      <div className="max-w-5xl mx-auto mb-6 text-center space-y-2">
         <h1 className="text-2xl font-bold text-foreground">{document.title}</h1>
         <div className="flex items-center justify-center gap-4 md:gap-6 text-sm text-muted-foreground flex-wrap">
           <span className="px-3 py-1 bg-muted rounded-full">调号: 1={document.settings.keySignature}</span>
@@ -208,8 +213,8 @@ export function ScoreCanvas() {
         </div>
       </div>
 
-      {/* 乐谱内容 */}
-      <div className="max-w-4xl mx-auto bg-white shadow-sm rounded-xl border border-border overflow-hidden pb-4">
+      {/* 乐谱内容 - 固定最大宽度 */}
+      <div className="max-w-5xl mx-auto bg-white shadow-sm rounded-lg border border-border overflow-hidden">
         {document.measures.map((measure, index) => (
           <div 
             key={measure.id} 
@@ -231,10 +236,10 @@ export function ScoreCanvas() {
       </div>
 
       {/* 添加小节按钮 */}
-      <div className="max-w-4xl mx-auto mt-6 flex justify-center">
+      <div className="max-w-5xl mx-auto mt-6 flex justify-center">
         <button
           onClick={addMeasure}
-          className="px-6 py-3 border-2 border-dashed border-muted-foreground/30 rounded-xl text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all duration-200 flex items-center gap-2"
+          className="px-6 py-3 border-2 border-dashed border-muted-foreground/30 rounded-lg text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all duration-200 flex items-center gap-2"
         >
           <span className="text-lg">+</span>
           <span>添加小节</span>
