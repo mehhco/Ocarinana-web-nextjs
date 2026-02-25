@@ -36,16 +36,19 @@ export function ElementPanel() {
   const [selectedDuration, setSelectedDuration] = useState<Duration>('1/4');
 
   const handleNoteClick = (noteValue: string) => {
-    // 清除选中状态，确保添加新音符而不是替换
+    // 先清除选中状态，使用 setTimeout 确保状态更新后再添加
     clearSelection();
-    // 直接添加新音符
-    addNote(noteValue as NoteValue, selectedDuration);
+    setTimeout(() => {
+      addNote(noteValue as NoteValue, selectedDuration);
+    }, 0);
   };
 
   const handleRestClick = (duration: string) => {
-    // 清除选中状态，确保添加新休止符而不是替换
+    // 先清除选中状态，使用 setTimeout 确保状态更新后再添加
     clearSelection();
-    addRest(duration as Duration);
+    setTimeout(() => {
+      addRest(duration as Duration);
+    }, 0);
   };
 
   const handleDurationSelect = (duration: Duration) => {
