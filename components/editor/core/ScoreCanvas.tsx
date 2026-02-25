@@ -1,29 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
 import { getFingeringUrl } from '../lib/fingeringMap';
 import type { ScoreElement, Measure } from '@/lib/editor/types';
-
-// 骨架屏组件 - 用于 SSR 和初始加载
-function ScoreSkeleton() {
-  return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50/50">
-      <div className="max-w-4xl mx-auto mb-6 text-center space-y-2">
-        <div className="h-8 w-48 bg-muted rounded mx-auto animate-pulse" />
-        <div className="flex items-center justify-center gap-4">
-          <div className="h-6 w-24 bg-muted rounded-full animate-pulse" />
-          <div className="h-6 w-24 bg-muted rounded-full animate-pulse" />
-          <div className="h-6 w-24 bg-muted rounded-full animate-pulse" />
-        </div>
-      </div>
-      <div className="max-w-4xl mx-auto bg-white shadow-sm rounded-xl border border-border overflow-hidden p-8">
-        <div className="h-20 bg-muted/50 rounded animate-pulse" />
-      </div>
-    </div>
-  );
-}
 
 interface NoteElementProps {
   element: ScoreElement;
@@ -185,12 +166,6 @@ export function ScoreCanvas() {
   } = useScoreStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
-
-  // 挂载后设置 mounted 状态，避免 hydration 不匹配
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // 自动滚动到选中的小节
   useEffect(() => {
@@ -202,11 +177,6 @@ export function ScoreCanvas() {
       }
     }
   }, [selectedMeasureIndex]);
-
-  // 未挂载时显示骨架屏，避免 hydration 错误
-  if (!mounted) {
-    return <ScoreSkeleton />;
-  }
 
   // 背景色根据皮肤设置
   const getSkinBackground = () => {

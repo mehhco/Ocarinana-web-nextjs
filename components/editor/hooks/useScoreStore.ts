@@ -112,26 +112,38 @@ type ScoreStore = ScoreStoreState & ScoreStoreActions;
 // ============ 辅助函数 ============
 
 /**
- * 创建初始文档
+ * 生成稳定ID（用于SSR和客户端一致性）
+ */
+let idCounter = 0;
+function generateStableId(): string {
+  idCounter += 1;
+  return `id-${idCounter}`;
+}
+
+/**
+ * 创建初始文档（使用稳定ID避免hydration错误）
  */
 function createInitialDocument(override?: Partial<ScoreDocument>): ScoreDocument {
   return {
     version: '1.0',
-    scoreId: override?.scoreId || `draft-${Date.now()}-${nanoid(8)}`,
+    scoreId: override?.scoreId || 'draft-new',
     ownerUserId: override?.ownerUserId,
     title: override?.title || DEFAULT_TITLE,
     measures: override?.measures?.map(m => ({
-      id: m.id || nanoid(),
-      elements: m.elements || []
-    })) || [{ id: nanoid(), elements: [] }],
+      id: m.id || generateStableId(),
+      elements: (m.elements || []).map(e => ({
+        ...e,
+        id: e.id || generateStableId()
+      }))
+    })) || [{ id: 'measure-1', elements: [] }],
     ties: override?.ties || [],
     lyrics: override?.lyrics || [],
     settings: {
       ...DEFAULT_SETTINGS,
       ...override?.settings,
     },
-    createdAt: override?.createdAt || new Date().toISOString(),
-    updatedAt: override?.updatedAt || new Date().toISOString(),
+    createdAt: override?.createdAt || '2024-01-01T00:00:00.000Z',
+    updatedAt: override?.updatedAt || '2024-01-01T00:00:00.000Z',
   };
 }
 
@@ -206,7 +218,16 @@ export const useScoreStore = create<ScoreStore>()(
   // ============ 初始化 ============
   initialize: (doc) => {
     set((state) => {
-      state.document = createInitialDocument(doc);
+      const initialDoc = createInitialDocument(doc);
+      
+      // 如果是新文档，生成真实的随机ID
+      if (!doc?.scoreId) {
+        initialDoc.scoreId = `draft-${Date.now()}-${nanoid(8)}`;
+        initialDoc.createdAt = new Date().toISOString();
+        initialDoc.updatedAt = new Date().toISOString();
+      }
+      
+      state.document = initialDoc;
       state.selectedMeasureIndex = null;
       state.selectedNoteIndex = null;
       state.isDirty = false;
