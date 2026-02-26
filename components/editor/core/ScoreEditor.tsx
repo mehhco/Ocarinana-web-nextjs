@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState, useLayoutEffect } from 'react';
+import { useState, useLayoutEffect } from 'react';
 import { useScoreStore } from '../hooks/useScoreStore';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useAutoSave } from '../hooks/useAutoSave';
 import { Toolbar } from './Toolbar';
 import { ElementPanel } from './ElementPanel';
 import { ScoreCanvas } from './ScoreCanvas';
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import type { ScoreDocument } from '@/lib/editor/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 
 interface ScoreEditorProps {
   initialDocument?: ScoreDocument;
@@ -17,6 +18,9 @@ interface ScoreEditorProps {
 export function ScoreEditor({ initialDocument, scoreId }: ScoreEditorProps) {
   const initialize = useScoreStore((state) => state.initialize);
   const [isReady, setIsReady] = useState(false);
+  
+  // 自动保存
+  const { isSaving, isDirty } = useAutoSave(scoreId);
   
   // 使用 useLayoutEffect 确保在客户端渲染前同步状态
   useLayoutEffect(() => {
@@ -37,6 +41,18 @@ export function ScoreEditor({ initialDocument, scoreId }: ScoreEditorProps) {
           </div>
         ) : (
           <>
+            {/* 保存状态指示器 */}
+            {isSaving && (
+              <div className="fixed top-20 right-4 z-50 bg-primary text-primary-foreground px-3 py-1.5 rounded-full text-sm flex items-center gap-2 shadow-lg">
+                <Save className="h-4 w-4 animate-pulse" />
+                保存中...
+              </div>
+            )}
+            {!isSaving && isDirty && scoreId && (
+              <div className="fixed top-20 right-4 z-50 bg-yellow-500 text-white px-3 py-1.5 rounded-full text-sm shadow-lg">
+                未保存
+              </div>
+            )}
             <ElementPanel />
             <ScoreCanvas />
           </>
