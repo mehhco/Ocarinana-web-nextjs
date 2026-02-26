@@ -12,3 +12,7 @@ export { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 export * from './lib/constants';
 export * from './lib/fingeringMap';
+export * from './lib/exportUtils';
+
+export { TieLayer } from './overlay/TieLayer';
+export { LyricsInput } from './overlay/LyricsInput';
