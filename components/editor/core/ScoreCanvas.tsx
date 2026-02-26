@@ -128,7 +128,7 @@ function MeasureComponent({
       <span className="text-xs text-muted-foreground w-6 shrink-0 mb-1">{index + 1}</span>
       
       {/* 音符容器 - A4纸宽度，自动换行 */}
-      <div className="flex flex-wrap content-start items-start gap-1 w-[794px] max-w-full">
+      <div className="flex flex-wrap content-start items-start gap-2 w-[794px] max-w-full">
         {measure.elements.map((element, noteIndex) => (
           <NoteElementComponent
             key={element.id}
