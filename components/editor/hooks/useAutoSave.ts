@@ -18,6 +18,7 @@ export function useAutoSave(scoreId: string | undefined) {
   
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
+  // 自动保存
   useEffect(() => {
     // 如果没有 scoreId 或没有更改，不保存
     if (!scoreId || !isDirty || isSaving) {
@@ -50,7 +51,29 @@ export function useAutoSave(scoreId: string | undefined) {
       }
     };
   }, [document, isDirty, isSaving, scoreId, setSaving, markAsSaved]);
-  
+
+  // 手动保存事件处理
+  useEffect(() => {
+    const handleManualSave = async () => {
+      if (!scoreId || isSaving) return;
+
+      setSaving(true);
+      const result = await saveToCloud(document, scoreId);
+
+      if (result.success) {
+        markAsSaved();
+        console.log('保存成功');
+      } else {
+        console.error('保存失败:', result.error);
+      }
+
+      setSaving(false);
+    };
+
+    window.addEventListener('editor:manual-save', handleManualSave);
+    return () => window.removeEventListener('editor:manual-save', handleManualSave);
+  }, [document, scoreId, isSaving, setSaving, markAsSaved]);
+
   return {
     isSaving,
     isDirty,

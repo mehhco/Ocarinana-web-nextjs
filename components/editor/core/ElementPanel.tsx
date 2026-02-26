@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Mic2, Hand, Plus, Minus, Highlighter, Underline } from 'lucide-react';
+import { Mic2, Hand, Plus, Highlighter, Underline } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import {
@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
 import { BASIC_NOTES, DURATION_OPTIONS, REST_OPTIONS } from '../lib/constants';
-import type { Duration, NoteValue } from '@/lib/editor/types';
+import type { Duration, NoteValue, Note } from '@/lib/editor/types';
 
 export function ElementPanel() {
   const {
@@ -29,6 +29,7 @@ export function ElementPanel() {
     addExtension,
     updateNoteDuration,
     updateSettings,
+    updateLyrics,
     clearAllLyrics,
     clearSelection,
   } = useScoreStore();
@@ -36,7 +37,6 @@ export function ElementPanel() {
   const [selectedDuration, setSelectedDuration] = useState<Duration>('1/4');
 
   const handleNoteClick = (noteValue: string) => {
-    // 先清除选中状态，使用 setTimeout 确保状态更新后再添加
     clearSelection();
     setTimeout(() => {
       addNote(noteValue as NoteValue, selectedDuration);
@@ -44,7 +44,6 @@ export function ElementPanel() {
   };
 
   const handleRestClick = (duration: string) => {
-    // 先清除选中状态，使用 setTimeout 确保状态更新后再添加
     clearSelection();
     setTimeout(() => {
       addRest(duration as Duration);
@@ -53,7 +52,6 @@ export function ElementPanel() {
 
   const handleDurationSelect = (duration: Duration) => {
     setSelectedDuration(duration);
-    // 如果有选中的音符，同时更新其时值
     if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
       updateNoteDuration(duration);
     }
@@ -66,6 +64,26 @@ export function ElementPanel() {
   const handleToggleFingering = () => {
     updateSettings({ showFingering: !document.settings.showFingering });
   };
+
+  // 获取当前选中音符的歌词
+  const getCurrentLyrics = () => {
+    if (selectedMeasureIndex === null || selectedNoteIndex === null) return '';
+    const measure = document.measures[selectedMeasureIndex];
+    if (!measure || !measure.elements[selectedNoteIndex]) return '';
+    const element = measure.elements[selectedNoteIndex];
+    // Only notes can have lyrics
+    if (element.type !== 'note') return '';
+    return (element as Note).lyrics || '';
+  };
+
+  const handleLyricsChange = (text: string) => {
+    if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
+      updateLyrics(selectedMeasureIndex, selectedNoteIndex, text);
+    }
+  };
+
+  const currentLyrics = getCurrentLyrics();
+  const hasSelection = selectedMeasureIndex !== null && selectedNoteIndex !== null;
 
   return (
     <TooltipProvider>
@@ -123,6 +141,18 @@ export function ElementPanel() {
                   清空歌词
                 </Button>
               </div>
+              {/* 歌词输入框 - 仅当选中音符时显示 */}
+              {hasSelection && (
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    value={currentLyrics}
+                    onChange={(e) => handleLyricsChange(e.target.value)}
+                    placeholder="为该音符添加歌词"
+                    className="w-full h-8 px-2 text-sm border border-blue-200 dark:border-blue-700 rounded bg-white dark:bg-background focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

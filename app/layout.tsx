@@ -147,6 +147,9 @@ export default function RootLayout({
         
         {/* 资源提示 - 性能优化：DNS预解析、预连接、预加载 */}
         <ResourceHints {...COMMON_RESOURCE_HINTS} />
+        
+        {/* html2canvas - 用于乐谱导出图片功能 */}
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" />
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
 import { getFingeringUrl } from '../lib/fingeringMap';
@@ -14,6 +14,7 @@ interface NoteElementProps {
   keySignature: string;
   showFingering: boolean;
   onClick: () => void;
+  noteRef?: (el: HTMLDivElement | null) => void;
 }
 
 function NoteElementComponent({ 
@@ -23,8 +24,22 @@ function NoteElementComponent({
   isSelected, 
   keySignature,
   showFingering,
-  onClick 
+  onClick,
+  noteRef 
 }: NoteElementProps) {
+  const elementRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (noteRef && elementRef.current) {
+      noteRef(elementRef.current);
+    }
+    return () => {
+      if (noteRef) {
+        noteRef(null);
+      }
+    };
+  }, [noteRef]);
+
   if (element.type === 'note') {
     const fingeringUrl = showFingering 
       ? getFingeringUrl(keySignature as any, element.value, element.hasHighDot, element.hasLowDot)
@@ -32,40 +47,24 @@ function NoteElementComponent({
 
     return (
       <div
+        ref={elementRef}
         className={cn(
           "inline-flex flex-col items-center cursor-pointer transition-all rounded-lg py-1 w-16 flex-shrink-0",
-          isSelected 
-            ? "bg-primary/10 shadow-md ring-2 ring-primary" 
-            : "hover:bg-muted/50"
+          isSelected ? "bg-primary/10 shadow-md ring-2 ring-primary" : "hover:bg-muted/50"
         )}
         onClick={onClick}
+        data-note-key={`${measureIndex}-${noteIndex}`}
       >
-        {/* 指法图 - 放在最上方 */}
         {fingeringUrl && (
-          <div className="w-14 h-14 mb-1">
-            <img 
-              src={fingeringUrl} 
-              alt={`指法 ${element.value}`}
-              className="w-full h-full object-contain"
-              loading="lazy"
-            />
+          <div className="w-14 h-14 flex-shrink-0">
+            <img src={fingeringUrl} alt={`指法 ${element.value}`} className="w-full h-full object-contain" loading="lazy" />
           </div>
         )}
-
-        {/* 高音点 */}
-        {element.hasHighDot && (
-          <span className="text-base leading-none">·</span>
-        )}
-        
-        {/* 音符值 */}
-        <div className="relative flex items-center justify-center">
-          <span className="text-2xl font-bold leading-tight">{element.value}</span>
+        {element.hasHighDot && <span className="text-base leading-none h-4">·</span>}
+        <div className="flex items-center justify-center h-8">
+          <span className="text-2xl font-bold">{element.value}</span>
         </div>
-
-        {/* 低音点 */}
-        {element.hasLowDot && (
-          <span className="text-base leading-none">·</span>
-        )}
+        {element.hasLowDot && <span className="text-base leading-none h-4">·</span>}
       </div>
     );
   }
@@ -73,13 +72,13 @@ function NoteElementComponent({
   if (element.type === 'rest') {
     return (
       <div
+        ref={elementRef}
         className={cn(
           "inline-flex flex-col items-center justify-center w-16 py-3 cursor-pointer transition-all rounded-lg flex-shrink-0",
-          isSelected 
-            ? "bg-primary/10 shadow-md ring-2 ring-primary" 
-            : "hover:bg-muted/50"
+          isSelected ? "bg-primary/10 shadow-md ring-2 ring-primary" : "hover:bg-muted/50"
         )}
         onClick={onClick}
+        data-note-key={`${measureIndex}-${noteIndex}`}
       >
         <span className="text-2xl font-bold text-muted-foreground">0</span>
       </div>
@@ -89,13 +88,13 @@ function NoteElementComponent({
   if (element.type === 'extension') {
     return (
       <div
+        ref={elementRef}
         className={cn(
           "inline-flex items-center justify-center w-10 py-3 cursor-pointer transition-all rounded-lg flex-shrink-0",
-          isSelected 
-            ? "bg-primary/10 ring-2 ring-primary" 
-            : "hover:bg-muted/50"
+          isSelected ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-muted/50"
         )}
         onClick={onClick}
+        data-note-key={`${measureIndex}-${noteIndex}`}
       >
         <span className="text-2xl font-bold text-muted-foreground">—</span>
       </div>
@@ -114,20 +113,10 @@ interface MeasureComponentProps {
   onSelectNote: (noteIndex: number) => void;
 }
 
-function MeasureComponent({
-  measure,
-  index,
-  selectedNoteIndex,
-  keySignature,
-  showFingering,
-  onSelectNote,
-}: MeasureComponentProps) {
+function MeasureComponent({ measure, index, selectedNoteIndex, keySignature, showFingering, onSelectNote }: MeasureComponentProps) {
   return (
     <div className="flex items-end gap-3 px-4 py-3 border-b border-dashed border-muted-foreground/20">
-      {/* 小节序号 - 底部对齐 */}
       <span className="text-xs text-muted-foreground w-6 shrink-0 mb-1">{index + 1}</span>
-      
-      {/* 音符容器 - A4纸宽度，自动换行 */}
       <div className="flex flex-wrap content-start items-start gap-2 w-[794px] max-w-full">
         {measure.elements.map((element, noteIndex) => (
           <NoteElementComponent
@@ -141,33 +130,94 @@ function MeasureComponent({
             onClick={() => onSelectNote(noteIndex)}
           />
         ))}
-        
-        {/* 空状态提示 */}
         {measure.elements.length === 0 && (
           <div className="flex items-center justify-center w-full h-20 text-sm text-muted-foreground/50 italic">
             点击左侧音符按钮添加音符
           </div>
         )}
       </div>
-
-      {/* 小节线 */}
       <div className="w-0.5 h-16 bg-muted-foreground/20 ml-2" />
     </div>
   );
 }
 
+// Simple TieLine component for rendering ties between notes
+function TieLine({ startNoteKey, endNoteKey, containerRef }: { startNoteKey: string; endNoteKey: string; containerRef: React.RefObject<HTMLDivElement | null> }) {
+  const [path, setPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const calculatePath = () => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      const startEl = container.querySelector(`[data-note-key="${startNoteKey}"]`);
+      const endEl = container.querySelector(`[data-note-key="${endNoteKey}"]`);
+
+      if (!startEl || !endEl) return;
+
+      const startRect = startEl.getBoundingClientRect();
+      const endRect = endEl.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+
+      const startX = startRect.left + startRect.width / 2 - containerRect.left;
+      const startY = startRect.top + startRect.height * 0.4 - containerRect.top;
+      const endX = endRect.left + endRect.width / 2 - containerRect.left;
+      const endY = endRect.top + endRect.height * 0.4 - containerRect.top;
+
+      const midX = (startX + endX) / 2;
+      const controlY1 = startY - 15;
+      const controlY2 = endY - 15;
+
+      setPath(`M ${startX} ${startY} Q ${midX} ${controlY1} ${endX} ${endY}`);
+    };
+
+    calculatePath();
+
+    // Recalculate on resize
+    const observer = new ResizeObserver(calculatePath);
+    observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
+  }, [startNoteKey, endNoteKey, containerRef]);
+
+  if (!path) return null;
+
+  return (
+    <svg className="absolute inset-0 pointer-events-none" style={{ width: '100%', height: '100%' }}>
+      <path
+        d={path}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        className="text-foreground"
+      />
+    </svg>
+  );
+}
+
+import { useState } from 'react';
+
 export function ScoreCanvas() {
-  const { 
-    document, 
-    selectedMeasureIndex, 
-    selectedNoteIndex,
-    selectElement,
-    addMeasure,
-  } = useScoreStore();
-
+  const { document: scoreDoc, selectedMeasureIndex, selectedNoteIndex, selectElement, addMeasure } = useScoreStore();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [ties, setTies] = useState<Array<{ startNoteKey: string; endNoteKey: string }>>([]);
 
-  // 自动滚动到选中的小节
+  // Parse ties from document
+  useEffect(() => {
+    if (!scoreDoc.ties || scoreDoc.ties.length === 0) {
+      setTies([]);
+      return;
+    }
+
+    const parsedTies = scoreDoc.ties.map(tie => ({
+      startNoteKey: `${tie.startMeasureIndex}-${tie.startNoteIndex}`,
+      endNoteKey: `${tie.endMeasureIndex}-${tie.endNoteIndex}`
+    }));
+    setTies(parsedTies);
+  }, [scoreDoc.ties]);
+
   useEffect(() => {
     if (selectedMeasureIndex !== null && containerRef.current) {
       const measureElements = containerRef.current.querySelectorAll('.measure-item');
@@ -178,70 +228,80 @@ export function ScoreCanvas() {
     }
   }, [selectedMeasureIndex]);
 
-  // 背景色根据皮肤设置
+  useEffect(() => {
+    const handleExportImage = async () => {
+      const scoreContent = containerRef.current?.querySelector('.score-content');
+      if (!scoreContent) return;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const html2canvas = (window as any).html2canvas;
+        if (!html2canvas) { alert('导出功能未加载'); return; }
+        const canvas = await html2canvas(scoreContent as HTMLElement, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
+        const link = window.document.createElement('a');
+        link.download = `${scoreDoc.title || '乐谱'}.png`;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+      } catch (error) {
+        console.error('导出图片失败:', error);
+        alert('导出图片失败');
+      }
+    };
+    window.addEventListener('editor:export-image', handleExportImage);
+    return () => window.removeEventListener('editor:export-image', handleExportImage);
+  }, [scoreDoc.title]);
+
   const getSkinBackground = () => {
-    switch (document.settings.skin) {
-      case 'light-beige':
-        return 'bg-amber-50/30';
-      case 'light-blue':
-        return 'bg-blue-50/30';
-      default:
-        return 'bg-slate-50/50';
+    switch (scoreDoc.settings.skin) {
+      case 'light-beige': return 'bg-amber-50/30';
+      case 'light-blue': return 'bg-blue-50/30';
+      default: return 'bg-slate-50/50';
     }
   };
 
   return (
-    <div 
-      ref={containerRef}
-      className={cn(
-        "flex-1 overflow-y-auto p-4 md:p-8",
-        getSkinBackground()
-      )}
-    >
-      {/* 乐谱头部信息 */}
+    <div ref={containerRef} className={cn("flex-1 overflow-y-auto p-4 md:p-8", getSkinBackground())}>
       <div className="mx-auto mb-6 text-center space-y-2" style={{ width: '794px', maxWidth: '100%' }}>
-        <h1 className="text-2xl font-bold text-foreground">{document.title}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{scoreDoc.title}</h1>
         <div className="flex items-center justify-center gap-4 md:gap-6 text-sm text-muted-foreground flex-wrap">
-          <span className="px-3 py-1 bg-muted rounded-full">调号: 1={document.settings.keySignature}</span>
-          <span className="px-3 py-1 bg-muted rounded-full">拍号: {document.settings.timeSignature}</span>
-          <span className="px-3 py-1 bg-muted rounded-full">速度: ♩ = {document.settings.tempo}</span>
+          <span className="px-3 py-1 bg-muted rounded-full">调号: 1={scoreDoc.settings.keySignature}</span>
+          <span className="px-3 py-1 bg-muted rounded-full">拍号: {scoreDoc.settings.timeSignature}</span>
+          <span className="px-3 py-1 bg-muted rounded-full">速度: ♩ = {scoreDoc.settings.tempo}</span>
         </div>
       </div>
 
-      {/* 乐谱内容 - A4纸宽度 */}
-      <div className="mx-auto bg-white shadow-sm rounded-xl border border-border overflow-hidden pb-4" style={{ width: '794px', maxWidth: '100%' }}>
-        {document.measures.map((measure, index) => (
-          <div 
-            key={measure.id} 
-            className={cn(
-              "measure-item transition-colors",
-              selectedMeasureIndex === index && "bg-primary/5"
-            )}
-          >
+      <div className="mx-auto bg-white shadow-sm rounded-xl border border-border overflow-hidden pb-4 score-content relative" style={{ width: '794px', maxWidth: '100%' }}>
+        {scoreDoc.measures.map((measure, index) => (
+          <div key={measure.id} className={cn("measure-item transition-colors relative", selectedMeasureIndex === index && "bg-primary/5")}>
             <MeasureComponent
               measure={measure}
               index={index}
               selectedNoteIndex={selectedMeasureIndex === index ? selectedNoteIndex : null}
-              keySignature={document.settings.keySignature}
-              showFingering={document.settings.showFingering}
+              keySignature={scoreDoc.settings.keySignature}
+              showFingering={scoreDoc.settings.showFingering}
               onSelectNote={(noteIndex) => selectElement(index, noteIndex)}
             />
+            {/* Render ties for this measure */}
+            {ties.filter(tie => 
+              tie.startNoteKey.startsWith(`${index}-`) || tie.endNoteKey.startsWith(`${index}-`)
+            ).map((tie, tieIdx) => (
+              <TieLine 
+                key={tieIdx}
+                startNoteKey={tie.startNoteKey}
+                endNoteKey={tie.endNoteKey}
+                containerRef={containerRef}
+              />
+            ))}
           </div>
         ))}
       </div>
 
-      {/* 添加小节按钮 */}
       <div className="mx-auto mt-6 flex justify-center" style={{ width: '794px', maxWidth: '100%' }}>
-        <button
-          onClick={addMeasure}
-          className="px-6 py-3 border-2 border-dashed border-muted-foreground/30 rounded-xl text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all duration-200 flex items-center gap-2"
-        >
+        <button onClick={addMeasure} className="px-6 py-3 border-2 border-dashed border-muted-foreground/30 rounded-xl text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all duration-200 flex items-center gap-2">
           <span className="text-lg">+</span>
           <span>添加小节</span>
         </button>
       </div>
 
-      {/* 底部留白 */}
       <div className="h-24" />
     </div>
   );

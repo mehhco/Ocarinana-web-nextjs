@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import { Save, Download, Undo2, Redo2, Music, Image, FileJson, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
 import { useScoreStore } from '../hooks/useScoreStore';
 import { KEY_SIGNATURE_OPTIONS, TIME_SIGNATURE_OPTIONS, SKIN_OPTIONS } from '../lib/constants';
+import { exportAsJson } from '../lib/exportUtils';
 import type { KeySignature, TimeSignature, SkinType } from '@/lib/editor/types';
 
 export function Toolbar() {
@@ -51,6 +53,21 @@ export function Toolbar() {
     updateSettings({ skin: value as SkinType });
   };
 
+  // 导出 JSON
+  const handleExportJson = useCallback(() => {
+    exportAsJson(document);
+  }, [document]);
+
+  // 导出图片 - 通过自定义事件通知 ScoreCanvas
+  const handleExportImage = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('editor:export-image'));
+  }, []);
+
+  // 手动保存
+  const handleSave = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('editor:manual-save'));
+  }, []);
+
   return (
     <TooltipProvider>
       <header className="h-16 border-b bg-background flex items-center px-4 gap-3 shrink-0">
@@ -58,7 +75,7 @@ export function Toolbar() {
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={handleSave}>
                 <Save className="h-4 w-4" />
                 <span className="hidden sm:inline">保存</span>
               </Button>
@@ -70,7 +87,7 @@ export function Toolbar() {
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportImage}>
                 <Image className="h-4 w-4" />
                 <span className="hidden sm:inline">导出图片</span>
               </Button>
@@ -82,7 +99,7 @@ export function Toolbar() {
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportJson}>
                 <FileJson className="h-4 w-4" />
                 <span className="hidden sm:inline">导出 JSON</span>
               </Button>
