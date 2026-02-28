@@ -302,7 +302,18 @@ export const useScoreStore = create<ScoreStore>()(
         }
       } else {
         // 添加到当前最后一个小节
-        const lastMeasure = document.measures[document.measures.length - 1];
+        let lastMeasure = document.measures[document.measures.length - 1];
+        
+        // 自动换行：如果小节内音符超过8个，创建新小节
+        if (lastMeasure.elements.length >= 8) {
+          const newMeasure: Measure = {
+            id: nanoid(),
+            elements: [],
+          };
+          document.measures.push(newMeasure);
+          lastMeasure = newMeasure;
+        }
+        
         lastMeasure.elements.push(newNote);
         
         // 不再自动选中新添加的音符，避免影响下一次添加
@@ -344,23 +355,34 @@ export const useScoreStore = create<ScoreStore>()(
             restGroup: 'half',
           });
         }
-      } else {
-        // 普通休止符
-        const newRest: Rest = {
-          id: nanoid(),
-          type: 'rest',
-          value: '0',
-          duration,
-        };
-        
-        if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
-          const measure = document.measures[selectedMeasureIndex];
-          measure.elements[selectedNoteIndex] = newRest;
         } else {
-          const lastMeasure = document.measures[document.measures.length - 1];
-          lastMeasure.elements.push(newRest);
+          // 普通休止符
+          const newRest: Rest = {
+            id: nanoid(),
+            type: 'rest',
+            value: '0',
+            duration,
+          };
+          
+          if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
+            const measure = document.measures[selectedMeasureIndex];
+            measure.elements[selectedNoteIndex] = newRest;
+          } else {
+            let lastMeasure = document.measures[document.measures.length - 1];
+            
+            // 自动换行：如果小节内音符超过8个，创建新小节
+            if (lastMeasure.elements.length >= 8) {
+              const newMeasure: Measure = {
+                id: nanoid(),
+                elements: [],
+              };
+              document.measures.push(newMeasure);
+              lastMeasure = newMeasure;
+            }
+            
+            lastMeasure.elements.push(newRest);
+          }
         }
-      }
       
       document.updatedAt = new Date().toISOString();
       state.isDirty = true;

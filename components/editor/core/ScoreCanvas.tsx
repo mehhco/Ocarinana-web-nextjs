@@ -13,6 +13,7 @@ interface NoteElementProps {
   isSelected: boolean;
   keySignature: string;
   showFingering: boolean;
+  showLyrics: boolean;
   onClick: () => void;
   noteRef?: (el: HTMLDivElement | null) => void;
 }
@@ -24,6 +25,7 @@ function NoteElementComponent({
   isSelected, 
   keySignature,
   showFingering,
+  showLyrics,
   onClick,
   noteRef 
 }: NoteElementProps) {
@@ -49,7 +51,7 @@ function NoteElementComponent({
       <div
         ref={elementRef}
         className={cn(
-          "inline-flex flex-col items-center cursor-pointer transition-all rounded-lg py-1 w-16 flex-shrink-0",
+          "inline-flex flex-col items-center cursor-pointer transition-all rounded-lg py-1 w-16 flex-shrink-0 relative",
           isSelected ? "bg-primary/10 shadow-md ring-2 ring-primary" : "hover:bg-muted/50"
         )}
         onClick={onClick}
@@ -65,6 +67,12 @@ function NoteElementComponent({
           <span className="text-2xl font-bold">{element.value}</span>
         </div>
         {element.hasLowDot && <span className="text-base leading-none h-4">·</span>}
+        {/* 歌词显示 */}
+        {showLyrics && element.lyrics && (
+          <span className="text-xs text-muted-foreground mt-1 font-medium truncate max-w-full px-1">
+            {element.lyrics}
+          </span>
+        )}
       </div>
     );
   }
@@ -74,13 +82,14 @@ function NoteElementComponent({
       <div
         ref={elementRef}
         className={cn(
-          "inline-flex flex-col items-center justify-center w-16 py-3 cursor-pointer transition-all rounded-lg flex-shrink-0",
-          isSelected ? "bg-primary/10 shadow-md ring-2 ring-primary" : "hover:bg-muted/50"
+          "inline-flex flex-col items-center justify-center w-16 py-3 cursor-pointer transition-all rounded-lg flex-shrink-0 bg-muted/30 border-2 border-dashed border-muted-foreground/20",
+          isSelected ? "bg-primary/10 shadow-md ring-2 ring-primary border-primary/30" : "hover:bg-muted/50"
         )}
         onClick={onClick}
         data-note-key={`${measureIndex}-${noteIndex}`}
       >
-        <span className="text-2xl font-bold text-muted-foreground">0</span>
+        <span className="text-2xl font-bold text-muted-foreground/60">0</span>
+        <span className="text-[10px] text-muted-foreground/40 mt-1">休止</span>
       </div>
     );
   }
@@ -113,10 +122,12 @@ interface MeasureComponentProps {
   onSelectNote: (noteIndex: number) => void;
 }
 
-function MeasureComponent({ measure, index, selectedNoteIndex, keySignature, showFingering, onSelectNote }: MeasureComponentProps) {
+function MeasureComponent({ measure, index, selectedNoteIndex, keySignature, showFingering, showLyrics, onSelectNote }: MeasureComponentProps & { showLyrics: boolean }) {
+  const noteRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  
   return (
-    <div className="flex items-end gap-3 px-4 py-3 border-b border-dashed border-muted-foreground/20">
-      <span className="text-xs text-muted-foreground w-6 shrink-0 mb-1">{index + 1}</span>
+    <div className="flex items-end gap-3 px-4 py-3 border-b-2 border-muted-foreground/30 relative">
+      <span className="text-xs text-muted-foreground w-6 shrink-0 mb-1 font-medium">{index + 1}</span>
       <div className="flex flex-wrap content-start items-start gap-2 w-[794px] max-w-full">
         {measure.elements.map((element, noteIndex) => (
           <NoteElementComponent
@@ -127,7 +138,9 @@ function MeasureComponent({ measure, index, selectedNoteIndex, keySignature, sho
             isSelected={selectedNoteIndex === noteIndex}
             keySignature={keySignature}
             showFingering={showFingering}
+            showLyrics={showLyrics}
             onClick={() => onSelectNote(noteIndex)}
+            noteRef={(el) => { noteRefs.current[`${index}-${noteIndex}`] = el; }}
           />
         ))}
         {measure.elements.length === 0 && (
@@ -136,7 +149,8 @@ function MeasureComponent({ measure, index, selectedNoteIndex, keySignature, sho
           </div>
         )}
       </div>
-      <div className="w-0.5 h-16 bg-muted-foreground/20 ml-2" />
+      {/* 小节线 - 更明显的视觉分隔 */}
+      <div className="w-1 h-20 bg-gradient-to-b from-transparent via-muted-foreground/40 to-transparent ml-2 rounded-full" />
     </div>
   );
 }
@@ -278,6 +292,7 @@ export function ScoreCanvas() {
               selectedNoteIndex={selectedMeasureIndex === index ? selectedNoteIndex : null}
               keySignature={scoreDoc.settings.keySignature}
               showFingering={scoreDoc.settings.showFingering}
+              showLyrics={scoreDoc.settings.showLyrics}
               onSelectNote={(noteIndex) => selectElement(index, noteIndex)}
             />
             {/* Render ties for this measure */}

@@ -32,6 +32,7 @@ export function ElementPanel() {
     updateLyrics,
     clearAllLyrics,
     clearSelection,
+    selectElement,
   } = useScoreStore();
 
   const [selectedDuration, setSelectedDuration] = useState<Duration>('1/4');
@@ -79,6 +80,53 @@ export function ElementPanel() {
   const handleLyricsChange = (text: string) => {
     if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
       updateLyrics(selectedMeasureIndex, selectedNoteIndex, text);
+    }
+  };
+  // 处理歌词输入的键盘事件 - 支持连续输入
+  const handleLyricsKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Tab' || e.key === 'Enter') {
+      e.preventDefault();
+      
+      if (selectedMeasureIndex === null || selectedNoteIndex === null) return;
+      
+      const measure = document.measures[selectedMeasureIndex];
+      if (!measure) return;
+      
+      // 找到下一个音符（跳过休止符和延长线）
+      let nextNoteIndex = selectedNoteIndex + 1;
+      while (nextNoteIndex < measure.elements.length) {
+        const element = measure.elements[nextNoteIndex];
+        if (element.type === 'note') {
+          selectElement(selectedMeasureIndex, nextNoteIndex);
+          setTimeout(() => {
+            const input = window.document.querySelector('input[placeholder*="Tab或Enter"]') as HTMLInputElement;
+            if (input) {
+              input.focus();
+              input.select();
+            }
+          }, 50);
+          return;
+        }
+        nextNoteIndex++;
+      }
+      
+      // 如果当前小节没有更多音符，尝试跳到下一小节
+      if (selectedMeasureIndex < document.measures.length - 1) {
+        const nextMeasure = document.measures[selectedMeasureIndex + 1];
+        for (let i = 0; i < nextMeasure.elements.length; i++) {
+          if (nextMeasure.elements[i].type === 'note') {
+            selectElement(selectedMeasureIndex + 1, i);
+            setTimeout(() => {
+              const input = window.document.querySelector('input[placeholder*="Tab或Enter"]') as HTMLInputElement;
+              if (input) {
+                input.focus();
+                input.select();
+              }
+            }, 50);
+            return;
+          }
+        }
+      }
     }
   };
 
@@ -148,9 +196,14 @@ export function ElementPanel() {
                     type="text"
                     value={currentLyrics}
                     onChange={(e) => handleLyricsChange(e.target.value)}
-                    placeholder="为该音符添加歌词"
+                    onKeyDown={handleLyricsKeyDown}
+                    placeholder="输入歌词，按Tab或Enter跳到下一个"
                     className="w-full h-8 px-2 text-sm border border-blue-200 dark:border-blue-700 rounded bg-white dark:bg-background focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  <p className="text-[10px] text-blue-600/70 mt-1 flex items-center gap-1">
+                    <span className="inline-block w-1 h-1 rounded-full bg-blue-400" />
+                    按 Tab 或 Enter 跳转到下一个音符
+                  </p>
                 </div>
               )}
             </div>
