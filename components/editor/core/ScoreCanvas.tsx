@@ -68,9 +68,9 @@ function NoteElementComponent({
         </div>
         {element.hasLowDot && <span className="text-base leading-none h-4">·</span>}
         {/* 歌词显示 */}
-        {showLyrics && element.lyrics && (
-          <span className="text-xs text-muted-foreground mt-1 font-medium truncate max-w-full px-1">
-            {element.lyrics}
+        {showLyrics && (
+          <span className="text-xs text-muted-foreground mt-1 font-medium truncate max-w-full px-1 min-h-[16px]">
+            {element.lyrics || '\u00A0'}
           </span>
         )}
       </div>
