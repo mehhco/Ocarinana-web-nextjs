@@ -7,7 +7,7 @@
 
 export type NoteValue = '1' | '2' | '3' | '4' | '5' | '6' | '7';
 
-export type Duration = '1' | '1/2' | '1/4' | '1/8' | '1/16';
+export type Duration = '1' | '1/2' | '1/4' | '1/8' | '1/16' | '1/32';
 
 export type KeySignature = 'C' | 'G' | 'D' | 'A' | 'E' | 'F' | 'Bb' | 'Eb';
 
@@ -41,10 +41,16 @@ export interface Extension {
   id: string;
   type: 'extension';
   value: '-';
-  duration: '1/4';
+  duration: Duration;
 }
 
-export type ScoreElement = Note | Rest | Extension;
+export interface Barline {
+  id: string;
+  type: 'barline';
+  value: '|';
+}
+
+export type ScoreElement = Note | Rest | Extension | Barline;
 
 // ============ 连音线类型 ============
 
@@ -56,7 +62,17 @@ export interface Tie {
   endNoteIndex: number;
 }
 
-// ============ 歌词类型 ============
+// ============ 时值线连接类型 ============
+
+export interface Beam {
+  id: string;
+  startMeasureIndex: number;
+  startNoteIndex: number;
+  endMeasureIndex: number;
+  endNoteIndex: number;
+  level: number; // 1=1/8, 2=1/16, 3=1/32，表示连接哪条时值线
+}
+
 
 export interface Lyric {
   measureIndex: number;
@@ -80,6 +96,7 @@ export interface ScoreDocument {
   title: string;
   measures: Measure[];
   ties: Tie[];
+  beams: Beam[];
   lyrics: Lyric[];
   settings: ScoreSettings;
   createdAt?: string;
@@ -112,7 +129,12 @@ export interface EditorState {
   // 连音线工具状态
   isTieMode: boolean;
   tieStartPosition: { measureIndex: number; noteIndex: number } | null;
+  
+  // 时值线连接工具状态
+  isBeamMode: boolean;
+  beamStartPosition: { measureIndex: number; noteIndex: number } | null;
 }
+
 
 // ============ 历史记录类型 ============
 

@@ -21,6 +21,7 @@ import type {
   Rest, 
   Measure,
   Tie,
+  Beam,
   Duration,
   NoteValue,
   History,
@@ -30,7 +31,6 @@ import type {
 import { DEFAULT_SETTINGS, DEFAULT_TITLE, HISTORY_CONFIG } from '../lib/constants';
 
 // ============ 状态接口 ============
-
 interface ScoreStoreState {
   // 文档状态
   document: ScoreDocument;
@@ -48,6 +48,10 @@ interface ScoreStoreState {
   isTieMode: boolean;
   tieStartPosition: { measureIndex: number; noteIndex: number } | null;
   
+  // 时值线连接工具状态
+  isBeamMode: boolean;
+  beamStartPosition: { measureIndex: number; noteIndex: number } | null;
+  
   // 历史记录
   history: History;
   canUndo: boolean;
@@ -64,13 +68,14 @@ interface ScoreStoreActions {
   updateSettings: (settings: Partial<ScoreSettings>) => void;
   
   // 音符操作
-  addNote: (noteValue: NoteValue, duration?: Duration) => void;
+  addNote: (noteValue: NoteValue, duration?: Duration, options?: { hasHighDot?: boolean; hasLowDot?: boolean }) => void;
   addRest: (duration: Duration) => void;
   replaceSelectedNote: (noteValue: NoteValue) => void;
   updateNoteDuration: (duration: Duration) => void;
   toggleHighDot: () => void;
   toggleLowDot: () => void;
   addExtension: () => void;
+  addBarline: () => void;
   deleteSelectedElement: () => void;
   
   // 小节操作
@@ -89,6 +94,13 @@ interface ScoreStoreActions {
   endTie: (measureIndex: number, noteIndex: number) => void;
   deleteTie: (tieId: string) => void;
   cancelTieMode: () => void;
+  
+  // 时值线连接操作
+  toggleBeamMode: () => void;
+  startBeam: (measureIndex: number, noteIndex: number) => void;
+  endBeam: (measureIndex: number, noteIndex: number) => void;
+  deleteBeam: (beamId: string) => void;
+  cancelBeamMode: () => void;
   
   // 歌词操作
   updateLyrics: (measureIndex: number, noteIndex: number, text: string) => void;
@@ -137,6 +149,7 @@ function createInitialDocument(override?: Partial<ScoreDocument>): ScoreDocument
       }))
     })) || [{ id: 'measure-1', elements: [] }],
     ties: override?.ties || [],
+    beams: override?.beams || [],
     lyrics: override?.lyrics || [],
     settings: {
       ...DEFAULT_SETTINGS,
@@ -207,6 +220,8 @@ export const useScoreStore = create<ScoreStore>()(
   isSaving: false,
   isTieMode: false,
   tieStartPosition: null,
+  isBeamMode: false,
+  beamStartPosition: null,
   history: {
     states: [],
     currentIndex: -1,
@@ -214,7 +229,6 @@ export const useScoreStore = create<ScoreStore>()(
   },
   canUndo: false,
   canRedo: false,
-
   // ============ 初始化 ============
   initialize: (doc) => {
     set((state) => {
@@ -233,6 +247,8 @@ export const useScoreStore = create<ScoreStore>()(
       state.isDirty = false;
       state.isTieMode = false;
       state.tieStartPosition = null;
+      state.isBeamMode = false;
+      state.beamStartPosition = null;
       state.history = {
         states: [],
         currentIndex: -1,
@@ -272,7 +288,7 @@ export const useScoreStore = create<ScoreStore>()(
   },
 
   // ============ 音符操作 ============
-  addNote: (noteValue, duration = '1/4') => {
+  addNote: (noteValue, duration = '1/4', options = {}) => {
     set((state) => {
       const { document, selectedMeasureIndex, selectedNoteIndex } = state;
       
@@ -281,6 +297,8 @@ export const useScoreStore = create<ScoreStore>()(
         type: 'note',
         value: noteValue,
         duration,
+        hasHighDot: options.hasHighDot || false,
+        hasLowDot: options.hasLowDot || false,
       };
       
       // 如果有选中的元素，替换它
@@ -290,10 +308,12 @@ export const useScoreStore = create<ScoreStore>()(
         
         if (element) {
           if (element.type === 'note') {
-            // 保留其他属性，只替换音符值
+            // 保留其他属性，只替换音符值和音高点设置
             measure.elements[selectedNoteIndex] = {
               ...element,
               value: noteValue,
+              hasHighDot: options.hasHighDot || false,
+              hasLowDot: options.hasLowDot || false,
             };
           } else {
             // 替换为新的音符
@@ -432,34 +452,15 @@ export const useScoreStore = create<ScoreStore>()(
       
       if (!element || (element.type !== 'note' && element.type !== 'rest')) return;
       
+      // 只更新时值，减时线通过渲染逻辑自动显示
       element.duration = duration;
-      
-      // 处理全音符和二分音符的特殊情况：添加延长线
-      if (duration === '1') {
-        // 全音符：添加 3 个延长线
-        for (let i = 0; i < 3; i++) {
-          measure.elements.splice(selectedNoteIndex + 1 + i, 0, {
-            id: nanoid(),
-            type: 'extension',
-            value: '-',
-            duration: '1/4',
-          });
-        }
-      } else if (duration === '1/2') {
-        // 二分音符：添加 1 个延长线
-        measure.elements.splice(selectedNoteIndex + 1, 0, {
-          id: nanoid(),
-          type: 'extension',
-          value: '-',
-          duration: '1/4',
-        });
-      }
       
       document.updatedAt = new Date().toISOString();
       state.isDirty = true;
       saveToHistory(state);
     });
   },
+
 
   toggleHighDot: () => {
     set((state) => {
@@ -509,11 +510,22 @@ export const useScoreStore = create<ScoreStore>()(
     set((state) => {
       const { document, selectedMeasureIndex, selectedNoteIndex } = state;
       
-      if (selectedMeasureIndex === null || selectedNoteIndex === null) return;
+      let targetMeasureIndex: number;
+      let insertIndex: number;
       
-      const measure = document.measures[selectedMeasureIndex];
+      if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
+        // 如果有选中元素，在选中元素后添加
+        targetMeasureIndex = selectedMeasureIndex;
+        insertIndex = selectedNoteIndex + 1;
+      } else {
+        // 如果没有选中，添加到最后一个小节的末尾
+        targetMeasureIndex = document.measures.length - 1;
+        insertIndex = document.measures[targetMeasureIndex].elements.length;
+      }
       
-      // 在选中音符后添加延长线
+      const measure = document.measures[targetMeasureIndex];
+      
+      // 在指定位置添加延长线
       const extension: ScoreElement = {
         id: nanoid(),
         type: 'extension',
@@ -521,7 +533,49 @@ export const useScoreStore = create<ScoreStore>()(
         duration: '1/4',
       };
       
-      measure.elements.splice(selectedNoteIndex + 1, 0, extension);
+      measure.elements.splice(insertIndex, 0, extension);
+      
+      // 选中新添加的延长线，方便连续添加
+      state.selectedMeasureIndex = targetMeasureIndex;
+      state.selectedNoteIndex = insertIndex;
+      
+      document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
+  addBarline: () => {
+    set((state) => {
+      const { document, selectedMeasureIndex, selectedNoteIndex } = state;
+      
+      let targetMeasureIndex: number;
+      let insertIndex: number;
+      
+      if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
+        // 如果有选中元素，在选中元素后添加
+        targetMeasureIndex = selectedMeasureIndex;
+        insertIndex = selectedNoteIndex + 1;
+      } else {
+        // 如果没有选中，添加到最后一个小节的末尾
+        targetMeasureIndex = document.measures.length - 1;
+        insertIndex = document.measures[targetMeasureIndex].elements.length;
+      }
+      
+      const measure = document.measures[targetMeasureIndex];
+      
+      // 在指定位置添加小节线
+      const barline: ScoreElement = {
+        id: nanoid(),
+        type: 'barline',
+        value: '|',
+      };
+      
+      measure.elements.splice(insertIndex, 0, barline);
+      
+      // 选中新添加的小节线，方便连续添加
+      state.selectedMeasureIndex = targetMeasureIndex;
+      state.selectedNoteIndex = insertIndex;
       
       document.updatedAt = new Date().toISOString();
       state.isDirty = true;
@@ -566,6 +620,13 @@ export const useScoreStore = create<ScoreStore>()(
                !(tie.endMeasureIndex === selectedMeasureIndex && tie.endNoteIndex === selectedNoteIndex)
       );
       
+      // 删除相关的时值线连接
+      if (document.beams) {
+        document.beams = document.beams.filter(
+          beam => !(beam.startMeasureIndex === selectedMeasureIndex && beam.startNoteIndex === selectedNoteIndex) &&
+                   !(beam.endMeasureIndex === selectedMeasureIndex && beam.endNoteIndex === selectedNoteIndex)
+        );
+      }
       // 更新选中的索引
       if (selectedNoteIndex >= measure.elements.length) {
         state.selectedNoteIndex = measure.elements.length > 0 ? measure.elements.length - 1 : null;
@@ -603,6 +664,12 @@ export const useScoreStore = create<ScoreStore>()(
         tie => tie.startMeasureIndex !== index && tie.endMeasureIndex !== index
       );
       
+      // 删除相关的时值线连接
+      if (state.document.beams) {
+        state.document.beams = state.document.beams.filter(
+          beam => beam.startMeasureIndex !== index && beam.endMeasureIndex !== index
+        );
+      }
       // 更新选中状态
       if (state.selectedMeasureIndex === index) {
         state.selectedMeasureIndex = null;
@@ -737,7 +804,158 @@ export const useScoreStore = create<ScoreStore>()(
       state.tieStartPosition = null;
     });
   },
-
+  
+  // ============ 时值线连接操作 ============
+  toggleBeamMode: () => {
+    set((state) => {
+      state.isBeamMode = !state.isBeamMode;
+      if (!state.isBeamMode) {
+        state.beamStartPosition = null;
+      }
+    });
+  },
+  
+  startBeam: (measureIndex, noteIndex) => {
+    set((state) => {
+      state.beamStartPosition = { measureIndex, noteIndex };
+    });
+  },
+  
+  endBeam: (measureIndex, noteIndex) => {
+    set((state) => {
+      const { beamStartPosition, document } = state;
+      
+      if (!beamStartPosition) return;
+      
+      // 不能连接同一个音符
+      if (beamStartPosition.measureIndex === measureIndex && 
+          beamStartPosition.noteIndex === noteIndex) {
+        state.beamStartPosition = null;
+        state.isBeamMode = false;
+        return;
+      }
+      
+      // 获取起始和结束位置的音符
+      const startMeasure = document.measures[beamStartPosition.measureIndex];
+      const endMeasure = document.measures[measureIndex];
+      
+      if (!startMeasure || !endMeasure) return;
+      
+      const startElement = startMeasure.elements[beamStartPosition.noteIndex];
+      const endElement = endMeasure.elements[noteIndex];
+      
+      // 只能连接音符
+      if (!startElement || startElement.type !== 'note' || !endElement || endElement.type !== 'note') {
+        state.beamStartPosition = null;
+        state.isBeamMode = false;
+        return;
+      }
+      
+      // 只能连接相邻的时值音符（1/8, 1/16, 1/32）
+      const startDuration = startElement.duration;
+      const endDuration = endElement.duration;
+      const validDurations = ['1/8', '1/16', '1/32'];
+      
+      if (!validDurations.includes(startDuration) || !validDurations.includes(endDuration)) {
+        state.beamStartPosition = null;
+        state.isBeamMode = false;
+        return;
+      }
+      
+      // 连接方向必须从左到右
+      if (beamStartPosition.measureIndex > measureIndex || 
+          (beamStartPosition.measureIndex === measureIndex && beamStartPosition.noteIndex >= noteIndex)) {
+        state.beamStartPosition = null;
+        state.isBeamMode = false;
+        return;
+      }
+      
+      // 检查是否相邻（在同一小节内）
+      if (beamStartPosition.measureIndex !== measureIndex) {
+        // 跨小节连接目前不支持
+        state.beamStartPosition = null;
+        state.isBeamMode = false;
+        return;
+      }
+      
+      // 检查是否相邻
+      let isAdjacent = false;
+      if (beamStartPosition.measureIndex === measureIndex) {
+        // 检查中间是否只有延长线
+        let hasOnlyExtensionsBetween = true;
+        for (let i = beamStartPosition.noteIndex + 1; i < noteIndex; i++) {
+          const el = startMeasure.elements[i];
+          if (el && el.type !== 'extension') {
+            hasOnlyExtensionsBetween = false;
+            break;
+          }
+        }
+        isAdjacent = hasOnlyExtensionsBetween;
+      }
+      
+      if (!isAdjacent) {
+        state.beamStartPosition = null;
+        state.isBeamMode = false;
+        return;
+      }
+      
+      // 计算 level：取两个音符的最小时值层级
+      // 1/8 = 1, 1/16 = 2, 1/32 = 3
+      function getDurationLevel(duration: string): number {
+        switch (duration) {
+          case '1/8': return 1;
+          case '1/16': return 2;
+          case '1/32': return 3;
+          default: return 0;
+        }
+      }
+      
+      const startLevel = getDurationLevel(startDuration);
+      const endLevel = getDurationLevel(endDuration);
+      const level = Math.min(startLevel, endLevel);
+      
+      // 创建 Beam 对象
+      const newBeam: Beam = {
+        id: nanoid(),
+        startMeasureIndex: beamStartPosition.measureIndex,
+        startNoteIndex: beamStartPosition.noteIndex,
+        endMeasureIndex: measureIndex,
+        endNoteIndex: noteIndex,
+        level,
+      };
+      
+      // 确保 document.beams 数组存在
+      if (!document.beams) {
+        document.beams = [];
+      }
+      
+      document.beams.push(newBeam);
+      state.beamStartPosition = null;
+      state.isBeamMode = false;
+      document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+  
+  deleteBeam: (beamId) => {
+    set((state) => {
+      if (state.document.beams) {
+        state.document.beams = state.document.beams.filter(beam => beam.id !== beamId);
+      }
+      state.document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+  
+  cancelBeamMode: () => {
+    set((state) => {
+      state.isBeamMode = false;
+      state.beamStartPosition = null;
+    });
+  },
+  
   // ============ 歌词操作 ============
   updateLyrics: (measureIndex, noteIndex, text) => {
     set((state) => {

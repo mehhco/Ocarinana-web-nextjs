@@ -40,7 +40,12 @@ export const DURATION_OPTIONS = [
   { value: '1/4' as const, label: '四分音符', symbol: '♩' },
   { value: '1/8' as const, label: '八分音符', symbol: '♪' },
   { value: '1/16' as const, label: '十六分音符', symbol: '𝅘𝅥' },
+  { value: '1/32' as const, label: '三十二分音符', symbol: '𝅘𝅥𝅮' },
 ];
+
+// ============ 基础音符 ============
+
+
 
 // ============ 基础音符 ============
 
@@ -53,14 +58,80 @@ export const BASIC_NOTES = [
   { value: '6', name: 'la', solfege: 'A' },
   { value: '7', name: 'si', solfege: 'B' },
 ];
+// ============ 三排音符系统 ============
+
+// 高音音符（带高音点）
+export const HIGH_NOTES = [
+  { value: '1', display: '1̇', name: '高音do', solfege: 'C' },
+  { value: '2', display: '2̇', name: '高音re', solfege: 'D' },
+  { value: '3', display: '3̇', name: '高音mi', solfege: 'E' },
+  { value: '4', display: '4̇', name: '高音fa', solfege: 'F' },
+  { value: '5', display: '5̇', name: '高音sol', solfege: 'G' },
+  { value: '6', display: '6̇', name: '高音la', solfege: 'A' },
+  { value: '7', display: '7̇', name: '高音si', solfege: 'B' },
+] as const;
+
+// 基础音符
+export const BASIC_NOTES_ROWS = [
+  { value: '1', display: '1', name: 'do', solfege: 'C' },
+  { value: '2', display: '2', name: 're', solfege: 'D' },
+  { value: '3', display: '3', name: 'mi', solfege: 'E' },
+  { value: '4', display: '4', name: 'fa', solfege: 'F' },
+  { value: '5', display: '5', name: 'sol', solfege: 'G' },
+  { value: '6', display: '6', name: 'la', solfege: 'A' },
+  { value: '7', display: '7', name: 'si', solfege: 'B' },
+] as const;
+
+// 低音音符（带低音点）
+export const LOW_NOTES = [
+  { value: '1', display: '1̣', name: '低音do', solfege: 'C' },
+  { value: '2', display: '2̣', name: '低音re', solfege: 'D' },
+  { value: '3', display: '3̣', name: '低音mi', solfege: 'E' },
+  { value: '4', display: '4̣', name: '低音fa', solfege: 'F' },
+  { value: '5', display: '5̣', name: '低音sol', solfege: 'G' },
+  { value: '6', display: '6̣', name: '低音la', solfege: 'A' },
+  { value: '7', display: '7̣', name: '低音si', solfege: 'B' },
+] as const;
+
+// 各调号可用音域配置
+// 根据 fingeringMap.ts 分析得出:
+// C调: 高音 1̇-4̇, 基础 1-7, 低音 6̣-7̣
+// F调: 高音 1̇, 基础 1-7, 低音 3̣-7̣
+// G调: 高音 b7̇, 基础 1-7, 低音 2̣-5̣
+export const KEY_SIGNATURE_RANGES: Record<string, {
+  high: string[];
+  basic: string[];
+  low: string[];
+}> = {
+  C: {
+    high: ['1', '2', '3', '4'],  // 1̇-4̇
+    basic: ['1', '2', '3', '4', '5', '6', '7'],  // 1-7
+    low: ['6', '7'],  // 6̣-7̣
+  },
+  F: {
+    high: ['1'],  // 1̇
+    basic: ['1', '2', '3', '4', '5', '6', '7'],  // 1-7
+    low: ['3', '4', '5', '6', '7'],  // 3̣-7̣
+  },
+  G: {
+    high: ['b7'],  // b7̇
+    basic: ['1', '2', '3', '4', '5', '6', '7'],  // 1-7
+    low: ['2', '3', '4', '5'],  // 2̣-5̣
+  },
+  // 其他调号暂时使用 C 调配置
+  D: { high: ['1', '2', '3', '4'], basic: ['1', '2', '3', '4', '5', '6', '7'], low: ['6', '7'] },
+  A: { high: ['1', '2', '3', '4'], basic: ['1', '2', '3', '4', '5', '6', '7'], low: ['6', '7'] },
+  E: { high: ['1', '2', '3', '4'], basic: ['1', '2', '3', '4', '5', '6', '7'], low: ['6', '7'] },
+  Bb: { high: ['1'], basic: ['1', '2', '3', '4', '5', '6', '7'], low: ['3', '4', '5', '6', '7'] },
+  Eb: { high: ['1'], basic: ['1', '2', '3', '4', '5', '6', '7'], low: ['3', '4', '5', '6', '7'] },
+};
+
 
 // ============ 装饰音 ============
 
 export const ORNAMENT_NOTES = [
-  { value: 'high-dot', label: '高音点', description: '在音符上方添加高音点' },
-  { value: 'low-dot', label: '低音点', description: '在音符下方添加低音点' },
-  { value: 'extension', label: '延长线', description: '延长音符时值' },
-  { value: 'underline', label: '下划线', description: '缩短音符时值' },
+  { value: 'extension', label: '延长线', description: '在音符上方添加延长线' },
+  { value: 'underline', label: '下划线', description: '在音符下方添加下划线（缩短时值）' },
 ];
 
 // ============ 休止符 ============

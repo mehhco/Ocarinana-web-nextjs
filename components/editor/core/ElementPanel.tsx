@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Mic2, Hand, Plus, Highlighter, Underline } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Mic2, Hand, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import {
@@ -13,7 +13,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
-import { BASIC_NOTES, DURATION_OPTIONS, REST_OPTIONS } from '../lib/constants';
+import { HIGH_NOTES, BASIC_NOTES_ROWS, LOW_NOTES, KEY_SIGNATURE_RANGES, DURATION_OPTIONS, REST_OPTIONS } from '../lib/constants';
 import type { Duration, NoteValue, Note } from '@/lib/editor/types';
 
 export function ElementPanel() {
@@ -27,20 +27,85 @@ export function ElementPanel() {
     toggleHighDot,
     toggleLowDot,
     addExtension,
+    addBarline,
     updateNoteDuration,
     updateSettings,
     updateLyrics,
     clearAllLyrics,
     clearSelection,
     selectElement,
+    isBeamMode,
+    beamStartPosition,
+    toggleBeamMode,
+    startBeam,
+    endBeam,
+    cancelBeamMode,
   } = useScoreStore();
-
   const [selectedDuration, setSelectedDuration] = useState<Duration>('1/4');
+  
+  // 用于跟踪时值线连接模式中最后处理的位置
+  const lastProcessedPosition = useRef<{ measureIndex: number; noteIndex: number } | null>(null);
 
-  const handleNoteClick = (noteValue: string) => {
+  // 当选择不同音符时，同步 selectedDuration 到该音符的实际时值
+  useEffect(() => {
+    if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
+      const measure = document.measures[selectedMeasureIndex];
+      const element = measure?.elements[selectedNoteIndex];
+      if (element && (element.type === 'note' || element.type === 'rest')) {
+        setSelectedDuration(element.duration);
+      }
+    }
+  }, [selectedMeasureIndex, selectedNoteIndex, document.measures]);
+  
+  // 处理时值线连接模式
+  useEffect(() => {
+    if (!isBeamMode) {
+      // 退出模式时重置
+      lastProcessedPosition.current = null;
+      return;
+    }
+    
+    if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
+      // 检查是否已经处理过这个位置
+      if (lastProcessedPosition.current &&
+          lastProcessedPosition.current.measureIndex === selectedMeasureIndex &&
+          lastProcessedPosition.current.noteIndex === selectedNoteIndex) {
+        return;
+      }
+      
+      const measure = document.measures[selectedMeasureIndex];
+      const element = measure?.elements[selectedNoteIndex];
+      
+      // 只能连接音符
+      if (!element || element.type !== 'note') {
+        return;
+      }
+      
+      // 记录已处理的位置
+      lastProcessedPosition.current = { measureIndex: selectedMeasureIndex, noteIndex: selectedNoteIndex };
+      
+      if (beamStartPosition === null) {
+        // 第一次选择，记录起始位置
+        startBeam(selectedMeasureIndex, selectedNoteIndex);
+      } else {
+        // 第二次选择，完成连接
+        // 检查是否是同一个音符
+        if (beamStartPosition.measureIndex === selectedMeasureIndex && 
+            beamStartPosition.noteIndex === selectedNoteIndex) {
+          // 取消选择
+          cancelBeamMode();
+        } else {
+          endBeam(selectedMeasureIndex, selectedNoteIndex);
+        }
+      }
+    }
+  }, [isBeamMode, selectedMeasureIndex, selectedNoteIndex, beamStartPosition, startBeam, endBeam, cancelBeamMode]);
+
+
+  const handleNoteClick = (noteValue: string, hasHighDot: boolean = false, hasLowDot: boolean = false) => {
     clearSelection();
     setTimeout(() => {
-      addNote(noteValue as NoteValue, selectedDuration);
+      addNote(noteValue as NoteValue, selectedDuration, { hasHighDot, hasLowDot });
     }, 0);
   };
 
@@ -69,12 +134,11 @@ export function ElementPanel() {
   // 获取当前选中音符的歌词
   const getCurrentLyrics = () => {
     if (selectedMeasureIndex === null || selectedNoteIndex === null) return '';
-    const measure = document.measures[selectedMeasureIndex];
-    if (!measure || !measure.elements[selectedNoteIndex]) return '';
-    const element = measure.elements[selectedNoteIndex];
-    // Only notes can have lyrics
-    if (element.type !== 'note') return '';
-    return (element as Note).lyrics || '';
+    // 从 document.lyrics 数组中查找对应位置的歌词
+    const lyric = document.lyrics.find(
+      l => l.measureIndex === selectedMeasureIndex && l.noteIndex === selectedNoteIndex
+    );
+    return lyric?.text || '';
   };
 
   const handleLyricsChange = (text: string) => {
@@ -211,63 +275,131 @@ export function ElementPanel() {
 
           <Separator />
 
-          {/* 基础音符 */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground">基础音符</h3>
-            <div className="grid grid-cols-4 gap-2">
-              {BASIC_NOTES.map((note) => (
-                <Tooltip key={note.value}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="h-14 flex flex-col items-center justify-center gap-0.5 hover:bg-primary/10 hover:border-primary/50 transition-colors"
-                      onClick={() => handleNoteClick(note.value)}
-                    >
-                      <span className="text-xl font-bold">{note.value}</span>
-                      <span className="text-[10px] text-muted-foreground">{note.name}</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{note.name} ({note.solfege})</p>
-                  </TooltipContent>
-                </Tooltip>
-              ))}
+          {/* 音符按钮 - 三排动态显示 */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground">音符</h3>
+            
+            {/* 高音行 */}
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground px-1">高音</div>
+              <div className="grid grid-cols-7 gap-1">
+                {HIGH_NOTES.map((note) => {
+                  const isAvailable = KEY_SIGNATURE_RANGES[document.settings.keySignature]?.high.includes(note.value);
+                  return (
+                    <Tooltip key={`high-${note.value}`}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          disabled={!isAvailable}
+                          className={cn(
+                            "h-12 flex flex-col items-center justify-center gap-0.5 transition-colors",
+                            isAvailable 
+                              ? "hover:bg-primary/10 hover:border-primary/50" 
+                              : "opacity-40 cursor-not-allowed bg-muted"
+                          )}
+                          onClick={() => isAvailable && handleNoteClick(note.value, true, false)}
+                        >
+                          <span className="text-lg font-bold">{note.display}</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{note.name} ({note.solfege}){!isAvailable && ' - 当前调号不可用'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 基础音行 */}
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground px-1">基础</div>
+              <div className="grid grid-cols-7 gap-1">
+                {BASIC_NOTES_ROWS.map((note) => (
+                  <Tooltip key={`basic-${note.value}`}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="h-12 flex flex-col items-center justify-center gap-0.5 hover:bg-primary/10 hover:border-primary/50 transition-colors"
+                        onClick={() => handleNoteClick(note.value, false, false)}
+                      >
+                        <span className="text-lg font-bold">{note.display}</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{note.name} ({note.solfege})</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
+
+            {/* 低音行 */}
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground px-1">低音</div>
+              <div className="grid grid-cols-7 gap-1">
+                {LOW_NOTES.map((note) => {
+                  const isAvailable = KEY_SIGNATURE_RANGES[document.settings.keySignature]?.low.includes(note.value);
+                  return (
+                    <Tooltip key={`low-${note.value}`}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          disabled={!isAvailable}
+                          className={cn(
+                            "h-12 flex flex-col items-center justify-center gap-0.5 transition-colors",
+                            isAvailable 
+                              ? "hover:bg-primary/10 hover:border-primary/50" 
+                              : "opacity-40 cursor-not-allowed bg-muted"
+                          )}
+                          onClick={() => isAvailable && handleNoteClick(note.value, false, true)}
+                        >
+                          <span className="text-lg font-bold">{note.display}</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{note.name} ({note.solfege}){!isAvailable && ' - 当前调号不可用'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
           <Separator />
 
-          {/* 装饰音 */}
+          {/* 装饰音 - 移除高音点/低音点按钮 */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-muted-foreground">装饰音</h3>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2">
               <Button
                 variant="outline"
-                className="h-10 gap-2"
-                onClick={toggleHighDot}
-              >
-                <Highlighter className="h-4 w-4" />
-                <span className="text-sm">高音点</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-10 gap-2"
-                onClick={toggleLowDot}
-              >
-                <Underline className="h-4 w-4" />
-                <span className="text-sm">低音点</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-10 col-span-2"
+                className="h-10"
                 onClick={addExtension}
               >
                 <span className="text-lg font-bold mr-2">-</span>
                 <span className="text-sm">延长线</span>
               </Button>
+              <Button
+                variant="outline"
+                className="h-10"
+                onClick={addBarline}
+              >
+                <span className="text-lg font-bold mr-2">|</span>
+                <span className="text-sm">小节线</span>
+              </Button>
+              <Button
+                variant={isBeamMode ? 'default' : 'outline'}
+                className={cn("h-10", isBeamMode && "ring-2 ring-primary ring-offset-2")}
+                onClick={toggleBeamMode}
+                disabled={!hasSelection}
+              >
+                <span className="text-lg font-bold mr-2">≡</span>
+                <span className="text-sm">{isBeamMode ? '连接中...' : '连接时值线'}</span>
+              </Button>
             </div>
           </div>
-
           <Separator />
 
           {/* 音符时值 */}
