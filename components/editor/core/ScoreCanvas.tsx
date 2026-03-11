@@ -160,6 +160,54 @@ function NoteElementComponent({
               <div 
                 className={cn(
                   "absolute top-0 h-[2px] bg-foreground",
+                  // 没有连接：短线居中
+                  beamConnectionLevel < 1 && "left-1/2 -translate-x-1/2 w-6",
+                  // 只连接左侧：延伸到左边
+                  beamConnectionLevel >= 1 && beamLeft && !beamRight && "left-[-36px] right-1/2",
+                  // 只连接右侧：延伸到右边
+                  beamConnectionLevel >= 1 && !beamLeft && beamRight && "left-1/2 right-[-36px]",
+                  // 两侧都连接：贯穿左右
+                  beamConnectionLevel >= 1 && beamLeft && beamRight && "inset-x-[-36px]"
+                )}
+              />
+            </div>
+            {/* 第2条线 (1/16) - 只有 beamConnectionLevel >= 2 时才连接 */}
+            {beamLevel >= 2 && (
+              <div className="relative w-full h-[2px]">
+                <div 
+                  className={cn(
+                    "absolute top-0 h-[2px] bg-foreground",
+                    beamConnectionLevel < 2 && "left-1/2 -translate-x-1/2 w-6",
+                    beamConnectionLevel >= 2 && beamLeft && !beamRight && "left-[-36px] right-1/2",
+                    beamConnectionLevel >= 2 && !beamLeft && beamRight && "left-1/2 right-[-36px]",
+                    beamConnectionLevel >= 2 && beamLeft && beamRight && "inset-x-[-36px]"
+                  )}
+                />
+              </div>
+            )}
+            {/* 第3条线 (1/32) - 只有 beamConnectionLevel >= 3 时才连接 */}
+            {beamLevel >= 3 && (
+              <div className="relative w-full h-[2px]">
+                <div 
+                  className={cn(
+                    "absolute top-0 h-[2px] bg-foreground",
+                    beamConnectionLevel < 3 && "left-1/2 -translate-x-1/2 w-6",
+                    beamConnectionLevel >= 3 && beamLeft && !beamRight && "left-[-36px] right-1/2",
+                    beamConnectionLevel >= 3 && !beamLeft && beamRight && "left-1/2 right-[-36px]",
+                    beamConnectionLevel >= 3 && beamLeft && beamRight && "inset-x-[-36px]"
+                  )}
+                />
+              </div>
+            )}
+          </div>
+        )}
+        {beamLevel > 0 && (
+          <div className="flex flex-col items-center gap-[2px] mt-1 w-full">
+            {/* 第1条线 (1/8) - 只有 beamConnectionLevel >= 1 时才连接 */}
+            <div className="relative w-full h-[2px]">
+              <div 
+                className={cn(
+                  "absolute top-0 h-[2px] bg-foreground",
                   // 没有连接或连接层级 < 1：短线（居中显示）
                   beamConnectionLevel < 1 ? "left-1/2 -translate-x-1/2 w-6" :
                   // 只连接左侧：从左侧音符中心延伸到当前音符中心
