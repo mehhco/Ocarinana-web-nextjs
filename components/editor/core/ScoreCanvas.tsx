@@ -1,78 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
+import { useEffect, useRef, memo, useCallback } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
 import { getFingeringUrl } from '../lib/fingeringMap';
-import type { ScoreElement, Measure, Beam } from '@/lib/editor/types';
-
-// 计算音符的时值线层级 (1/8=1, 1/16=2, 1/32=3)
-function getBeamLevel(duration: string): number {
-  switch (duration) {
-    case '1/8': return 1;
-    case '1/16': return 2;
-    case '1/32': return 3;
-    default: return 0;
-  }
-}
-
-// 计算所有音符的时值线连接信息
-function calculateBeamConnections(
-  measures: Measure[],
-  beams: Beam[] = []
-): Map<string, { beamLeft: boolean; beamRight: boolean; beamLevel: number; beamConnectionLevel: number }> {
-  const connections = new Map<string, { beamLeft: boolean; beamRight: boolean; beamLevel: number; beamConnectionLevel: number }>();
-  
-  // 为每个元素初始化连接信息（默认无连接）
-  measures.forEach((measure, measureIndex) => {
-    measure.elements.forEach((element, noteIndex) => {
-      const key = `${measureIndex}-${noteIndex}`;
-      if (element.type === 'note') {
-        const level = getBeamLevel(element.duration);
-        connections.set(key, { beamLeft: false, beamRight: false, beamLevel: level, beamConnectionLevel: 0 });
-      } else {
-        connections.set(key, { beamLeft: false, beamRight: false, beamLevel: 0, beamConnectionLevel: 0 });
-      }
-    });
-  });
-  
-  // 应用手动时值线连接
-  beams.forEach(beam => {
-    const startKey = `${beam.startMeasureIndex}-${beam.startNoteIndex}`;
-    const endKey = `${beam.endMeasureIndex}-${beam.endNoteIndex}`;
-    
-    const startConn = connections.get(startKey);
-    const endConn = connections.get(endKey);
-    
-    if (startConn) {
-      startConn.beamRight = true;
-      startConn.beamConnectionLevel = Math.max(startConn.beamConnectionLevel, beam.level);
-    }
-    
-    if (endConn) {
-      endConn.beamLeft = true;
-      endConn.beamConnectionLevel = Math.max(endConn.beamConnectionLevel, beam.level);
-    }
-    
-    // 连接中间的所有延长线
-    if (beam.startMeasureIndex === beam.endMeasureIndex) {
-      const measure = measures[beam.startMeasureIndex];
-      if (measure) {
-        for (let i = beam.startNoteIndex + 1; i < beam.endNoteIndex; i++) {
-          const middleKey = `${beam.startMeasureIndex}-${i}`;
-          const middleConn = connections.get(middleKey);
-          if (middleConn) {
-            middleConn.beamLeft = true;
-            middleConn.beamRight = true;
-            middleConn.beamConnectionLevel = Math.max(middleConn.beamConnectionLevel, beam.level);
-          }
-        }
-      }
-    }
-  });
-
-  return connections;
-}
+import type { ScoreElement, Measure } from '@/lib/editor/types';
 
 interface NoteElementProps {
   element: ScoreElement;
@@ -83,52 +16,40 @@ interface NoteElementProps {
   showFingering: boolean;
   showLyrics: boolean;
   onClick: () => void;
-  noteRef?: (el: HTMLDivElement | null) => void;
-  // 时值线连接信息
-  beamLeft?: boolean;
-  beamRight?: boolean;
-  beamLevel: number;
-  beamConnectionLevel?: number;
 }
 
-function NoteElementComponent({ 
-  element, 
-  measureIndex, 
-  noteIndex, 
-  isSelected, 
+// 计算时值线数量（仅根据音符时值，无连接逻辑）
+const getBeamCount = (duration: string): number => {
+  switch (duration) {
+    case '1/8': return 1;
+    case '1/16': return 2;
+    case '1/32': return 3;
+    default: return 0;
+  }
+};
+
+// 优化：使用 memo 包裹 NoteElementComponent
+const NoteElementComponent = memo(function NoteElementComponent({
+  element,
+  measureIndex,
+  noteIndex,
+  isSelected,
   keySignature,
   showFingering,
   showLyrics,
   onClick,
-  noteRef,
-  beamLeft,
-  beamRight,
-  beamLevel,
-  beamConnectionLevel = 0
 }: NoteElementProps) {
-  const elementRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (noteRef && elementRef.current) {
-      noteRef(elementRef.current);
-    }
-    return () => {
-      if (noteRef) {
-        noteRef(null);
-      }
-    };
-  }, [noteRef]);
-
   if (element.type === 'note') {
-    const fingeringUrl = showFingering 
+    const fingeringUrl = showFingering
       ? getFingeringUrl(keySignature as any, element.value, element.hasHighDot, element.hasLowDot)
       : null;
 
+    const beamCount = getBeamCount(element.duration);
+
     return (
       <div
-        ref={elementRef}
         className={cn(
-          "inline-flex flex-col items-center cursor-pointer transition-all rounded-lg py-1 w-16 flex-shrink-0 relative overflow-visible",
+          "inline-flex flex-col items-center cursor-pointer transition-all rounded-lg py-1 w-16 flex-shrink-0 relative",
           isSelected ? "bg-primary/10 shadow-md ring-2 ring-primary" : "hover:bg-muted/50"
         )}
         onClick={onClick}
@@ -137,7 +58,13 @@ function NoteElementComponent({
         {/* 指法图 - 固定高度容器 */}
         <div className="w-14 h-14 flex-shrink-0">
           {fingeringUrl && (
-            <img src={fingeringUrl} alt={`指法 ${element.value}`} className="w-full h-full object-contain" loading="lazy" />
+            <img
+              src={fingeringUrl}
+              alt={`指法 ${element.value}`}
+              className="w-full h-full object-contain"
+              loading="lazy"
+              decoding="async"
+            />
           )}
         </div>
         {/* 高音点 - 固定高度容器 */}
@@ -146,110 +73,20 @@ function NoteElementComponent({
         </div>
         {/* 音符数字 */}
         <div className="flex items-center justify-center h-8">
-          <span className="text-2xl font-bold">{element.value}</span>
+          <span className="text-2xl font-bold text-foreground">{element.value}</span>
         </div>
         {/* 低音点 - 固定高度容器 */}
         <div className="h-4 flex items-center justify-center">
           {element.hasLowDot && <span className="text-base leading-none">·</span>}
         </div>
-        {/* 时值线（减时线）- 每条线根据连接层级独立判断是否连接 */}
-        {beamLevel > 0 && (
-          <div className="flex flex-col items-center gap-[2px] mt-1 w-full">
-            {/* 第1条线 (1/8) - 只有 beamConnectionLevel >= 1 时才连接 */}
-            <div className="relative w-full h-[2px]">
-              <div 
-                className={cn(
-                  "absolute top-0 h-[2px] bg-foreground",
-                  // 没有连接：短线居中
-                  beamConnectionLevel < 1 && "left-1/2 -translate-x-1/2 w-6",
-                  // 只连接左侧：延伸到左边
-                  beamConnectionLevel >= 1 && beamLeft && !beamRight && "left-[-36px] right-1/2",
-                  // 只连接右侧：延伸到右边
-                  beamConnectionLevel >= 1 && !beamLeft && beamRight && "left-1/2 right-[-36px]",
-                  // 两侧都连接：贯穿左右
-                  beamConnectionLevel >= 1 && beamLeft && beamRight && "inset-x-[-36px]"
-                )}
-              />
-            </div>
-            {/* 第2条线 (1/16) - 只有 beamConnectionLevel >= 2 时才连接 */}
-            {beamLevel >= 2 && (
-              <div className="relative w-full h-[2px]">
-                <div 
-                  className={cn(
-                    "absolute top-0 h-[2px] bg-foreground",
-                    beamConnectionLevel < 2 && "left-1/2 -translate-x-1/2 w-6",
-                    beamConnectionLevel >= 2 && beamLeft && !beamRight && "left-[-36px] right-1/2",
-                    beamConnectionLevel >= 2 && !beamLeft && beamRight && "left-1/2 right-[-36px]",
-                    beamConnectionLevel >= 2 && beamLeft && beamRight && "inset-x-[-36px]"
-                  )}
-                />
-              </div>
-            )}
-            {/* 第3条线 (1/32) - 只有 beamConnectionLevel >= 3 时才连接 */}
-            {beamLevel >= 3 && (
-              <div className="relative w-full h-[2px]">
-                <div 
-                  className={cn(
-                    "absolute top-0 h-[2px] bg-foreground",
-                    beamConnectionLevel < 3 && "left-1/2 -translate-x-1/2 w-6",
-                    beamConnectionLevel >= 3 && beamLeft && !beamRight && "left-[-36px] right-1/2",
-                    beamConnectionLevel >= 3 && !beamLeft && beamRight && "left-1/2 right-[-36px]",
-                    beamConnectionLevel >= 3 && beamLeft && beamRight && "inset-x-[-36px]"
-                  )}
-                />
-              </div>
-            )}
+        {/* 时值线（减时线） */}
+        {beamCount > 0 && (
+          <div className="flex flex-col items-center gap-[2px] mt-1">
+            {Array.from({ length: beamCount }).map((_, i) => (
+              <div key={i} className="w-6 h-[2px] bg-foreground" />
+            ))}
           </div>
         )}
-        {beamLevel > 0 && (
-          <div className="flex flex-col items-center gap-[2px] mt-1 w-full">
-            {/* 第1条线 (1/8) - 只有 beamConnectionLevel >= 1 时才连接 */}
-            <div className="relative w-full h-[2px]">
-              <div 
-                className={cn(
-                  "absolute top-0 h-[2px] bg-foreground",
-                  // 没有连接或连接层级 < 1：短线（居中显示）
-                  beamConnectionLevel < 1 ? "left-1/2 -translate-x-1/2 w-6" :
-                  // 只连接左侧：从左侧音符中心延伸到当前音符中心
-                  beamLeft && !beamRight ? "inset-x-[-32px] right-1/2 left-auto w-[calc(50%+32px)]" :
-                  // 只连接右侧：从当前音符中心延伸到右侧音符中心
-                  !beamLeft && beamRight ? "left-1/2 right-[-32px] w-[calc(50%+32px)]" :
-                  // 两侧都连接：贯穿整个区域
-                  "inset-x-[-32px] w-[calc(100%+64px)]"
-                )}
-              />
-            </div>
-            {/* 第2条线 (1/16) - 只有 beamConnectionLevel >= 2 时才连接 */}
-            {beamLevel >= 2 && (
-              <div className="relative w-full h-[2px]">
-                <div 
-                  className={cn(
-                    "absolute top-0 h-[2px] bg-foreground",
-                    beamConnectionLevel < 2 ? "left-1/2 -translate-x-1/2 w-6" :
-                    beamLeft && !beamRight ? "right-1/2 left-[-32px] w-[calc(50%+32px)]" :
-                    !beamLeft && beamRight ? "left-1/2 right-[-32px] w-[calc(50%+32px)]" :
-                    "inset-x-[-32px] w-[calc(100%+64px)]"
-                  )}
-                />
-              </div>
-            )}
-            {/* 第3条线 (1/32) - 只有 beamConnectionLevel >= 3 时才连接 */}
-            {beamLevel >= 3 && (
-              <div className="relative w-full h-[2px]">
-                <div 
-                  className={cn(
-                    "absolute top-0 h-[2px] bg-foreground",
-                    beamConnectionLevel < 3 ? "left-1/2 -translate-x-1/2 w-6" :
-                    beamLeft && !beamRight ? "right-1/2 left-[-32px] w-[calc(50%+32px)]" :
-                    !beamLeft && beamRight ? "left-1/2 right-[-32px] w-[calc(50%+32px)]" :
-                    "inset-x-[-32px] w-[calc(100%+64px)]"
-                  )}
-                />
-              </div>
-            )}
-          </div>
-        )}
-        {/* 歌词显示 */}
         {/* 歌词显示 */}
         {showLyrics && (
           <span className="text-xs text-muted-foreground mt-1 font-medium truncate max-w-full px-1 min-h-[16px]">
@@ -263,7 +100,6 @@ function NoteElementComponent({
   if (element.type === 'rest') {
     return (
       <div
-        ref={elementRef}
         className={cn(
           "inline-flex flex-col items-center justify-center w-16 py-3 cursor-pointer transition-all rounded-lg flex-shrink-0 bg-muted/30 border-2 border-dashed border-muted-foreground/20",
           isSelected ? "bg-primary/10 shadow-md ring-2 ring-primary border-primary/30" : "hover:bg-muted/50"
@@ -280,21 +116,62 @@ function NoteElementComponent({
   if (element.type === 'extension') {
     return (
       <div
-        ref={elementRef}
         className={cn(
-          "inline-flex items-center justify-center w-10 py-3 cursor-pointer transition-all rounded-lg flex-shrink-0",
+          "inline-flex flex-col items-center cursor-pointer transition-all rounded-lg py-1 w-10 flex-shrink-0 relative",
           isSelected ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-muted/50"
         )}
         onClick={onClick}
         data-note-key={`${measureIndex}-${noteIndex}`}
       >
-        <span className="text-2xl font-bold text-muted-foreground">—</span>
+        {/* 占位：指法图高度 */}
+        <div className="w-14 h-14 flex-shrink-0" />
+        {/* 占位：高音点高度 */}
+        <div className="h-4 flex-shrink-0" />
+        {/* 延长线 - 与音符数字对齐 */}
+        <div className="flex items-center justify-center h-8">
+          <span className="text-2xl font-bold text-muted-foreground">—</span>
+        </div>
+        {/* 占位：低音点高度 */}
+        <div className="h-4 flex-shrink-0" />
+      </div>
+    );
+  }
+
+  if (element.type === 'barline') {
+    return (
+      <div
+        className={cn(
+          "inline-flex flex-col items-center cursor-pointer transition-all rounded-lg py-1 w-8 flex-shrink-0 relative",
+          isSelected ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-muted/50"
+        )}
+        onClick={onClick}
+        data-note-key={`${measureIndex}-${noteIndex}`}
+      >
+        {/* 占位：指法图高度 */}
+        <div className="w-14 h-14 flex-shrink-0" />
+        {/* 占位：高音点高度 */}
+        <div className="h-4 flex-shrink-0" />
+        {/* 小节线 - 与音符数字对齐 */}
+        <div className="flex items-center justify-center h-8">
+          <span className="text-2xl font-bold text-foreground">|</span>
+        </div>
+        {/* 占位：低音点高度 */}
+        <div className="h-4 flex-shrink-0" />
       </div>
     );
   }
 
   return null;
-}
+}, (prevProps, nextProps) => {
+  // 自定义比较函数：只有关键属性变化时才重渲染
+  return (
+    prevProps.element === nextProps.element &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.showFingering === nextProps.showFingering &&
+    prevProps.showLyrics === nextProps.showLyrics &&
+    prevProps.keySignature === nextProps.keySignature
+  );
+});
 
 interface MeasureComponentProps {
   measure: Measure;
@@ -304,40 +181,43 @@ interface MeasureComponentProps {
   showFingering: boolean;
   showLyrics: boolean;
   onSelectNote: (noteIndex: number) => void;
-  beams: Beam[];
-  measures: Measure[];
+  style?: React.CSSProperties;
 }
 
-function MeasureComponent({ measure, index, selectedNoteIndex, keySignature, showFingering, showLyrics, onSelectNote, beams, measures }: MeasureComponentProps) {
-  const noteRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  
-  // Calculate beam connections for this measure
-  const beamConnections = useMemo(() => calculateBeamConnections(measures, beams), [measures, beams]);
-  
+// 优化：使用 memo 包裹 MeasureComponent
+const MeasureComponent = memo(function MeasureComponent({
+  measure,
+  index,
+  selectedNoteIndex,
+  keySignature,
+  showFingering,
+  showLyrics,
+  onSelectNote,
+  style,
+}: MeasureComponentProps) {
+  const handleSelectNote = useCallback((noteIndex: number) => {
+    onSelectNote(noteIndex);
+  }, [onSelectNote]);
+
   return (
-    <div className="flex items-end gap-3 px-4 py-3 relative">
-      <div className="flex flex-wrap content-start items-start gap-2 w-[794px] max-w-full">
-        {measure.elements.map((element, noteIndex) => {
-          const beamInfo = beamConnections.get(`${index}-${noteIndex}`) || { beamLeft: false, beamRight: false, beamLevel: 0, beamConnectionLevel: 0 };
-          return (
-            <NoteElementComponent
-              key={element.id}
-              element={element}
-              measureIndex={index}
-              noteIndex={noteIndex}
-              isSelected={selectedNoteIndex === noteIndex}
-              keySignature={keySignature}
-              showFingering={showFingering}
-              showLyrics={showLyrics}
-              onClick={() => onSelectNote(noteIndex)}
-              noteRef={(el) => { noteRefs.current[`${index}-${noteIndex}`] = el; }}
-              beamLeft={beamInfo.beamLeft}
-              beamRight={beamInfo.beamRight}
-              beamLevel={beamInfo.beamLevel}
-              beamConnectionLevel={beamInfo.beamConnectionLevel}
-            />
-          );
-        })}
+    <div
+      className="flex items-end gap-3 px-4 py-3 relative"
+      style={style}
+    >
+      <div className="flex flex-wrap content-start items-start gap-2 w-full">
+        {measure.elements.map((element, noteIndex) => (
+          <NoteElementComponent
+            key={element.id}
+            element={element}
+            measureIndex={index}
+            noteIndex={noteIndex}
+            isSelected={selectedNoteIndex === noteIndex}
+            keySignature={keySignature}
+            showFingering={showFingering}
+            showLyrics={showLyrics}
+            onClick={() => handleSelectNote(noteIndex)}
+          />
+        ))}
         {measure.elements.length === 0 && (
           <div className="flex items-center justify-center w-full h-20 text-sm text-muted-foreground/50 italic">
             点击左侧音符按钮添加音符
@@ -346,102 +226,73 @@ function MeasureComponent({ measure, index, selectedNoteIndex, keySignature, sho
       </div>
     </div>
   );
-}
-
-// Simple TieLine component for rendering ties between notes
-function TieLine({ startNoteKey, endNoteKey, containerRef }: { startNoteKey: string; endNoteKey: string; containerRef: React.RefObject<HTMLDivElement | null> }) {
-  const [path, setPath] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const calculatePath = () => {
-      const container = containerRef.current;
-      if (!container) return;
-
-      const startEl = container.querySelector(`[data-note-key="${startNoteKey}"]`);
-      const endEl = container.querySelector(`[data-note-key="${endNoteKey}"]`);
-
-      if (!startEl || !endEl) return;
-
-      const startRect = startEl.getBoundingClientRect();
-      const endRect = endEl.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-
-      const startX = startRect.left + startRect.width / 2 - containerRect.left;
-      const startY = startRect.top + startRect.height * 0.4 - containerRect.top;
-      const endX = endRect.left + endRect.width / 2 - containerRect.left;
-      const endY = endRect.top + endRect.height * 0.4 - containerRect.top;
-
-      const midX = (startX + endX) / 2;
-      const controlY1 = startY - 15;
-      const controlY2 = endY - 15;
-
-      setPath(`M ${startX} ${startY} Q ${midX} ${controlY1} ${endX} ${endY}`);
-    };
-
-    calculatePath();
-
-    // Recalculate on resize
-    const observer = new ResizeObserver(calculatePath);
-    observer.observe(containerRef.current);
-
-    return () => observer.disconnect();
-  }, [startNoteKey, endNoteKey, containerRef]);
-
-  if (!path) return null;
-
+}, (prevProps, nextProps) => {
+  // 自定义比较函数
   return (
-    <svg className="absolute inset-0 pointer-events-none" style={{ width: '100%', height: '100%' }}>
-      <path
-        d={path}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className="text-foreground"
-      />
-    </svg>
+    prevProps.measure === nextProps.measure &&
+    prevProps.selectedNoteIndex === nextProps.selectedNoteIndex &&
+    prevProps.showFingering === nextProps.showFingering &&
+    prevProps.showLyrics === nextProps.showLyrics &&
+    prevProps.keySignature === nextProps.keySignature
   );
-}
+});
+
+// 预估小节高度
+const ESTIMATED_MEASURE_HEIGHT = 120;
 
 export function ScoreCanvas() {
-  const { document: scoreDoc, selectedMeasureIndex, selectedNoteIndex, selectElement, addMeasure } = useScoreStore();
+  const {
+    document: scoreDoc,
+    selectedMeasureIndex,
+    selectedNoteIndex,
+    selectElement,
+    addMeasure,
+  } = useScoreStore();
+
   const containerRef = useRef<HTMLDivElement>(null);
-  const [ties, setTies] = useState<Array<{ startNoteKey: string; endNoteKey: string }>>([]);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Parse ties from document
+  // 虚拟滚动实现
+  const virtualizer = useVirtualizer({
+    count: scoreDoc.measures.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => ESTIMATED_MEASURE_HEIGHT,
+    overscan: 5, // 上下多渲染 5 个小节，避免滚动时的白屏
+    getItemKey: (index) => scoreDoc.measures[index]?.id ?? index,
+  });
+
+  const virtualItems = virtualizer.getVirtualItems();
+
+  // 选中小节时滚动到视图
   useEffect(() => {
-    if (!scoreDoc.ties || scoreDoc.ties.length === 0) {
-      setTies([]);
-      return;
+    if (selectedMeasureIndex !== null && scrollContainerRef.current) {
+      virtualizer.scrollToIndex(selectedMeasureIndex, {
+        align: 'center',
+        behavior: 'smooth',
+      });
     }
+  }, [selectedMeasureIndex, virtualizer]);
 
-    const parsedTies = scoreDoc.ties.map(tie => ({
-      startNoteKey: `${tie.startMeasureIndex}-${tie.startNoteIndex}`,
-      endNoteKey: `${tie.endMeasureIndex}-${tie.endNoteIndex}`
-    }));
-    setTies(parsedTies);
-  }, [scoreDoc.ties]);
-
-  useEffect(() => {
-    if (selectedMeasureIndex !== null && containerRef.current) {
-      const measureElements = containerRef.current.querySelectorAll('.measure-item');
-      const selectedMeasure = measureElements[selectedMeasureIndex];
-      if (selectedMeasure) {
-        selectedMeasure.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [selectedMeasureIndex]);
-
+  // 导出图片处理
   useEffect(() => {
     const handleExportImage = async () => {
+      // 导出时临时渲染所有小节
       const scoreContent = containerRef.current?.querySelector('.score-content');
       if (!scoreContent) return;
+
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const html2canvas = (window as any).html2canvas;
-        if (!html2canvas) { alert('导出功能未加载'); return; }
-        const canvas = await html2canvas(scoreContent as HTMLElement, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
+        if (!html2canvas) {
+          alert('导出功能未加载');
+          return;
+        }
+
+        const canvas = await html2canvas(scoreContent as HTMLElement, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true,
+        });
+
         const link = window.document.createElement('a');
         link.download = `${scoreDoc.title || '乐谱'}.png`;
         link.href = canvas.toDataURL('image/png', 1.0);
@@ -451,6 +302,7 @@ export function ScoreCanvas() {
         alert('导出图片失败');
       }
     };
+
     window.addEventListener('editor:export-image', handleExportImage);
     return () => window.removeEventListener('editor:export-image', handleExportImage);
   }, [scoreDoc.title]);
@@ -463,54 +315,85 @@ export function ScoreCanvas() {
     }
   };
 
+  const handleSelectNote = useCallback((measureIndex: number, noteIndex: number) => {
+    selectElement(measureIndex, noteIndex);
+  }, [selectElement]);
+
   return (
-    <div ref={containerRef} className={cn("flex-1 overflow-y-auto p-4 md:p-8", getSkinBackground())}>
-      <div className="mx-auto mb-6 text-center space-y-2" style={{ width: '794px', maxWidth: '100%' }}>
-        <h1 className="text-2xl font-bold text-foreground">{scoreDoc.title}</h1>
-        <div className="flex items-center justify-center gap-4 md:gap-6 text-sm text-muted-foreground flex-wrap">
-          <span className="px-3 py-1 bg-muted rounded-full">调号: 1={scoreDoc.settings.keySignature}</span>
-          <span className="px-3 py-1 bg-muted rounded-full">拍号: {scoreDoc.settings.timeSignature}</span>
-          <span className="px-3 py-1 bg-muted rounded-full">速度: ♩ = {scoreDoc.settings.tempo}</span>
+    <div ref={containerRef} className={cn("flex-1 flex flex-col h-full overflow-hidden", getSkinBackground())}>
+      {/* 标题区域 - 更紧凑 */}
+      <div className="px-4 py-3 border-b bg-background/50 shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-foreground">{scoreDoc.title}</h1>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+              <span className="px-2 py-0.5 bg-muted rounded">调号: 1={scoreDoc.settings.keySignature}</span>
+              <span className="px-2 py-0.5 bg-muted rounded">拍号: {scoreDoc.settings.timeSignature}</span>
+              <span className="px-2 py-0.5 bg-muted rounded">速度: ♩ = {scoreDoc.settings.tempo}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="mx-auto bg-white shadow-sm rounded-xl border border-border overflow-hidden pb-4 score-content relative" style={{ width: '794px', maxWidth: '100%' }}>
-        {scoreDoc.measures.map((measure, index) => (
-          <div key={measure.id} className={cn("measure-item transition-colors relative", selectedMeasureIndex === index && "bg-primary/5")}>
-            <MeasureComponent
-              measure={measure}
-              index={index}
-              selectedNoteIndex={selectedMeasureIndex === index ? selectedNoteIndex : null}
-              keySignature={scoreDoc.settings.keySignature}
-              showFingering={scoreDoc.settings.showFingering}
-              showLyrics={scoreDoc.settings.showLyrics}
-              onSelectNote={(noteIndex) => selectElement(index, noteIndex)}
-              beams={scoreDoc.beams || []}
-              measures={scoreDoc.measures}
-            />
-            {/* Render ties for this measure */}
-            {ties.filter(tie => 
-              tie.startNoteKey.startsWith(`${index}-`) || tie.endNoteKey.startsWith(`${index}-`)
-            ).map((tie, tieIdx) => (
-              <TieLine 
-                key={tieIdx}
-                startNoteKey={tie.startNoteKey}
-                endNoteKey={tie.endNoteKey}
-                containerRef={containerRef}
-              />
-            ))}
-          </div>
-        ))}
+      {/* 虚拟滚动容器 - 占据剩余空间 */}
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 bg-white overflow-auto score-content"
+      >
+        {/* 虚拟滚动总高度占位 */}
+        <div
+          style={{
+            height: `${virtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          {virtualItems.map((virtualItem) => {
+            const measure = scoreDoc.measures[virtualItem.index];
+            const isSelectedMeasure = selectedMeasureIndex === virtualItem.index;
+
+            return (
+              <div
+                key={measure.id}
+                data-index={virtualItem.index}
+                ref={virtualizer.measureElement}
+                className={cn(
+                  "measure-item transition-colors relative border-b border-border",
+                  isSelectedMeasure && "bg-primary/5"
+                )}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualItem.start}px)`,
+                }}
+              >
+                <MeasureComponent
+                  measure={measure}
+                  index={virtualItem.index}
+                  selectedNoteIndex={isSelectedMeasure ? selectedNoteIndex : null}
+                  keySignature={scoreDoc.settings.keySignature}
+                  showFingering={scoreDoc.settings.showFingering}
+                  showLyrics={scoreDoc.settings.showLyrics}
+                  onSelectNote={(noteIndex) => handleSelectNote(virtualItem.index, noteIndex)}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="mx-auto mt-6 flex justify-center" style={{ width: '794px', maxWidth: '100%' }}>
-        <button onClick={addMeasure} className="px-6 py-3 border-2 border-dashed border-muted-foreground/30 rounded-xl text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all duration-200 flex items-center gap-2">
+      {/* 添加小节按钮 - 固定在底部 */}
+      <div className="px-4 py-3 border-t bg-background shrink-0">
+        <button
+          onClick={addMeasure}
+          className="w-full px-4 py-2 border-2 border-dashed border-muted-foreground/30 rounded-lg text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all duration-200 flex items-center justify-center gap-2"
+        >
           <span className="text-lg">+</span>
           <span>添加小节</span>
         </button>
       </div>
-
-      <div className="h-24" />
     </div>
   );
 }

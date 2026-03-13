@@ -49,7 +49,7 @@ export function exportAsJson(scoreDoc: ScoreDocument): void {
     settings: scoreDoc.settings,
     measures: scoreDoc.measures,
     lyrics: scoreDoc.lyrics,
-    ties: scoreDoc.ties,
+
   };
 
   const blob = new Blob([JSON.stringify(data, null, 2)], {

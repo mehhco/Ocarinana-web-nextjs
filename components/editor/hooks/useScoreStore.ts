@@ -615,7 +615,7 @@ export const useScoreStore = create<ScoreStore>()(
       }
       
       // 删除相关的连音线
-      document.ties = document.ties.filter(
+      document.ties = document.ties?.filter(
         tie => !(tie.startMeasureIndex === selectedMeasureIndex && tie.startNoteIndex === selectedNoteIndex) &&
                !(tie.endMeasureIndex === selectedMeasureIndex && tie.endNoteIndex === selectedNoteIndex)
       );
@@ -660,7 +660,7 @@ export const useScoreStore = create<ScoreStore>()(
       state.document.measures.splice(index, 1);
       
       // 删除相关的连音线
-      state.document.ties = state.document.ties.filter(
+      state.document.ties = state.document.ties?.filter(
         tie => tie.startMeasureIndex !== index && tie.endMeasureIndex !== index
       );
       
@@ -780,7 +780,7 @@ export const useScoreStore = create<ScoreStore>()(
         endNoteIndex: noteIndex,
       };
       
-      state.document.ties.push(newTie);
+      state.document.ties = [...(state.document.ties || []), newTie];
       state.tieStartPosition = null;
       state.isTieMode = false;
       state.document.updatedAt = new Date().toISOString();
@@ -791,7 +791,7 @@ export const useScoreStore = create<ScoreStore>()(
 
   deleteTie: (tieId) => {
     set((state) => {
-      state.document.ties = state.document.ties.filter(tie => tie.id !== tieId);
+      state.document.ties = state.document.ties?.filter(tie => tie.id !== tieId);
       state.document.updatedAt = new Date().toISOString();
       state.isDirty = true;
       saveToHistory(state);

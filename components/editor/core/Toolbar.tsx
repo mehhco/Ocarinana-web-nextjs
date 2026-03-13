@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback } from 'react';
-import { Save, Download, Undo2, Redo2, Music, Image, FileJson, Link2 } from 'lucide-react';
+import { useCallback, memo } from 'react';
+import { Save, Download, Undo2, Redo2, Image, FileJson } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,46 +17,59 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
-import { useScoreStore } from '../hooks/useScoreStore';
+import {
+  useDocumentTitle,
+  useDocumentSettings,
+  useCanUndo,
+  useCanRedo,
+  useUpdateTitle,
+  useUpdateSettings,
+  useUndo,
+  useRedo,
+} from '../hooks/useSelectors';
 import { KEY_SIGNATURE_OPTIONS, TIME_SIGNATURE_OPTIONS, SKIN_OPTIONS } from '../lib/constants';
 import { exportAsJson } from '../lib/exportUtils';
 import type { KeySignature, TimeSignature, SkinType } from '@/lib/editor/types';
 
-export function Toolbar() {
-  const {
-    document,
-    canUndo,
-    canRedo,
-    isTieMode,
-    updateTitle,
-    updateSettings,
-    undo,
-    redo,
-    toggleTieMode,
-  } = useScoreStore();
+// 优化：使用 memo 避免不必要的重渲染
+export const Toolbar = memo(function Toolbar() {
+  // 使用细粒度 selectors，只订阅需要的数据
+  const title = useDocumentTitle();
+  const settings = useDocumentSettings();
+  const canUndo = useCanUndo();
+  const canRedo = useCanRedo();
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 使用细粒度 action selectors
+  const updateTitle = useUpdateTitle();
+  const updateSettings = useUpdateSettings();
+  const undo = useUndo();
+  const redo = useRedo();
+
+  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     updateTitle(e.target.value);
-  };
+  }, [updateTitle]);
 
-  const handleKeySignatureChange = (value: string) => {
+  const handleKeySignatureChange = useCallback((value: string) => {
     updateSettings({ keySignature: value as KeySignature });
-  };
+  }, [updateSettings]);
 
-  const handleTimeSignatureChange = (value: string) => {
+  const handleTimeSignatureChange = useCallback((value: string) => {
     updateSettings({ timeSignature: value as TimeSignature });
-  };
+  }, [updateSettings]);
 
-  const handleSkinChange = (value: string) => {
+  const handleSkinChange = useCallback((value: string) => {
     updateSettings({ skin: value as SkinType });
-  };
+  }, [updateSettings]);
 
   // 导出 JSON
   const handleExportJson = useCallback(() => {
-    exportAsJson(document);
-  }, [document]);
+    // 需要获取完整文档，这里使用 store 的 getState
+    import('../hooks/useScoreStore').then(({ useScoreStore }) => {
+      const document = useScoreStore.getState().getDocumentSnapshot();
+      exportAsJson(document);
+    });
+  }, []);
 
   // 导出图片 - 通过自定义事件通知 ScoreCanvas
   const handleExportImage = useCallback(() => {
@@ -115,7 +128,7 @@ export function Toolbar() {
         {/* 标题输入 */}
         <div className="flex-1 min-w-0 max-w-md">
           <Input
-            value={document.title}
+            value={title}
             onChange={handleTitleChange}
             placeholder="请输入乐谱标题"
             className="h-9"
@@ -128,7 +141,7 @@ export function Toolbar() {
         <div className="hidden sm:flex items-center gap-2">
           <span className="text-sm text-muted-foreground whitespace-nowrap">调号：</span>
           <Select
-            value={document.settings.keySignature}
+            value={settings.keySignature}
             onValueChange={handleKeySignatureChange}
           >
             <SelectTrigger className="w-24 h-9">
@@ -148,7 +161,7 @@ export function Toolbar() {
         <div className="hidden md:flex items-center gap-2">
           <span className="text-sm text-muted-foreground whitespace-nowrap">拍号：</span>
           <Select
-            value={document.settings.timeSignature}
+            value={settings.timeSignature}
             onValueChange={handleTimeSignatureChange}
           >
             <SelectTrigger className="w-20 h-9">
@@ -168,7 +181,7 @@ export function Toolbar() {
         <div className="hidden lg:flex items-center gap-2">
           <span className="text-sm text-muted-foreground whitespace-nowrap">皮肤：</span>
           <Select
-            value={document.settings.skin}
+            value={settings.skin}
             onValueChange={handleSkinChange}
           >
             <SelectTrigger className="w-24 h-9">
@@ -223,25 +236,7 @@ export function Toolbar() {
           </Tooltip>
         </div>
 
-        <Separator orientation="vertical" className="h-8" />
-
-        {/* 连音线工具 */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Toggle
-              pressed={isTieMode}
-              onPressedChange={toggleTieMode}
-              className="h-9 px-3 gap-1.5 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-            >
-              <Link2 className="h-4 w-4" />
-              <span className="hidden sm:inline text-sm">连音线</span>
-            </Toggle>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>连音线工具：点击两个音符创建连音</p>
-          </TooltipContent>
-        </Tooltip>
       </header>
     </TooltipProvider>
   );
-}
+});

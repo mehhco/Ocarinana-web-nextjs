@@ -15,7 +15,7 @@ export type TimeSignature = '2/4' | '3/4' | '4/4' | '6/8';
 
 export type SkinType = 'white' | 'light-beige' | 'light-blue';
 
-export type ElementType = 'note' | 'rest' | 'extension' | 'tie-start' | 'tie-end';
+export type ElementType = 'note' | 'rest' | 'extension' | 'barline';
 
 // ============ 音符数据类型 ============
 
@@ -52,7 +52,14 @@ export interface Barline {
 
 export type ScoreElement = Note | Rest | Extension | Barline;
 
-// ============ 连音线类型 ============
+export interface Beam {
+  id: string;
+  startMeasureIndex: number;
+  startNoteIndex: number;
+  endMeasureIndex: number;
+  endNoteIndex: number;
+  level: number; // 1=1/8, 2=1/16, 3=1/32
+}
 
 export interface Tie {
   id: string;
@@ -61,18 +68,6 @@ export interface Tie {
   endMeasureIndex: number;
   endNoteIndex: number;
 }
-
-// ============ 时值线连接类型 ============
-
-export interface Beam {
-  id: string;
-  startMeasureIndex: number;
-  startNoteIndex: number;
-  endMeasureIndex: number;
-  endNoteIndex: number;
-  level: number; // 1=1/8, 2=1/16, 3=1/32，表示连接哪条时值线
-}
-
 
 export interface Lyric {
   measureIndex: number;
@@ -95,8 +90,8 @@ export interface ScoreDocument {
   ownerUserId?: string;
   title: string;
   measures: Measure[];
-  ties: Tie[];
-  beams: Beam[];
+  beams?: Beam[];
+  ties?: Tie[];
   lyrics: Lyric[];
   settings: ScoreSettings;
   createdAt?: string;
@@ -117,24 +112,20 @@ export interface ScoreSettings {
 export interface EditorState {
   // 当前文档
   document: ScoreDocument;
-  
+
   // 选中状态
   selectedMeasureIndex: number | null;
   selectedNoteIndex: number | null;
-  
+
   // UI 状态
   isDirty: boolean;                 // 是否有未保存更改
   isExporting: boolean;             // 是否正在导出
-  
-  // 连音线工具状态
-  isTieMode: boolean;
-  tieStartPosition: { measureIndex: number; noteIndex: number } | null;
-  
+  isSaving: boolean;                // 是否正在保存
+
   // 时值线连接工具状态
   isBeamMode: boolean;
   beamStartPosition: { measureIndex: number; noteIndex: number } | null;
 }
-
 
 // ============ 历史记录类型 ============
 
@@ -152,7 +143,7 @@ export interface History {
 
 // ============ 指法图类型 ============
 
-export type FingeringKey = 
+export type FingeringKey =
   | '1' | '2' | '3' | '4' | '5' | '6' | '7'
   | '1-high' | '2-high' | '3-high' | '4-high' | '5-high' | '6-high' | '7-high'
   | '1-low' | '2-low' | '3-low' | '4-low' | '5-low' | '6-low' | '7-low';
@@ -164,7 +155,6 @@ export type FingeringMap = Record<KeySignature, Record<FingeringKey, string>>;
 export interface RenderOptions {
   container: HTMLElement;
   measures: Measure[];
-  ties: Tie[];
   lyrics: Lyric[];
   settings: ScoreSettings;
   selectedMeasureIndex: number | null;
