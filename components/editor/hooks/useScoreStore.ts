@@ -322,18 +322,8 @@ export const useScoreStore = create<ScoreStore>()(
         }
       } else {
         // 添加到当前最后一个小节
-        let lastMeasure = document.measures[document.measures.length - 1];
-        
-        // 自动换行：如果小节内音符超过8个，创建新小节
-        if (lastMeasure.elements.length >= 8) {
-          const newMeasure: Measure = {
-            id: nanoid(),
-            elements: [],
-          };
-          document.measures.push(newMeasure);
-          lastMeasure = newMeasure;
-        }
-        
+        // 注意：不再限制小节内音符数量，依靠 flex-wrap 自动换行显示
+        const lastMeasure = document.measures[document.measures.length - 1];
         lastMeasure.elements.push(newNote);
         
         // 不再自动选中新添加的音符，避免影响下一次添加
@@ -388,18 +378,8 @@ export const useScoreStore = create<ScoreStore>()(
             const measure = document.measures[selectedMeasureIndex];
             measure.elements[selectedNoteIndex] = newRest;
           } else {
-            let lastMeasure = document.measures[document.measures.length - 1];
-            
-            // 自动换行：如果小节内音符超过8个，创建新小节
-            if (lastMeasure.elements.length >= 8) {
-              const newMeasure: Measure = {
-                id: nanoid(),
-                elements: [],
-              };
-              document.measures.push(newMeasure);
-              lastMeasure = newMeasure;
-            }
-            
+            // 不再限制小节内音符数量，依靠 flex-wrap 自动换行显示
+            const lastMeasure = document.measures[document.measures.length - 1];
             lastMeasure.elements.push(newRest);
           }
         }
