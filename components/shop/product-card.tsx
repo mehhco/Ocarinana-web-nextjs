@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlatformBadge } from "./platform-badge";
-import { ExternalLink } from "lucide-react";
+import { ExternalLinkIcon } from "@/components/ui/icons";
 import type { Product } from "@/lib/supabase/products";
 
 interface ProductCardProps {
@@ -93,7 +93,7 @@ export function ProductCard({ product }: ProductCardProps) {
             className="flex items-center justify-center gap-2"
           >
             去购买
-            <ExternalLink className="h-4 w-4" />
+            <ExternalLinkIcon className="h-4 w-4" />
           </Link>
         </Button>
       </CardFooter>

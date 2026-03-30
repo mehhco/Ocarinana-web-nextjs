@@ -1,32 +1,57 @@
 'use client';
 
-import { useCallback, memo } from 'react';
+import Image from 'next/image';
+import { memo, useCallback } from 'react';
+import { PlusIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
-import Image from 'next/image';
-import { Plus } from 'lucide-react';
-import type { ScoreElement, Measure } from '@/lib/editor/types';
+import type { Measure, ScoreElement } from '@/lib/editor/types';
 
-// 指法图路径映射
-function getFingeringImage(keySignature: string, noteValue: string, hasHighDot: boolean, hasLowDot: boolean): string {
-  const keyMap: Record<string, string> = {
-    'C': 'C-graph',
-    'F': 'F-graph',
-    'G': 'G-graph',
-    'Bb': 'F-graph',
-    'Eb': 'C-graph',
-    'D': 'G-graph',
-    'A': 'G-graph',
-    'E': 'C-graph',
-  };
-  
-  const folder = keyMap[keySignature] || 'C-graph';
-  
+function getFingeringImage(
+  keySignature: string,
+  noteValue: string,
+  hasHighDot: boolean,
+  hasLowDot: boolean
+): string {
+  const folder = `${keySignature}-graph`;
+
   let filename = noteValue;
-  if (hasHighDot) filename += 'h';
-  if (hasLowDot) filename += 'l';
   
+  // b7（降7）是G调特有的高音，其文件名就是b7.webp，不需要加后缀
+  if (noteValue === 'b7') {
+    return `/webfile/static/${folder}/${filename}.webp`;
+  }
+  
+  // 其他高音音符添加 h 后缀（如 1h, 2h...）
+  if (hasHighDot) filename += 'h';
+  // 低音音符添加 l 后缀（如 1l, 2l...）
+  if (hasLowDot) filename += 'l';
+
   return `/webfile/static/${folder}/${filename}.webp`;
+}
+
+// 检查音符在该调号下是否有对应的指法图
+function hasFingeringForKey(keySignature: string, noteValue: string, hasHighDot: boolean, hasLowDot: boolean): boolean {
+  // C调可用: 高音1-4, 中音1-7, 低音6-7
+  if (keySignature === 'C') {
+    if (hasHighDot) return ['1', '2', '3', '4'].includes(noteValue);
+    if (hasLowDot) return ['6', '7'].includes(noteValue);
+    return ['1', '2', '3', '4', '5', '6', '7'].includes(noteValue);
+  }
+  // F调可用: 高音1, 中音1-7, 低音3-7
+  if (keySignature === 'F') {
+    if (hasHighDot) return ['1'].includes(noteValue);
+    if (hasLowDot) return ['3', '4', '5', '6', '7'].includes(noteValue);
+    return ['1', '2', '3', '4', '5', '6', '7'].includes(noteValue);
+  }
+  // G调可用: 高音b7, 中音1-7, 低音2-5
+  if (keySignature === 'G') {
+    if (noteValue === 'b7') return true;
+    if (hasHighDot) return false;
+    if (hasLowDot) return ['2', '3', '4', '5'].includes(noteValue);
+    return ['1', '2', '3', '4', '5', '6', '7'].includes(noteValue);
+  }
+  return false;
 }
 
 interface NoteElementProps {
@@ -39,7 +64,6 @@ interface NoteElementProps {
   onClick: () => void;
 }
 
-// 音符渲染组件
 const NoteElementComponent = memo(function NoteElementComponent({
   element,
   isSelected,
@@ -48,45 +72,55 @@ const NoteElementComponent = memo(function NoteElementComponent({
   onClick,
 }: NoteElementProps) {
   if (element.type === 'note') {
-    const fingeringUrl = showFingering
-      ? getFingeringImage(keySignature, element.value, element.hasHighDot || false, element.hasLowDot || false)
+    // 检查音符在该调号下是否有对应的指法图
+    const hasFingering = showFingering && hasFingeringForKey(
+      keySignature,
+      element.value,
+      element.hasHighDot || false,
+      element.hasLowDot || false
+    );
+    const fingeringUrl = hasFingering
+      ? getFingeringImage(
+          keySignature,
+          element.value,
+          element.hasHighDot || false,
+          element.hasLowDot || false
+        )
       : null;
 
     return (
       <div
         className={cn(
-          "flex flex-col items-center cursor-pointer transition-all w-10 py-1",
-          isSelected ? "bg-indigo-50 rounded-md ring-2 ring-indigo-500" : "hover:bg-slate-50"
+          'flex w-14 cursor-pointer flex-col items-center py-1 transition-all',
+          isSelected ? 'rounded-md bg-indigo-50 ring-2 ring-indigo-500' : 'hover:bg-slate-50'
         )}
         onClick={onClick}
       >
-        {/* 指法图 */}
-        <div className="w-8 h-8 flex-shrink-0">
-          {showFingering && fingeringUrl && (
+        {/* 指法图区域：有指法图时显示，否则留白 */}
+        <div className="h-12 w-12 flex-shrink-0">
+          {fingeringUrl && (
             <Image
               src={fingeringUrl}
-              alt={`${element.value}指法`}
-              width={32}
-              height={32}
-              className="w-full h-full object-contain"
+              alt={`${element.value} 指法图`}
+              width={48}
+              height={48}
+              className="h-full w-full object-contain"
               unoptimized
             />
           )}
         </div>
-        
-        {/* 高音点 */}
-        <div className="h-4 flex items-center justify-center flex-shrink-0">
-          {element.hasHighDot && <span className="text-xl font-bold text-slate-800 leading-none">·</span>}
+
+        <div className="flex h-4 flex-shrink-0 items-center justify-center">
+          {/* b7是G调特有的高音，不需要显示高音点标记 */}
+          {element.hasHighDot && element.value !== 'b7' && <span className="text-xl font-bold leading-none text-slate-800">•</span>}
         </div>
-        
-        {/* 音符数字 */}
-        <div className="h-5 flex items-center justify-center flex-shrink-0">
+
+        <div className="flex h-5 flex-shrink-0 items-center justify-center">
           <span className="text-lg font-bold text-slate-800">{element.value}</span>
         </div>
-        
-        {/* 低音点 */}
-        <div className="h-4 flex items-center justify-center flex-shrink-0">
-          {element.hasLowDot && <span className="text-xl font-bold text-slate-800 leading-none">·</span>}
+
+        <div className="flex h-4 flex-shrink-0 items-center justify-center">
+          {element.hasLowDot && <span className="text-xl font-bold leading-none text-slate-800">•</span>}
         </div>
       </div>
     );
@@ -96,23 +130,16 @@ const NoteElementComponent = memo(function NoteElementComponent({
     return (
       <div
         className={cn(
-          "flex flex-col items-center cursor-pointer transition-all w-10 py-1",
-          isSelected ? "bg-indigo-50 rounded-md ring-2 ring-indigo-500" : "hover:bg-slate-50"
+          'flex w-14 cursor-pointer flex-col items-center py-1 transition-all',
+          isSelected ? 'rounded-md bg-indigo-50 ring-2 ring-indigo-500' : 'hover:bg-slate-50'
         )}
         onClick={onClick}
       >
-        {/* 占位：指法图位置 */}
-        <div className="w-8 h-8 flex-shrink-0" />
-        
-        {/* 占位：高音点位置 */}
+        <div className="h-12 w-12 flex-shrink-0" />
         <div className="h-4 flex-shrink-0" />
-        
-        {/* 休止符数字 - 与音符数字同高度 */}
-        <div className="h-5 flex items-center justify-center flex-shrink-0">
+        <div className="flex h-5 flex-shrink-0 items-center justify-center">
           <span className="text-lg font-bold text-slate-800">0</span>
         </div>
-        
-        {/* 占位：低音点位置 */}
         <div className="h-4 flex-shrink-0" />
       </div>
     );
@@ -122,23 +149,16 @@ const NoteElementComponent = memo(function NoteElementComponent({
     return (
       <div
         className={cn(
-          "flex flex-col items-center cursor-pointer transition-all w-6 py-1",
-          isSelected ? "bg-indigo-50 rounded-md ring-2 ring-indigo-500" : "hover:bg-slate-50"
+          'flex w-10 cursor-pointer flex-col items-center py-1 transition-all',
+          isSelected ? 'rounded-md bg-indigo-50 ring-2 ring-indigo-500' : 'hover:bg-slate-50'
         )}
         onClick={onClick}
       >
-        {/* 占位：指法图位置 */}
-        <div className="w-8 h-8 flex-shrink-0" />
-        
-        {/* 占位：高音点位置 */}
+        <div className="h-12 w-12 flex-shrink-0" />
         <div className="h-4 flex-shrink-0" />
-        
-        {/* 延长线 - 与音符数字同高度 */}
-        <div className="h-5 flex items-center justify-center flex-shrink-0">
-          <span className="text-lg font-bold text-slate-800">—</span>
+        <div className="flex h-5 flex-shrink-0 items-center justify-center">
+          <span className="text-lg font-bold text-slate-800">-</span>
         </div>
-        
-        {/* 占位：低音点位置 */}
         <div className="h-4 flex-shrink-0" />
       </div>
     );
@@ -148,23 +168,16 @@ const NoteElementComponent = memo(function NoteElementComponent({
     return (
       <div
         className={cn(
-          "flex flex-col items-center cursor-pointer transition-all w-4 py-1",
-          isSelected ? "bg-indigo-50 rounded-md ring-2 ring-indigo-500" : "hover:bg-slate-50"
+          'flex w-8 cursor-pointer flex-col items-center py-1 transition-all',
+          isSelected ? 'rounded-md bg-indigo-50 ring-2 ring-indigo-500' : 'hover:bg-slate-50'
         )}
         onClick={onClick}
       >
-        {/* 占位：指法图位置 */}
-        <div className="w-8 h-8 flex-shrink-0" />
-        
-        {/* 占位：高音点位置 */}
+        <div className="h-12 w-12 flex-shrink-0" />
         <div className="h-4 flex-shrink-0" />
-        
-        {/* 小节线 - 与音符数字同高度 */}
-        <div className="h-5 flex items-center justify-center flex-shrink-0">
+        <div className="flex h-5 flex-shrink-0 items-center justify-center">
           <span className="text-lg font-bold text-slate-700">|</span>
         </div>
-        
-        {/* 占位：低音点位置 */}
         <div className="h-4 flex-shrink-0" />
       </div>
     );
@@ -182,7 +195,6 @@ interface MeasureProps {
   onSelectNote: (noteIndex: number) => void;
 }
 
-// 小节组件 - 移除所有宽度限制，让音符根据容器宽度自由换行
 const MeasureComponent = memo(function MeasureComponent({
   measure,
   measureIndex,
@@ -192,7 +204,7 @@ const MeasureComponent = memo(function MeasureComponent({
   onSelectNote,
 }: MeasureProps) {
   return (
-    <div className="flex flex-wrap items-start w-full px-1 py-2">
+    <div className="flex w-full flex-wrap items-start px-1 py-2">
       {measure.elements.map((element, noteIndex) => (
         <NoteElementComponent
           key={element.id}
@@ -219,55 +231,58 @@ export function ScoreCanvas() {
     clearSelection,
   } = useScoreStore();
 
-  const handleSelectNote = useCallback((measureIndex: number, noteIndex: number) => {
-    // 如果点击的是已选中的音符，则取消选中
-    if (selectedMeasureIndex === measureIndex && selectedNoteIndex === noteIndex) {
-      clearSelection();
-    } else {
-      selectElement(measureIndex, noteIndex);
-    }
-  }, [selectElement, clearSelection, selectedMeasureIndex, selectedNoteIndex]);
+  const handleSelectNote = useCallback(
+    (measureIndex: number, noteIndex: number) => {
+      if (selectedMeasureIndex === measureIndex && selectedNoteIndex === noteIndex) {
+        clearSelection();
+      } else {
+        selectElement(measureIndex, noteIndex);
+      }
+    },
+    [clearSelection, selectElement, selectedMeasureIndex, selectedNoteIndex]
+  );
 
-  const handleBackgroundClick = useCallback((e: React.MouseEvent) => {
-    // 如果点击的是背景（不是音符），则清除选中状态
-    if (e.target === e.currentTarget) {
-      clearSelection();
-    }
-  }, [clearSelection]);
+  const handleBackgroundClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === e.currentTarget) {
+        clearSelection();
+      }
+    },
+    [clearSelection]
+  );
 
   return (
-    <div className="w-full h-full overflow-y-auto bg-white">
-      {/* 乐谱标题区 */}
-      <div className="text-center py-5 border-b border-slate-200 bg-slate-50/50">
-        <h1 className="text-xl font-bold text-slate-800 mb-1">{scoreDoc.title}</h1>
-        <div className="text-xs text-slate-500 flex items-center justify-center gap-4">
-          <span>调号: <span className="font-medium text-slate-700">{scoreDoc.settings.keySignature}</span></span>
-          <span>拍号: <span className="font-medium text-slate-700">{scoreDoc.settings.timeSignature}</span></span>
-          <span>速度: <span className="font-medium text-slate-700">♩={scoreDoc.settings.tempo}</span></span>
+    <div className="h-full w-full overflow-y-auto bg-white">
+      <div className="border-b border-slate-200 bg-slate-50/50 py-3 text-center">
+        <h1 className="mb-1 text-lg font-bold text-slate-800">{scoreDoc.title}</h1>
+        <div className="flex items-center justify-center gap-3 text-[11px] text-slate-500">
+          <span>
+            调号: <span className="font-medium text-slate-700">{scoreDoc.settings.keySignature}</span>
+          </span>
+          <span>
+            拍号: <span className="font-medium text-slate-700">{scoreDoc.settings.timeSignature}</span>
+          </span>
+          <span>
+            速度: <span className="font-medium text-slate-700">♩={scoreDoc.settings.tempo}</span>
+          </span>
         </div>
       </div>
 
-      {/* 乐谱编辑区 - 确保占满全部可用宽度 */}
-      <div className="p-4 w-full" onClick={handleBackgroundClick}>
-        {/* 调号拍号 */}
-        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-200 w-full">
-          <div className="text-sm font-bold text-slate-800">
+      <div className="w-full px-4 pb-4 pt-3" onClick={handleBackgroundClick}>
+        <div className="mb-3 flex w-full items-center gap-3 border-b border-slate-200 pb-2">
+          <div className="text-xs font-semibold text-slate-800">
             {scoreDoc.settings.keySignature} {scoreDoc.settings.timeSignature}
           </div>
         </div>
 
-        {/* 小节列表 - 移除任何宽度限制，让音符自由填充 */}
-        <div className="space-y-3 w-full">
+        <div className="w-full space-y-2.5">
           {scoreDoc.measures.map((measure, measureIndex) => {
             const isSelected = selectedMeasureIndex === measureIndex;
-            
+
             return (
-              <div 
+              <div
                 key={measure.id}
-                className={cn(
-                  "border-b border-slate-300 pb-3 w-full",
-                  isSelected && "bg-amber-50/30"
-                )}
+                className={cn('w-full border-b border-slate-300 pb-2.5', isSelected && 'bg-amber-50/30')}
               >
                 <MeasureComponent
                   measure={measure}
@@ -282,12 +297,11 @@ export function ScoreCanvas() {
           })}
         </div>
 
-        {/* 添加小节按钮 */}
         <button
           onClick={addMeasure}
-          className="mt-4 w-full py-2.5 border-2 border-dashed border-slate-300 rounded-lg text-slate-400 hover:border-indigo-400 hover:text-indigo-600 transition-all flex items-center justify-center gap-2 text-sm font-medium"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 py-2 text-sm font-medium text-slate-400 transition-all hover:border-indigo-400 hover:text-indigo-600"
         >
-          <Plus className="h-4 w-4" />
+          <PlusIcon className="h-4 w-4" />
           添加小节
         </button>
       </div>

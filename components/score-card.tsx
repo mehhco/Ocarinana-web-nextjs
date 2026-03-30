@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2Icon, Trash2Icon } from "@/components/ui/icons";
 
 interface ScoreCardProps {
   scoreId: string;
@@ -90,7 +90,7 @@ export function ScoreCard({
             asChild
           >
             <Link href={`/protected/scores?scoreId=${encodeURIComponent(scoreId)}`}>
-              <Edit2 className="mr-1 h-3 w-3" />
+              <Edit2Icon className="mr-1 h-3 w-3" />
               编辑
             </Link>
           </Button>
@@ -100,7 +100,7 @@ export function ScoreCard({
             onClick={handleDelete}
             disabled={isDeleting}
           >
-            <Trash2 className="h-3 w-3" />
+            <Trash2Icon className="h-3 w-3" />
           </Button>
         </div>
       </CardContent>

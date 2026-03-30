@@ -12,7 +12,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScoreCard } from "@/components/score-card";
-import { Search, Filter, ArrowUpDown, Music, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ArrowUpDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  FilterIcon,
+  MusicIcon,
+  SearchIcon,
+} from "@/components/ui/icons";
 
 interface Score {
   scoreId: string;
@@ -116,7 +123,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-6">
         <div className="rounded-full bg-muted p-6">
-          <Music className="h-12 w-12 text-muted-foreground" />
+          <MusicIcon className="h-12 w-12 text-muted-foreground" />
         </div>
         <div className="text-center space-y-2">
           <h3 className="text-xl font-semibold">还没有创建任何乐谱</h3>
@@ -138,7 +145,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
         {/* 筛选控件 */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="搜索乐谱标题..."
               value={searchQuery}
@@ -149,7 +156,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
-                <Filter className="h-4 w-4" />
+                <FilterIcon className="h-4 w-4" />
                 {KEY_OPTIONS.find((k) => k.value === keyFilter)?.label}
               </Button>
             </DropdownMenuTrigger>
@@ -167,7 +174,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
-                <Filter className="h-4 w-4" />
+                <FilterIcon className="h-4 w-4" />
                 {TIME_OPTIONS.find((t) => t.value === timeFilter)?.label}
               </Button>
             </DropdownMenuTrigger>
@@ -185,7 +192,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
-                <ArrowUpDown className="h-4 w-4" />
+                <ArrowUpDownIcon className="h-4 w-4" />
                 {SORT_OPTIONS.find((s) => s.value === sortBy)?.label}
               </Button>
             </DropdownMenuTrigger>
@@ -225,7 +232,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
       {/* 筛选控件 */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="搜索乐谱标题..."
             value={searchQuery}
@@ -236,7 +243,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="gap-2">
-              <Filter className="h-4 w-4" />
+              <FilterIcon className="h-4 w-4" />
               {KEY_OPTIONS.find((k) => k.value === keyFilter)?.label}
             </Button>
           </DropdownMenuTrigger>
@@ -254,7 +261,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="gap-2">
-              <Filter className="h-4 w-4" />
+              <FilterIcon className="h-4 w-4" />
               {TIME_OPTIONS.find((t) => t.value === timeFilter)?.label}
             </Button>
           </DropdownMenuTrigger>
@@ -272,7 +279,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="gap-2">
-              <ArrowUpDown className="h-4 w-4" />
+              <ArrowUpDownIcon className="h-4 w-4" />
               {SORT_OPTIONS.find((s) => s.value === sortBy)?.label}
             </Button>
           </DropdownMenuTrigger>
@@ -318,7 +325,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeftIcon className="h-4 w-4" />
             上一页
           </Button>
           <div className="flex items-center gap-1">
@@ -360,7 +367,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
             disabled={currentPage === totalPages}
           >
             下一页
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRightIcon className="h-4 w-4" />
           </Button>
         </div>
       )}

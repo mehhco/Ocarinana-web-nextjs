@@ -6,13 +6,8 @@
 
 export const KEY_SIGNATURE_OPTIONS = [
   { value: 'C' as const, label: '1=C' },
-  { value: 'G' as const, label: '1=G' },
-  { value: 'D' as const, label: '1=D' },
-  { value: 'A' as const, label: '1=A' },
-  { value: 'E' as const, label: '1=E' },
   { value: 'F' as const, label: '1=F' },
-  { value: 'Bb' as const, label: '1=Bb' },
-  { value: 'Eb' as const, label: '1=Eb' },
+  { value: 'G' as const, label: '1=G' },
 ];
 
 // ============ 拍号选项 ============
@@ -118,12 +113,6 @@ export const KEY_SIGNATURE_RANGES: Record<string, {
     basic: ['1', '2', '3', '4', '5', '6', '7'],  // 1-7
     low: ['2', '3', '4', '5'],  // 2̣-5̣
   },
-  // 其他调号暂时使用 C 调配置
-  D: { high: ['1', '2', '3', '4'], basic: ['1', '2', '3', '4', '5', '6', '7'], low: ['6', '7'] },
-  A: { high: ['1', '2', '3', '4'], basic: ['1', '2', '3', '4', '5', '6', '7'], low: ['6', '7'] },
-  E: { high: ['1', '2', '3', '4'], basic: ['1', '2', '3', '4', '5', '6', '7'], low: ['6', '7'] },
-  Bb: { high: ['1'], basic: ['1', '2', '3', '4', '5', '6', '7'], low: ['3', '4', '5', '6', '7'] },
-  Eb: { high: ['1'], basic: ['1', '2', '3', '4', '5', '6', '7'], low: ['3', '4', '5', '6', '7'] },
 };
 
 

@@ -15,7 +15,7 @@ export default function EditorV2Layout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="h-screen w-full overflow-hidden">
+    <div className="-mx-5 -mt-5 flex h-[calc(100%+1.25rem)] min-h-0 w-[calc(100%+2.5rem)] flex-1 overflow-hidden">
       {children}
     </div>
   );

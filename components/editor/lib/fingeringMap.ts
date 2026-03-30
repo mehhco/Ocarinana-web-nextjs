@@ -94,12 +94,6 @@ export const FINGERING_MAP: Record<KeySignature, Partial<Record<FingeringKey, st
   'C': C_FINGERING,
   'F': F_FINGERING,
   'G': G_FINGERING,
-  // 其他调号可以按需添加
-  'D': C_FINGERING,  // 暂用 C 调作为默认
-  'A': C_FINGERING,
-  'E': C_FINGERING,
-  'Bb': F_FINGERING,
-  'Eb': F_FINGERING,
 };
 
 // ============ 辅助函数 ============

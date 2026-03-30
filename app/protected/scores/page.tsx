@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon } from "@/components/ui/icons";
 import { Metadata } from "next";
 import { EditorClientWrapper } from "@/components/editor-client-wrapper";
 

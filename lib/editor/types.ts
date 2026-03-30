@@ -5,11 +5,11 @@
 
 // ============ 基础类型 ============
 
-export type NoteValue = '1' | '2' | '3' | '4' | '5' | '6' | '7';
+export type NoteValue = '1' | '2' | '3' | '4' | '5' | '6' | '7' | 'b7';
 
 export type Duration = '1' | '1/2' | '1/4' | '1/8' | '1/16' | '1/32';
 
-export type KeySignature = 'C' | 'G' | 'D' | 'A' | 'E' | 'F' | 'Bb' | 'Eb';
+export type KeySignature = 'C' | 'F' | 'G';
 
 export type TimeSignature = '2/4' | '3/4' | '4/4' | '6/8';
 
