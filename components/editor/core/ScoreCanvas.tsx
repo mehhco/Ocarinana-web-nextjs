@@ -5,7 +5,7 @@ import { memo, useCallback } from 'react';
 import { PlusIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
-import type { Measure, ScoreElement } from '@/lib/editor/types';
+import type { Beam, Duration, Measure, ScoreElement } from '@/lib/editor/types';
 
 function getFingeringImage(
   keySignature: string,
@@ -54,6 +54,31 @@ function hasFingeringForKey(keySignature: string, noteValue: string, hasHighDot:
   return false;
 }
 
+function getDurationLineCount(duration: Duration): number {
+  switch (duration) {
+    case '1/8': return 1;
+    case '1/16': return 2;
+    case '1/32': return 3;
+    default: return 0;
+  }
+}
+
+function isDurationLevelBeamed(
+  beams: Beam[],
+  measureIndex: number,
+  noteIndex: number,
+  level: number
+): boolean {
+  return beams.some(
+    beam =>
+      beam.startMeasureIndex === measureIndex &&
+      beam.endMeasureIndex === measureIndex &&
+      beam.startNoteIndex <= noteIndex &&
+      noteIndex <= beam.endNoteIndex &&
+      beam.level >= level
+  );
+}
+
 interface NoteElementProps {
   element: ScoreElement;
   measureIndex: number;
@@ -61,17 +86,26 @@ interface NoteElementProps {
   isSelected: boolean;
   keySignature: string;
   showFingering: boolean;
+  beams: Beam[];
+  isBeamStart: boolean;
   onClick: () => void;
 }
 
 const NoteElementComponent = memo(function NoteElementComponent({
   element,
+  measureIndex,
+  noteIndex,
   isSelected,
   keySignature,
   showFingering,
+  beams,
+  isBeamStart,
   onClick,
 }: NoteElementProps) {
   if (element.type === 'note') {
+    const durationLineCount = getDurationLineCount(element.duration);
+    const hasDurationLines = durationLineCount > 0;
+
     // 检查音符在该调号下是否有对应的指法图
     const hasFingering = showFingering && hasFingeringForKey(
       keySignature,
@@ -92,7 +126,11 @@ const NoteElementComponent = memo(function NoteElementComponent({
       <div
         className={cn(
           'flex w-14 cursor-pointer flex-col items-center py-1 transition-all',
-          isSelected ? 'rounded-md bg-indigo-50 ring-2 ring-indigo-500' : 'hover:bg-slate-50'
+          isBeamStart
+            ? 'rounded-md bg-amber-50 ring-2 ring-amber-500'
+            : isSelected
+              ? 'rounded-md bg-indigo-50 ring-2 ring-indigo-500'
+              : 'hover:bg-slate-50'
         )}
         onClick={onClick}
       >
@@ -119,6 +157,26 @@ const NoteElementComponent = memo(function NoteElementComponent({
           <span className="text-lg font-bold text-slate-800">{element.value}</span>
         </div>
 
+        {hasDurationLines && (
+          <div className="flex h-[14px] w-full flex-shrink-0 flex-col items-center gap-0.5 pt-0.5">
+            {[1, 2, 3].map((level) => {
+              const shouldShowLine = level <= durationLineCount;
+              const isBeamed = isDurationLevelBeamed(beams, measureIndex, noteIndex, level);
+
+              return (
+                <span
+                  key={level}
+                  className={cn(
+                    'h-[2px] rounded-full',
+                    shouldShowLine ? 'bg-slate-900' : 'bg-transparent',
+                    isBeamed ? 'w-full' : 'w-5'
+                  )}
+                />
+              );
+            })}
+          </div>
+        )}
+
         <div className="flex h-4 flex-shrink-0 items-center justify-center">
           {element.hasLowDot && <span className="text-xl font-bold leading-none text-slate-800">•</span>}
         </div>
@@ -140,6 +198,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         <div className="flex h-5 flex-shrink-0 items-center justify-center">
           <span className="text-lg font-bold text-slate-800">0</span>
         </div>
+        <div className="h-[14px] flex-shrink-0" />
         <div className="h-4 flex-shrink-0" />
       </div>
     );
@@ -159,6 +218,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         <div className="flex h-5 flex-shrink-0 items-center justify-center">
           <span className="text-lg font-bold text-slate-800">-</span>
         </div>
+        <div className="h-[14px] flex-shrink-0" />
         <div className="h-4 flex-shrink-0" />
       </div>
     );
@@ -178,6 +238,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         <div className="flex h-5 flex-shrink-0 items-center justify-center">
           <span className="text-lg font-bold text-slate-700">|</span>
         </div>
+        <div className="h-[14px] flex-shrink-0" />
         <div className="h-4 flex-shrink-0" />
       </div>
     );
@@ -192,6 +253,8 @@ interface MeasureProps {
   selectedNoteIndex: number | null;
   keySignature: string;
   showFingering: boolean;
+  beams: Beam[];
+  beamStartPosition: { measureIndex: number; noteIndex: number } | null;
   onSelectNote: (noteIndex: number) => void;
 }
 
@@ -201,6 +264,8 @@ const MeasureComponent = memo(function MeasureComponent({
   selectedNoteIndex,
   keySignature,
   showFingering,
+  beams,
+  beamStartPosition,
   onSelectNote,
 }: MeasureProps) {
   return (
@@ -214,6 +279,11 @@ const MeasureComponent = memo(function MeasureComponent({
           isSelected={selectedNoteIndex === noteIndex}
           keySignature={keySignature}
           showFingering={showFingering}
+          beams={beams}
+          isBeamStart={
+            beamStartPosition?.measureIndex === measureIndex &&
+            beamStartPosition.noteIndex === noteIndex
+          }
           onClick={() => onSelectNote(noteIndex)}
         />
       ))}
@@ -229,26 +299,61 @@ export function ScoreCanvas() {
     selectElement,
     addMeasure,
     clearSelection,
+    isBeamMode,
+    beamStartPosition,
+    startBeam,
+    endBeam,
+    cancelBeamMode,
   } = useScoreStore();
 
   const handleSelectNote = useCallback(
     (measureIndex: number, noteIndex: number) => {
+      if (isBeamMode) {
+        const element = scoreDoc.measures[measureIndex]?.elements[noteIndex];
+
+        if (!element || element.type !== 'note') return;
+
+        if (!beamStartPosition) {
+          startBeam(measureIndex, noteIndex);
+          selectElement(measureIndex, noteIndex);
+          return;
+        }
+
+        endBeam(measureIndex, noteIndex);
+        selectElement(measureIndex, noteIndex);
+        return;
+      }
+
       if (selectedMeasureIndex === measureIndex && selectedNoteIndex === noteIndex) {
         clearSelection();
       } else {
         selectElement(measureIndex, noteIndex);
       }
     },
-    [clearSelection, selectElement, selectedMeasureIndex, selectedNoteIndex]
+    [
+      beamStartPosition,
+      clearSelection,
+      endBeam,
+      isBeamMode,
+      scoreDoc.measures,
+      selectElement,
+      selectedMeasureIndex,
+      selectedNoteIndex,
+      startBeam,
+    ]
   );
 
   const handleBackgroundClick = useCallback(
     (e: React.MouseEvent) => {
       if (e.target === e.currentTarget) {
-        clearSelection();
+        if (isBeamMode) {
+          cancelBeamMode();
+        } else {
+          clearSelection();
+        }
       }
     },
-    [clearSelection]
+    [cancelBeamMode, clearSelection, isBeamMode]
   );
 
   return (
@@ -290,6 +395,8 @@ export function ScoreCanvas() {
                   selectedNoteIndex={isSelected ? selectedNoteIndex : null}
                   keySignature={scoreDoc.settings.keySignature}
                   showFingering={scoreDoc.settings.showFingering}
+                  beams={scoreDoc.beams || []}
+                  beamStartPosition={beamStartPosition}
                   onSelectNote={(noteIndex) => handleSelectNote(measureIndex, noteIndex)}
                 />
               </div>

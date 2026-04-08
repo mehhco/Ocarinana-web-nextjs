@@ -89,12 +89,10 @@ const LOW_NOTES: { value: NoteValue; display: string }[] = [
 ];
 
 const DURATION_OPTIONS: { value: Duration; label: string }[] = [
-  { value: '1', label: '全音符' },
-  { value: '1/2', label: '二分' },
-  { value: '1/4', label: '四分' },
-  { value: '1/8', label: '八分' },
-  { value: '1/16', label: '十六分' },
-  { value: '1/32', label: '三十二分' },
+  { value: '1/4', label: '1/4' },
+  { value: '1/8', label: '1/8' },
+  { value: '1/16', label: '1/16' },
+  { value: '1/32', label: '1/32' },
 ];
 
 // 根据调号获取可用的音符
@@ -132,8 +130,10 @@ export const ElementPanel = memo(function ElementPanel() {
   const addExtension = useScoreStore((state) => state.addExtension);
   const addBarline = useScoreStore((state) => state.addBarline);
   const updateNoteDuration = useScoreStore((state) => state.updateNoteDuration);
+  const toggleBeamMode = useScoreStore((state) => state.toggleBeamMode);
   const clearAllLyrics = useScoreStore((state) => state.clearAllLyrics);
   const clearSelection = useScoreStore((state) => state.clearSelection);
+  const isBeamMode = useScoreStore((state) => state.isBeamMode);
   const selectedMeasureIndex = useScoreStore((state) => state.selectedMeasureIndex);
   const selectedNoteIndex = useScoreStore((state) => state.selectedNoteIndex);
   const selectedElement = useScoreStore((state) => {
@@ -328,7 +328,7 @@ export const ElementPanel = memo(function ElementPanel() {
             <span className="text-xs font-semibold tracking-wider text-slate-500">时值</span>
             <div className="h-px flex-1 bg-slate-200" />
           </div>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-4 gap-1.5">
             {DURATION_OPTIONS.map((option) => (
               <ActionButton
                 key={option.value}
@@ -363,6 +363,9 @@ export const ElementPanel = memo(function ElementPanel() {
           <div className="grid grid-cols-2 gap-1.5">
             <ActionButton onClick={addExtension}>延长线</ActionButton>
             <ActionButton onClick={addBarline}>小节线</ActionButton>
+            <ActionButton onClick={toggleBeamMode} active={isBeamMode}>
+              {isBeamMode ? '取消合并' : '合并时值线'}
+            </ActionButton>
           </div>
         </div>
       </div>

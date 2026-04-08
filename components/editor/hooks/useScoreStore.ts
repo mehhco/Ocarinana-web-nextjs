@@ -207,6 +207,23 @@ function restoreFromHistory(state: ScoreStoreState, historyState: HistoryState) 
   state.isDirty = true;
 }
 
+function getDurationLevel(duration: Duration): number {
+  switch (duration) {
+    case '1/8': return 1;
+    case '1/16': return 2;
+    case '1/32': return 3;
+    default: return 0;
+  }
+}
+
+function beamTouchesPosition(beam: Beam, measureIndex: number, noteIndex: number): boolean {
+  if (beam.startMeasureIndex !== measureIndex || beam.endMeasureIndex !== measureIndex) {
+    return false;
+  }
+
+  return beam.startNoteIndex <= noteIndex && noteIndex <= beam.endNoteIndex;
+}
+
 // ============ Store 创建 ============
 
 export const useScoreStore = create<ScoreStore>()(
@@ -434,6 +451,12 @@ export const useScoreStore = create<ScoreStore>()(
       
       // 只更新时值，减时线通过渲染逻辑自动显示
       element.duration = duration;
+
+      if (document.beams) {
+        document.beams = document.beams.filter(
+          beam => !beamTouchesPosition(beam, selectedMeasureIndex, selectedNoteIndex)
+        );
+      }
       
       document.updatedAt = new Date().toISOString();
       state.isDirty = true;
@@ -603,8 +626,7 @@ export const useScoreStore = create<ScoreStore>()(
       // 删除相关的时值线连接
       if (document.beams) {
         document.beams = document.beams.filter(
-          beam => !(beam.startMeasureIndex === selectedMeasureIndex && beam.startNoteIndex === selectedNoteIndex) &&
-                   !(beam.endMeasureIndex === selectedMeasureIndex && beam.endNoteIndex === selectedNoteIndex)
+          beam => !beamTouchesPosition(beam, selectedMeasureIndex, selectedNoteIndex)
         );
       }
       // 更新选中的索引
@@ -806,12 +828,22 @@ export const useScoreStore = create<ScoreStore>()(
       const { beamStartPosition, document } = state;
       
       if (!beamStartPosition) return;
+
+      const resetBeamMode = () => {
+        state.beamStartPosition = null;
+        state.isBeamMode = false;
+      };
       
       // 不能连接同一个音符
       if (beamStartPosition.measureIndex === measureIndex && 
           beamStartPosition.noteIndex === noteIndex) {
-        state.beamStartPosition = null;
-        state.isBeamMode = false;
+        resetBeamMode();
+        return;
+      }
+
+      // 只支持同一小节内从左到右选择 2-3 个连续音符
+      if (beamStartPosition.measureIndex !== measureIndex || beamStartPosition.noteIndex >= noteIndex) {
+        resetBeamMode();
         return;
       }
       
@@ -819,88 +851,41 @@ export const useScoreStore = create<ScoreStore>()(
       const startMeasure = document.measures[beamStartPosition.measureIndex];
       const endMeasure = document.measures[measureIndex];
       
-      if (!startMeasure || !endMeasure) return;
-      
-      const startElement = startMeasure.elements[beamStartPosition.noteIndex];
-      const endElement = endMeasure.elements[noteIndex];
-      
-      // 只能连接音符
-      if (!startElement || startElement.type !== 'note' || !endElement || endElement.type !== 'note') {
-        state.beamStartPosition = null;
-        state.isBeamMode = false;
+      if (!startMeasure || !endMeasure) {
+        resetBeamMode();
+        return;
+      }
+
+      const rangeStart = beamStartPosition.noteIndex;
+      const rangeEnd = noteIndex;
+      const rangeElements = startMeasure.elements.slice(rangeStart, rangeEnd + 1);
+
+      if (rangeElements.length < 2 || rangeElements.length > 3) {
+        resetBeamMode();
+        return;
+      }
+
+      const durationLevels = rangeElements.map(element => {
+        if (!element || element.type !== 'note') return 0;
+        return getDurationLevel(element.duration);
+      });
+
+      if (durationLevels.some(level => level === 0)) {
+        resetBeamMode();
         return;
       }
       
-      // 只能连接相邻的时值音符（1/8, 1/16, 1/32）
-      const startDuration = startElement.duration;
-      const endDuration = endElement.duration;
-      const validDurations = ['1/8', '1/16', '1/32'];
-      
-      if (!validDurations.includes(startDuration) || !validDurations.includes(endDuration)) {
-        state.beamStartPosition = null;
-        state.isBeamMode = false;
-        return;
-      }
-      
-      // 连接方向必须从左到右
-      if (beamStartPosition.measureIndex > measureIndex || 
-          (beamStartPosition.measureIndex === measureIndex && beamStartPosition.noteIndex >= noteIndex)) {
-        state.beamStartPosition = null;
-        state.isBeamMode = false;
-        return;
-      }
-      
-      // 检查是否相邻（在同一小节内）
-      if (beamStartPosition.measureIndex !== measureIndex) {
-        // 跨小节连接目前不支持
-        state.beamStartPosition = null;
-        state.isBeamMode = false;
-        return;
-      }
-      
-      // 检查是否相邻
-      let isAdjacent = false;
-      if (beamStartPosition.measureIndex === measureIndex) {
-        // 检查中间是否只有延长线
-        let hasOnlyExtensionsBetween = true;
-        for (let i = beamStartPosition.noteIndex + 1; i < noteIndex; i++) {
-          const el = startMeasure.elements[i];
-          if (el && el.type !== 'extension') {
-            hasOnlyExtensionsBetween = false;
-            break;
-          }
-        }
-        isAdjacent = hasOnlyExtensionsBetween;
-      }
-      
-      if (!isAdjacent) {
-        state.beamStartPosition = null;
-        state.isBeamMode = false;
-        return;
-      }
-      
-      // 计算 level：取两个音符的最小时值层级
+      // 计算 level：取所有参与音符的最小时值层级
       // 1/8 = 1, 1/16 = 2, 1/32 = 3
-      function getDurationLevel(duration: string): number {
-        switch (duration) {
-          case '1/8': return 1;
-          case '1/16': return 2;
-          case '1/32': return 3;
-          default: return 0;
-        }
-      }
-      
-      const startLevel = getDurationLevel(startDuration);
-      const endLevel = getDurationLevel(endDuration);
-      const level = Math.min(startLevel, endLevel);
+      const level = Math.min(...durationLevels);
       
       // 创建 Beam 对象
       const newBeam: Beam = {
         id: nanoid(),
         startMeasureIndex: beamStartPosition.measureIndex,
-        startNoteIndex: beamStartPosition.noteIndex,
+        startNoteIndex: rangeStart,
         endMeasureIndex: measureIndex,
-        endNoteIndex: noteIndex,
+        endNoteIndex: rangeEnd,
         level,
       };
       
@@ -908,10 +893,16 @@ export const useScoreStore = create<ScoreStore>()(
       if (!document.beams) {
         document.beams = [];
       }
+
+      document.beams = document.beams.filter(
+        beam => beam.startMeasureIndex !== measureIndex ||
+          beam.endMeasureIndex !== measureIndex ||
+          beam.endNoteIndex < rangeStart ||
+          beam.startNoteIndex > rangeEnd
+      );
       
       document.beams.push(newBeam);
-      state.beamStartPosition = null;
-      state.isBeamMode = false;
+      resetBeamMode();
       document.updatedAt = new Date().toISOString();
       state.isDirty = true;
       saveToHistory(state);
