@@ -841,7 +841,7 @@ export const useScoreStore = create<ScoreStore>()(
         return;
       }
 
-      // 只支持同一小节内从左到右选择 2-3 个连续音符
+      // 只支持同一小节内从左到右选择连续音符
       if (beamStartPosition.measureIndex !== measureIndex || beamStartPosition.noteIndex >= noteIndex) {
         resetBeamMode();
         return;
@@ -860,7 +860,7 @@ export const useScoreStore = create<ScoreStore>()(
       const rangeEnd = noteIndex;
       const rangeElements = startMeasure.elements.slice(rangeStart, rangeEnd + 1);
 
-      if (rangeElements.length < 2 || rangeElements.length > 3) {
+      if (rangeElements.length < 2) {
         resetBeamMode();
         return;
       }

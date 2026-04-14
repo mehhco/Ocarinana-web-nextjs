@@ -117,6 +117,15 @@ function getAvailableNotes(keySignature: string): { high: string[]; low: string[
   return ranges[keySignature] || ranges['C'];
 }
 
+function getBeamDurationLevel(duration: Duration): number {
+  switch (duration) {
+    case '1/8': return 1;
+    case '1/16': return 2;
+    case '1/32': return 3;
+    default: return 0;
+  }
+}
+
 const REST_OPTIONS: { value: Duration; label: string }[] = [
   { value: '1', label: '全休止符' },
   { value: '1/2', label: '二分休止' },
@@ -131,11 +140,15 @@ export const ElementPanel = memo(function ElementPanel() {
   const addBarline = useScoreStore((state) => state.addBarline);
   const updateNoteDuration = useScoreStore((state) => state.updateNoteDuration);
   const toggleBeamMode = useScoreStore((state) => state.toggleBeamMode);
+  const endBeam = useScoreStore((state) => state.endBeam);
+  const cancelBeamMode = useScoreStore((state) => state.cancelBeamMode);
   const clearAllLyrics = useScoreStore((state) => state.clearAllLyrics);
   const clearSelection = useScoreStore((state) => state.clearSelection);
   const isBeamMode = useScoreStore((state) => state.isBeamMode);
+  const beamStartPosition = useScoreStore((state) => state.beamStartPosition);
   const selectedMeasureIndex = useScoreStore((state) => state.selectedMeasureIndex);
   const selectedNoteIndex = useScoreStore((state) => state.selectedNoteIndex);
+  const document = useScoreStore((state) => state.document);
   const selectedElement = useScoreStore((state) => {
     if (state.selectedMeasureIndex === null || state.selectedNoteIndex === null) {
       return null;
@@ -154,6 +167,27 @@ export const ElementPanel = memo(function ElementPanel() {
     selectedElement && (selectedElement.type === 'note' || selectedElement.type === 'rest')
       ? selectedElement.duration
       : null;
+
+  const canConfirmBeam = (() => {
+    if (
+      !isBeamMode ||
+      !beamStartPosition ||
+      selectedMeasureIndex === null ||
+      selectedNoteIndex === null ||
+      beamStartPosition.measureIndex !== selectedMeasureIndex ||
+      selectedNoteIndex <= beamStartPosition.noteIndex
+    ) {
+      return false;
+    }
+
+    const measure = document.measures[selectedMeasureIndex];
+    const rangeElements = measure?.elements.slice(beamStartPosition.noteIndex, selectedNoteIndex + 1) ?? [];
+
+    return (
+      rangeElements.length >= 2 &&
+      rangeElements.every((element) => element.type === 'note' && getBeamDurationLevel(element.duration) > 0)
+    );
+  })();
 
   const handleHighNoteClick = useCallback(
     (noteValue: NoteValue) => {
@@ -212,6 +246,28 @@ export const ElementPanel = memo(function ElementPanel() {
   const toggleLyrics = useCallback(() => {
     updateSettings({ showLyrics: !settings.showLyrics });
   }, [settings.showLyrics, updateSettings]);
+
+  const handleBeamAction = useCallback(() => {
+    if (!isBeamMode) {
+      toggleBeamMode();
+      return;
+    }
+
+    if (canConfirmBeam && selectedMeasureIndex !== null && selectedNoteIndex !== null) {
+      endBeam(selectedMeasureIndex, selectedNoteIndex);
+      return;
+    }
+
+    cancelBeamMode();
+  }, [
+    cancelBeamMode,
+    canConfirmBeam,
+    endBeam,
+    isBeamMode,
+    selectedMeasureIndex,
+    selectedNoteIndex,
+    toggleBeamMode,
+  ]);
 
   return (
     <aside className="h-full w-full overflow-y-auto bg-slate-50/50">
@@ -363,8 +419,8 @@ export const ElementPanel = memo(function ElementPanel() {
           <div className="grid grid-cols-2 gap-1.5">
             <ActionButton onClick={addExtension}>延长线</ActionButton>
             <ActionButton onClick={addBarline}>小节线</ActionButton>
-            <ActionButton onClick={toggleBeamMode} active={isBeamMode}>
-              {isBeamMode ? '取消合并' : '合并时值线'}
+            <ActionButton onClick={handleBeamAction} active={isBeamMode}>
+              {!isBeamMode ? '合并时值线' : canConfirmBeam ? '确认合并' : '取消合并'}
             </ActionButton>
           </div>
         </div>

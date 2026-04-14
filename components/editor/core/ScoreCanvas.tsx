@@ -63,20 +63,62 @@ function getDurationLineCount(duration: Duration): number {
   }
 }
 
-function isDurationLevelBeamed(
+function getElementDurationLineCount(element: ScoreElement): number {
+  if (element.type !== 'note') return 0;
+  return getDurationLineCount(element.duration);
+}
+
+function getDurationBeamSegmentPosition(
   beams: Beam[],
+  measureElements: ScoreElement[],
   measureIndex: number,
   noteIndex: number,
   level: number
-): boolean {
-  return beams.some(
-    beam =>
-      beam.startMeasureIndex === measureIndex &&
-      beam.endMeasureIndex === measureIndex &&
-      beam.startNoteIndex <= noteIndex &&
-      noteIndex <= beam.endNoteIndex &&
-      beam.level >= level
-  );
+): 'none' | 'start' | 'middle' | 'end' {
+  for (const beam of beams) {
+    if (
+      beam.startMeasureIndex !== measureIndex ||
+      beam.endMeasureIndex !== measureIndex ||
+      noteIndex < beam.startNoteIndex ||
+      noteIndex > beam.endNoteIndex
+    ) {
+      continue;
+    }
+
+    let segmentStart: number | null = null;
+
+    for (let i = beam.startNoteIndex; i <= beam.endNoteIndex; i += 1) {
+      const canJoinAtLevel = getElementDurationLineCount(measureElements[i]) >= level;
+
+      if (canJoinAtLevel) {
+        if (segmentStart === null) {
+          segmentStart = i;
+        }
+        continue;
+      }
+
+      if (segmentStart !== null) {
+        const segmentEnd = i - 1;
+        if (segmentEnd - segmentStart + 1 >= 2 && segmentStart <= noteIndex && noteIndex <= segmentEnd) {
+          if (noteIndex === segmentStart) return 'start';
+          if (noteIndex === segmentEnd) return 'end';
+          return 'middle';
+        }
+        segmentStart = null;
+      }
+    }
+
+    if (segmentStart !== null) {
+      const segmentEnd = beam.endNoteIndex;
+      if (segmentEnd - segmentStart + 1 >= 2 && segmentStart <= noteIndex && noteIndex <= segmentEnd) {
+        if (noteIndex === segmentStart) return 'start';
+        if (noteIndex === segmentEnd) return 'end';
+        return 'middle';
+      }
+    }
+  }
+
+  return 'none';
 }
 
 interface NoteElementProps {
@@ -84,8 +126,10 @@ interface NoteElementProps {
   measureIndex: number;
   noteIndex: number;
   isSelected: boolean;
+  isBeamPreview: boolean;
   keySignature: string;
   showFingering: boolean;
+  measureElements: ScoreElement[];
   beams: Beam[];
   isBeamStart: boolean;
   onClick: () => void;
@@ -96,8 +140,10 @@ const NoteElementComponent = memo(function NoteElementComponent({
   measureIndex,
   noteIndex,
   isSelected,
+  isBeamPreview,
   keySignature,
   showFingering,
+  measureElements,
   beams,
   isBeamStart,
   onClick,
@@ -126,7 +172,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
       <div
         className={cn(
           'flex w-14 cursor-pointer flex-col items-center py-1 transition-all',
-          isBeamStart
+          isBeamStart || isBeamPreview
             ? 'rounded-md bg-amber-50 ring-2 ring-amber-500'
             : isSelected
               ? 'rounded-md bg-indigo-50 ring-2 ring-indigo-500'
@@ -154,22 +200,31 @@ const NoteElementComponent = memo(function NoteElementComponent({
         </div>
 
         <div className="flex h-5 flex-shrink-0 items-center justify-center">
-          <span className="text-lg font-bold text-slate-800">{element.value}</span>
+          <span className="text-lg font-bold leading-none text-slate-800">{element.value}</span>
         </div>
 
         {hasDurationLines && (
-          <div className="flex h-[14px] w-full flex-shrink-0 flex-col items-center gap-0.5 pt-0.5">
+          <div className="mt-1 flex w-full flex-shrink-0 flex-col items-center gap-[3px]">
             {[1, 2, 3].map((level) => {
               const shouldShowLine = level <= durationLineCount;
-              const isBeamed = isDurationLevelBeamed(beams, measureIndex, noteIndex, level);
+              const beamSegmentPosition = getDurationBeamSegmentPosition(
+                beams,
+                measureElements,
+                measureIndex,
+                noteIndex,
+                level
+              );
 
               return (
                 <span
                   key={level}
                   className={cn(
-                    'h-[2px] rounded-full',
-                    shouldShowLine ? 'bg-slate-900' : 'bg-transparent',
-                    isBeamed ? 'w-full' : 'w-5'
+                    'block h-0 flex-shrink-0 box-border border-t-[2px] border-solid',
+                    shouldShowLine ? 'border-slate-900' : 'border-transparent',
+                    beamSegmentPosition === 'middle' && 'w-full',
+                    beamSegmentPosition === 'start' && 'w-[calc(50%+0.625rem)] self-end',
+                    beamSegmentPosition === 'end' && 'w-[calc(50%+0.625rem)] self-start',
+                    beamSegmentPosition === 'none' && 'w-5'
                   )}
                 />
               );
@@ -255,6 +310,7 @@ interface MeasureProps {
   showFingering: boolean;
   beams: Beam[];
   beamStartPosition: { measureIndex: number; noteIndex: number } | null;
+  isBeamMode: boolean;
   onSelectNote: (noteIndex: number) => void;
 }
 
@@ -266,6 +322,7 @@ const MeasureComponent = memo(function MeasureComponent({
   showFingering,
   beams,
   beamStartPosition,
+  isBeamMode,
   onSelectNote,
 }: MeasureProps) {
   return (
@@ -277,8 +334,20 @@ const MeasureComponent = memo(function MeasureComponent({
           measureIndex={measureIndex}
           noteIndex={noteIndex}
           isSelected={selectedNoteIndex === noteIndex}
+          isBeamPreview={
+            !!(
+              isBeamMode &&
+              beamStartPosition &&
+              beamStartPosition.measureIndex === measureIndex &&
+              selectedNoteIndex !== null &&
+              selectedNoteIndex > beamStartPosition.noteIndex &&
+              beamStartPosition.noteIndex <= noteIndex &&
+              noteIndex <= selectedNoteIndex
+            )
+          }
           keySignature={keySignature}
           showFingering={showFingering}
+          measureElements={measure.elements}
           beams={beams}
           isBeamStart={
             beamStartPosition?.measureIndex === measureIndex &&
@@ -302,7 +371,6 @@ export function ScoreCanvas() {
     isBeamMode,
     beamStartPosition,
     startBeam,
-    endBeam,
     cancelBeamMode,
   } = useScoreStore();
 
@@ -319,7 +387,12 @@ export function ScoreCanvas() {
           return;
         }
 
-        endBeam(measureIndex, noteIndex);
+        if (beamStartPosition.measureIndex !== measureIndex || noteIndex <= beamStartPosition.noteIndex) {
+          startBeam(measureIndex, noteIndex);
+          selectElement(measureIndex, noteIndex);
+          return;
+        }
+
         selectElement(measureIndex, noteIndex);
         return;
       }
@@ -333,7 +406,6 @@ export function ScoreCanvas() {
     [
       beamStartPosition,
       clearSelection,
-      endBeam,
       isBeamMode,
       scoreDoc.measures,
       selectElement,
@@ -397,6 +469,7 @@ export function ScoreCanvas() {
                   showFingering={scoreDoc.settings.showFingering}
                   beams={scoreDoc.beams || []}
                   beamStartPosition={beamStartPosition}
+                  isBeamMode={isBeamMode}
                   onSelectNote={(noteIndex) => handleSelectNote(measureIndex, noteIndex)}
                 />
               </div>
