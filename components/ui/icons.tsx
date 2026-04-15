@@ -1,12 +1,15 @@
 import * as React from "react";
 
-type IconProps = React.SVGProps<SVGSVGElement>;
+type IconProps = React.SVGProps<SVGSVGElement> & {
+  size?: number | string;
+};
 
 function IconBase({
   children,
   className,
   fill = "none",
   viewBox = "0 0 24 24",
+  size,
   ...props
 }: IconProps & { children: React.ReactNode; viewBox?: string }) {
   return (
@@ -15,7 +18,9 @@ function IconBase({
       className={className}
       fill={fill}
       viewBox={viewBox}
+      height={size}
       xmlns="http://www.w3.org/2000/svg"
+      width={size}
       {...props}
     >
       {children}

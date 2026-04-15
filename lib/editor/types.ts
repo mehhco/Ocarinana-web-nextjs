@@ -1,9 +1,6 @@
 /**
- * 乐谱编辑器类型定义
- * 与旧版本 script.js 中的 ScoreModel 对应
+ * Editor data types for the score editor.
  */
-
-// ============ 基础类型 ============
 
 export type NoteValue = '1' | '2' | '3' | '4' | '5' | '6' | '7' | 'b7';
 
@@ -17,16 +14,15 @@ export type SkinType = 'white' | 'light-beige' | 'light-blue';
 
 export type ElementType = 'note' | 'rest' | 'extension' | 'barline';
 
-// ============ 音符数据类型 ============
-
 export interface Note {
-  id: string;                       // 唯一标识（用于 React key）
+  id: string;
   type: 'note';
   value: NoteValue;
   duration: Duration;
-  hasHighDot?: boolean;             // 高音点
-  hasLowDot?: boolean;              // 低音点
-  lyrics?: string;                  // 关联的歌词
+  hasHighDot?: boolean;
+  hasLowDot?: boolean;
+  hasAugmentationDot?: boolean;
+  lyrics?: string;
 }
 
 export interface Rest {
@@ -34,7 +30,7 @@ export interface Rest {
   type: 'rest';
   value: '0';
   duration: Duration;
-  restGroup?: 'full' | 'half';      // 全/二分休止符组标记
+  restGroup?: 'full' | 'half';
 }
 
 export interface Extension {
@@ -58,7 +54,7 @@ export interface Beam {
   startNoteIndex: number;
   endMeasureIndex: number;
   endNoteIndex: number;
-  level: number; // 1=1/8, 2=1/16, 3=1/32
+  level: number;
 }
 
 export interface Tie {
@@ -75,14 +71,10 @@ export interface Lyric {
   text: string;
 }
 
-// ============ 小节类型 ============
-
 export interface Measure {
   id: string;
   elements: ScoreElement[];
 }
-
-// ============ 乐谱文档类型 ============
 
 export interface ScoreDocument {
   version: string;
@@ -107,27 +99,16 @@ export interface ScoreSettings {
   showFingering: boolean;
 }
 
-// ============ 编辑器状态类型 ============
-
 export interface EditorState {
-  // 当前文档
   document: ScoreDocument;
-
-  // 选中状态
   selectedMeasureIndex: number | null;
   selectedNoteIndex: number | null;
-
-  // UI 状态
-  isDirty: boolean;                 // 是否有未保存更改
-  isExporting: boolean;             // 是否正在导出
-  isSaving: boolean;                // 是否正在保存
-
-  // 时值线连接工具状态
+  isDirty: boolean;
+  isExporting: boolean;
+  isSaving: boolean;
   isBeamMode: boolean;
   beamStartPosition: { measureIndex: number; noteIndex: number } | null;
 }
-
-// ============ 历史记录类型 ============
 
 export interface HistoryState {
   document: ScoreDocument;
@@ -138,19 +119,33 @@ export interface HistoryState {
 export interface History {
   states: HistoryState[];
   currentIndex: number;
-  maxSize: number;                  // 最大历史记录数（默认 50）
+  maxSize: number;
 }
 
-// ============ 指法图类型 ============
-
 export type FingeringKey =
-  | '1' | '2' | '3' | '4' | '5' | '6' | '7'
-  | '1-high' | '2-high' | '3-high' | '4-high' | '5-high' | '6-high' | '7-high'
-  | '1-low' | '2-low' | '3-low' | '4-low' | '5-low' | '6-low' | '7-low';
+  | '1'
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '7'
+  | '1-high'
+  | '2-high'
+  | '3-high'
+  | '4-high'
+  | '5-high'
+  | '6-high'
+  | '7-high'
+  | '1-low'
+  | '2-low'
+  | '3-low'
+  | '4-low'
+  | '5-low'
+  | '6-low'
+  | '7-low';
 
 export type FingeringMap = Record<KeySignature, Record<FingeringKey, string>>;
-
-// ============ 渲染相关类型 ============
 
 export interface RenderOptions {
   container: HTMLElement;

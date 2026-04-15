@@ -75,6 +75,7 @@ interface ScoreStoreActions {
   updateNoteDuration: (duration: Duration) => void;
   toggleHighDot: () => void;
   toggleLowDot: () => void;
+  toggleAugmentationDot: () => void;
   addExtension: () => void;
   addBarline: () => void;
   deleteSelectedElement: () => void;
@@ -318,6 +319,7 @@ export const useScoreStore = create<ScoreStore>()(
         duration,
         hasHighDot: options.hasHighDot || false,
         hasLowDot: options.hasLowDot || false,
+        hasAugmentationDot: false,
       };
       
       // 如果有选中的元素，替换它
@@ -505,6 +507,25 @@ export const useScoreStore = create<ScoreStore>()(
         element.hasHighDot = false;
       }
       
+      document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
+  toggleAugmentationDot: () => {
+    set((state) => {
+      const { document, selectedMeasureIndex, selectedNoteIndex } = state;
+
+      if (selectedMeasureIndex === null || selectedNoteIndex === null) return;
+
+      const measure = document.measures[selectedMeasureIndex];
+      const element = measure.elements[selectedNoteIndex];
+
+      if (!element || element.type !== 'note') return;
+
+      element.hasAugmentationDot = !element.hasAugmentationDot;
+
       document.updatedAt = new Date().toISOString();
       state.isDirty = true;
       saveToHistory(state);

@@ -270,7 +270,12 @@ const NoteElementComponent = memo(function NoteElementComponent({
         </div>
 
         <div className="flex h-5 flex-shrink-0 items-center justify-center">
-          <span className="text-lg font-bold leading-none text-slate-800">{element.value}</span>
+          <div className="relative flex h-5 w-9 items-end justify-center">
+            <span className="text-lg font-bold leading-none text-slate-800">{element.value}</span>
+            {element.hasAugmentationDot && (
+              <span className="absolute bottom-0 right-0 text-sm font-bold leading-none text-slate-800">•</span>
+            )}
+          </div>
         </div>
 
         {hasDurationLines && (

@@ -1,10 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AuthButton } from "@/components/auth-button";
-import { Spicy_Rice } from "next/font/google";
 import { isShopEnabled } from "@/lib/supabase/config";
-
-const spicyRice = Spicy_Rice({ subsets: ["latin"], weight: "400", display: "swap" });
 
 interface AppNavProps {
   currentPath?: string;
@@ -25,7 +22,8 @@ export async function AppNav({ currentPath = "/" }: AppNavProps) {
         <div className="flex items-center gap-6">
           <Link 
             href="/" 
-            className={`${spicyRice.className} font-bold text-4xl text-emerald-600 drop-shadow hover:text-emerald-700 transition-colors`}
+            className="font-bold text-4xl text-emerald-600 drop-shadow transition-colors hover:text-emerald-700"
+            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
           >
             Ocarinana
           </Link>

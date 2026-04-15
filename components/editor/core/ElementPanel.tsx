@@ -142,6 +142,7 @@ export const ElementPanel = memo(function ElementPanel() {
   const addExtension = useScoreStore((state) => state.addExtension);
   const addBarline = useScoreStore((state) => state.addBarline);
   const updateNoteDuration = useScoreStore((state) => state.updateNoteDuration);
+  const toggleAugmentationDot = useScoreStore((state) => state.toggleAugmentationDot);
   const toggleBeamMode = useScoreStore((state) => state.toggleBeamMode);
   const endBeam = useScoreStore((state) => state.endBeam);
   const cancelBeamMode = useScoreStore((state) => state.cancelBeamMode);
@@ -170,6 +171,7 @@ export const ElementPanel = memo(function ElementPanel() {
     selectedElement && (selectedElement.type === 'note' || selectedElement.type === 'rest')
       ? selectedElement.duration
       : null;
+  const hasAugmentationDot = selectedElement?.type === 'note' ? !!selectedElement.hasAugmentationDot : false;
 
   const canConfirmBeam = (() => {
     if (
@@ -430,6 +432,7 @@ export const ElementPanel = memo(function ElementPanel() {
             <div className="h-px flex-1 bg-slate-200" />
           </div>
           <div className="grid grid-cols-2 gap-1.5">
+            <ActionButton onClick={toggleAugmentationDot} active={hasAugmentationDot}>附点</ActionButton>
             <ActionButton onClick={addExtension}>延长线</ActionButton>
             <ActionButton onClick={addBarline}>小节线</ActionButton>
             <ActionButton onClick={handleBeamAction} active={isBeamMode}>

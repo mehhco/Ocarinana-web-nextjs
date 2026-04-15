@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { ToastProvider } from "@/components/providers/toast-provider";
 import { CookieConsent } from "@/components/cookie-consent";
@@ -20,7 +19,8 @@ export const metadata: Metadata = {
     default: "Ocarinana - 陶笛谱生成器 | 在线数字简谱编辑工具",
     template: "%s | Ocarinana",
   },
-  description: "Ocarinana 是专业的在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配、歌词编辑、高清图片导出。适合音乐爱好者、陶笛学习者和音乐教师使用。",
+  description:
+    "Ocarinana 是专业的在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配、歌词编辑与高清图片导出。",
   keywords: [
     "陶笛谱",
     "数字简谱",
@@ -28,8 +28,6 @@ export const metadata: Metadata = {
     "陶笛指法",
     "在线乐谱编辑",
     "音乐制作",
-    "陶笛学习",
-    "乐谱导出",
     "ocarina",
     "sheet music",
   ],
@@ -46,7 +44,7 @@ export const metadata: Metadata = {
     locale: "zh_CN",
     url: defaultUrl,
     title: "Ocarinana - 陶笛谱生成器",
-    description: "专业的在线陶笛谱生成器，支持数字简谱编辑、指法图自动匹配、高清导出",
+    description: "专业的在线陶笛谱生成器，支持数字简谱编辑、指法图匹配和高清导出。",
     siteName: "Ocarinana",
     images: [
       {
@@ -60,7 +58,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Ocarinana - 陶笛谱生成器",
-    description: "专业的在线陶笛谱生成器，支持数字简谱编辑、指法图自动匹配",
+    description: "专业的在线陶笛谱生成器，支持数字简谱编辑、指法图匹配和高清导出。",
     images: [`${defaultUrl}/twitter-image.webp`],
     creator: "@ocarinana",
   },
@@ -87,31 +85,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: defaultUrl,
   },
-  // 百度站长工具验证
   other: process.env.NEXT_PUBLIC_BAIDU_SITE_VERIFICATION
     ? {
-        'baidu-site-verification': process.env.NEXT_PUBLIC_BAIDU_SITE_VERIFICATION,
+        "baidu-site-verification": process.env.NEXT_PUBLIC_BAIDU_SITE_VERIFICATION,
       }
     : {},
 };
-
-// 性能优化：字体优化配置
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  display: "swap", // 防止字体闪烁
-  subsets: ["latin"],
-  preload: true, // 预加载字体
-  fallback: [
-    "system-ui",
-    "-apple-system",
-    "BlinkMacSystemFont",
-    "Segoe UI",
-    "Roboto",
-    "Helvetica Neue",
-    "Arial",
-    "sans-serif",
-  ],
-});
 
 export default function RootLayout({
   children,
@@ -120,7 +99,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
+      <body className="antialiased">
         <ErrorBoundary>
           <ThemeProvider
             attribute="class"
@@ -132,23 +111,20 @@ export default function RootLayout({
             <CookieConsent />
           </ThemeProvider>
         </ErrorBoundary>
-        
-        {/* Analytics - 仅在用户同意后加载 */}
+
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
         )}
         {process.env.NEXT_PUBLIC_BAIDU_ANALYTICS_ID && (
           <BaiduAnalytics baiduId={process.env.NEXT_PUBLIC_BAIDU_ANALYTICS_ID} />
         )}
-        
-        {/* Service Worker - 性能优化：离线访问支持 */}
+
         <ServiceWorkerRegister />
-        
-        {/* 资源提示 - 性能优化：DNS预解析、预连接、预加载 */}
         <ResourceHints {...COMMON_RESOURCE_HINTS} />
-        
-        {/* html2canvas - 用于乐谱导出图片功能 */}
-        <script async src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" />
+        <script
+          async
+          src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+        />
       </body>
     </html>
   );
