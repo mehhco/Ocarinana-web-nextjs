@@ -1,41 +1,63 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import type { ClipboardEvent, CompositionEvent, KeyboardEvent, MouseEvent } from 'react';
 import { cn } from '@/lib/utils';
 
 interface LyricsInputProps {
-  text: string;
+  value: string;
+  active?: boolean;
+  disabled?: boolean;
+  inputRef?: (node: HTMLInputElement | null) => void;
   onChange: (text: string) => void;
+  onFocus?: () => void;
   onBlur?: () => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
+  onPaste?: (event: ClipboardEvent<HTMLInputElement>) => void;
+  onCompositionStart?: (event: CompositionEvent<HTMLInputElement>) => void;
+  onCompositionEnd?: (event: CompositionEvent<HTMLInputElement>) => void;
 }
 
-export function LyricsInput({ text, onChange, onBlur }: LyricsInputProps) {
-  const [localValue, setLocalValue] = useState(text);
-
-  useEffect(() => {
-    setLocalValue(text);
-  }, [text]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setLocalValue(value);
-    onChange(value);
+export function LyricsInput({
+  value,
+  active = false,
+  disabled = false,
+  inputRef,
+  onChange,
+  onFocus,
+  onBlur,
+  onKeyDown,
+  onPaste,
+  onCompositionStart,
+  onCompositionEnd,
+}: LyricsInputProps) {
+  const stopPointerPropagation = (event: MouseEvent<HTMLInputElement>) => {
+    event.stopPropagation();
   };
 
   return (
     <input
+      ref={inputRef}
       type="text"
-      value={localValue}
-      onChange={handleChange}
+      value={value}
+      disabled={disabled}
+      placeholder="歌词"
+      onChange={(event) => onChange(event.target.value)}
+      onFocus={onFocus}
       onBlur={onBlur}
-      placeholder="词"
+      onKeyDown={onKeyDown}
+      onPaste={onPaste}
+      onCompositionStart={onCompositionStart}
+      onCompositionEnd={onCompositionEnd}
+      onClick={stopPointerPropagation}
+      onMouseDown={stopPointerPropagation}
       className={cn(
-        "w-16 h-6 text-xs text-center border border-transparent",
-        "bg-transparent hover:bg-muted/50 focus:bg-white",
-        "focus:border-primary focus:ring-1 focus:ring-primary",
-        "rounded px-1 py-0.5",
-        "transition-all duration-150",
-        "placeholder:text-muted-foreground/50"
+        'h-7 w-16 rounded-md border px-1 text-center text-sm leading-none transition-all',
+        'bg-transparent text-slate-700 placeholder:text-slate-300',
+        active
+          ? 'border-indigo-400 bg-white shadow-sm ring-1 ring-indigo-300'
+          : 'border-transparent hover:border-slate-200 hover:bg-slate-50',
+        'focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-300',
+        disabled && 'cursor-not-allowed opacity-50'
       )}
     />
   );

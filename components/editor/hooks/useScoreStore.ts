@@ -22,6 +22,7 @@ import type {
   Measure,
   Tie,
   Beam,
+  Lyric,
   Duration,
   NoteValue,
   History,
@@ -104,6 +105,7 @@ interface ScoreStoreActions {
   
   // 歌词操作
   updateLyrics: (measureIndex: number, noteIndex: number, text: string) => void;
+  updateLyricsBatch: (entries: Lyric[]) => void;
   clearAllLyrics: () => void;
   
   // 历史记录
@@ -951,6 +953,28 @@ export const useScoreStore = create<ScoreStore>()(
       state.document.updatedAt = new Date().toISOString();
       state.isDirty = true;
       // 歌词更新不保存历史记录（太频繁）
+    });
+  },
+
+  updateLyricsBatch: (entries) => {
+    set((state) => {
+      if (entries.length === 0) return;
+
+      const touchedKeys = new Set(entries.map((entry) => `${entry.measureIndex}:${entry.noteIndex}`));
+      const filteredLyrics = state.document.lyrics.filter(
+        (lyric) => !touchedKeys.has(`${lyric.measureIndex}:${lyric.noteIndex}`)
+      );
+      const nextEntries = entries
+        .map((entry) => ({
+          measureIndex: entry.measureIndex,
+          noteIndex: entry.noteIndex,
+          text: entry.text.trim(),
+        }))
+        .filter((entry) => entry.text);
+
+      state.document.lyrics = [...filteredLyrics, ...nextEntries];
+      state.document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
     });
   },
 
