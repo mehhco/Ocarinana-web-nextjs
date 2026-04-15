@@ -181,7 +181,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         onClick={onClick}
       >
         {/* 指法图区域：有指法图时显示，否则留白 */}
-        <div className="h-12 w-12 flex-shrink-0">
+        <div className={cn('w-12 flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-12' : 'h-0')}>
           {fingeringUrl && (
             <Image
               src={fingeringUrl}
@@ -248,7 +248,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         )}
         onClick={onClick}
       >
-        <div className="h-12 w-12 flex-shrink-0" />
+        <div className={cn('w-12 flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-12' : 'h-0')} />
         <div className="h-4 flex-shrink-0" />
         <div className="flex h-5 flex-shrink-0 items-center justify-center">
           <span className="text-lg font-bold text-slate-800">0</span>
@@ -268,7 +268,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         )}
         onClick={onClick}
       >
-        <div className="h-12 w-12 flex-shrink-0" />
+        <div className={cn('w-12 flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-12' : 'h-0')} />
         <div className="h-4 flex-shrink-0" />
         <div className="flex h-5 flex-shrink-0 items-center justify-center">
           <span className="text-lg font-bold text-slate-800">-</span>
@@ -288,7 +288,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         )}
         onClick={onClick}
       >
-        <div className="h-12 w-12 flex-shrink-0" />
+        <div className={cn('w-12 flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-12' : 'h-0')} />
         <div className="h-4 flex-shrink-0" />
         <div className="flex h-5 flex-shrink-0 items-center justify-center">
           <span className="text-lg font-bold text-slate-700">|</span>

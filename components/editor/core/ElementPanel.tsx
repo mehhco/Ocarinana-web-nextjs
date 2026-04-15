@@ -68,6 +68,9 @@ const HIGH_NOTES: { value: NoteValue; display: string }[] = [
   { value: '7', display: '↑7' },
 ];
 
+const HIGH_FLAT_NOTE = HIGH_NOTES[0];
+const HIGH_SCALE_NOTES = HIGH_NOTES.slice(1);
+
 const BASIC_NOTES: { value: NoteValue; display: string }[] = [
   { value: '1', display: '1' },
   { value: '2', display: '2' },
@@ -327,18 +330,28 @@ export const ElementPanel = memo(function ElementPanel() {
               <span className="text-xs font-semibold tracking-wider text-slate-500">高音</span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
-            <div className="grid grid-cols-7 gap-1.5">
-              {HIGH_NOTES.map((note) => {
-                const isAvailable = availableNotes.high.includes(note.value);
-                return (
-                  <NoteButton
-                    key={`high-${note.value}`}
-                    display={note.display}
-                    onClick={() => handleHighNoteClick(note.value)}
-                    disabled={!isAvailable}
-                  />
-                );
-              })}
+            <div className="space-y-1.5">
+              <div className="grid grid-cols-7 gap-1.5">
+                <NoteButton
+                  key={`high-${HIGH_FLAT_NOTE.value}`}
+                  display={HIGH_FLAT_NOTE.display}
+                  onClick={() => handleHighNoteClick(HIGH_FLAT_NOTE.value)}
+                  disabled={!availableNotes.high.includes(HIGH_FLAT_NOTE.value)}
+                />
+              </div>
+              <div className="grid grid-cols-7 gap-1.5">
+                {HIGH_SCALE_NOTES.map((note) => {
+                  const isAvailable = availableNotes.high.includes(note.value);
+                  return (
+                    <NoteButton
+                      key={`high-${note.value}`}
+                      display={note.display}
+                      onClick={() => handleHighNoteClick(note.value)}
+                      disabled={!isAvailable}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
 
