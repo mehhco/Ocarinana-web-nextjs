@@ -29,9 +29,10 @@ export default async function EditorV2Page({ searchParams }: EditorV2PageProps) 
       
       if (res.ok) {
         const data = await res.json();
+        const document = data.document ?? data;
         initialDocument = {
-          ...data.document,
-          scoreId: data.scoreId,
+          ...document,
+          scoreId: data.scoreId ?? document.scoreId ?? scoreId,
           ownerUserId: user.id,
         };
       }

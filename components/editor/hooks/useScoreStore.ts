@@ -233,6 +233,164 @@ function beamTouchesPosition(beam: Beam, measureIndex: number, noteIndex: number
   return beam.startNoteIndex <= noteIndex && noteIndex <= beam.endNoteIndex;
 }
 
+function shiftNoteIndexAfterDelete(noteIndex: number, deleteStartIndex: number, deleteCount: number): number | null {
+  const deleteEndIndex = deleteStartIndex + deleteCount - 1;
+
+  if (deleteStartIndex <= noteIndex && noteIndex <= deleteEndIndex) {
+    return null;
+  }
+
+  if (noteIndex > deleteEndIndex) {
+    return noteIndex - deleteCount;
+  }
+
+  return noteIndex;
+}
+
+function reindexPositionMarksAfterElementDelete<T extends { measureIndex: number; noteIndex: number }>(
+  marks: T[] | undefined,
+  measureIndex: number,
+  deleteStartIndex: number,
+  deleteCount: number
+): T[] {
+  return (marks || []).flatMap((mark) => {
+    if (mark.measureIndex !== measureIndex) {
+      return [mark];
+    }
+
+    const nextNoteIndex = shiftNoteIndexAfterDelete(mark.noteIndex, deleteStartIndex, deleteCount);
+
+    if (nextNoteIndex === null) {
+      return [];
+    }
+
+    return [{ ...mark, noteIndex: nextNoteIndex }];
+  });
+}
+
+function reindexTiesAfterElementDelete(
+  ties: Tie[] | undefined,
+  measureIndex: number,
+  deleteStartIndex: number,
+  deleteCount: number
+): Tie[] {
+  const deleteEndIndex = deleteStartIndex + deleteCount - 1;
+
+  return (ties || []).flatMap((tie) => {
+    if (
+      tie.startMeasureIndex === measureIndex &&
+      tie.endMeasureIndex === measureIndex &&
+      tie.startNoteIndex <= deleteEndIndex &&
+      tie.endNoteIndex >= deleteStartIndex
+    ) {
+      return [];
+    }
+
+    const startNoteIndex =
+      tie.startMeasureIndex === measureIndex
+        ? shiftNoteIndexAfterDelete(tie.startNoteIndex, deleteStartIndex, deleteCount)
+        : tie.startNoteIndex;
+    const endNoteIndex =
+      tie.endMeasureIndex === measureIndex
+        ? shiftNoteIndexAfterDelete(tie.endNoteIndex, deleteStartIndex, deleteCount)
+        : tie.endNoteIndex;
+
+    if (startNoteIndex === null || endNoteIndex === null) {
+      return [];
+    }
+
+    return [{ ...tie, startNoteIndex, endNoteIndex }];
+  });
+}
+
+function reindexBeamsAfterElementDelete(
+  beams: Beam[] | undefined,
+  measureIndex: number,
+  deleteStartIndex: number,
+  deleteCount: number
+): Beam[] {
+  const deleteEndIndex = deleteStartIndex + deleteCount - 1;
+
+  return (beams || []).flatMap((beam) => {
+    if (
+      beam.startMeasureIndex === measureIndex &&
+      beam.endMeasureIndex === measureIndex &&
+      beam.startNoteIndex <= deleteEndIndex &&
+      beam.endNoteIndex >= deleteStartIndex
+    ) {
+      return [];
+    }
+
+    const startNoteIndex =
+      beam.startMeasureIndex === measureIndex
+        ? shiftNoteIndexAfterDelete(beam.startNoteIndex, deleteStartIndex, deleteCount)
+        : beam.startNoteIndex;
+    const endNoteIndex =
+      beam.endMeasureIndex === measureIndex
+        ? shiftNoteIndexAfterDelete(beam.endNoteIndex, deleteStartIndex, deleteCount)
+        : beam.endNoteIndex;
+
+    if (startNoteIndex === null || endNoteIndex === null) {
+      return [];
+    }
+
+    return [{ ...beam, startNoteIndex, endNoteIndex }];
+  });
+}
+
+function shiftMeasureIndexAfterDelete(measureIndex: number, deletedMeasureIndex: number): number | null {
+  if (measureIndex === deletedMeasureIndex) {
+    return null;
+  }
+
+  if (measureIndex > deletedMeasureIndex) {
+    return measureIndex - 1;
+  }
+
+  return measureIndex;
+}
+
+function reindexPositionMarksAfterMeasureDelete<T extends { measureIndex: number }>(
+  marks: T[] | undefined,
+  deletedMeasureIndex: number
+): T[] {
+  return (marks || []).flatMap((mark) => {
+    const nextMeasureIndex = shiftMeasureIndexAfterDelete(mark.measureIndex, deletedMeasureIndex);
+
+    if (nextMeasureIndex === null) {
+      return [];
+    }
+
+    return [{ ...mark, measureIndex: nextMeasureIndex }];
+  });
+}
+
+function reindexTiesAfterMeasureDelete(ties: Tie[] | undefined, deletedMeasureIndex: number): Tie[] {
+  return (ties || []).flatMap((tie) => {
+    const startMeasureIndex = shiftMeasureIndexAfterDelete(tie.startMeasureIndex, deletedMeasureIndex);
+    const endMeasureIndex = shiftMeasureIndexAfterDelete(tie.endMeasureIndex, deletedMeasureIndex);
+
+    if (startMeasureIndex === null || endMeasureIndex === null) {
+      return [];
+    }
+
+    return [{ ...tie, startMeasureIndex, endMeasureIndex }];
+  });
+}
+
+function reindexBeamsAfterMeasureDelete(beams: Beam[] | undefined, deletedMeasureIndex: number): Beam[] {
+  return (beams || []).flatMap((beam) => {
+    const startMeasureIndex = shiftMeasureIndexAfterDelete(beam.startMeasureIndex, deletedMeasureIndex);
+    const endMeasureIndex = shiftMeasureIndexAfterDelete(beam.endMeasureIndex, deletedMeasureIndex);
+
+    if (startMeasureIndex === null || endMeasureIndex === null) {
+      return [];
+    }
+
+    return [{ ...beam, startMeasureIndex, endMeasureIndex }];
+  });
+}
+
 // ============ Store 创建 ============
 
 export const useScoreStore = create<ScoreStore>()(
@@ -626,10 +784,11 @@ export const useScoreStore = create<ScoreStore>()(
       const element = measure.elements[selectedNoteIndex];
       
       if (!element) return;
+
+      let deleteCount = 1;
       
       // 如果是音符或休止符，删除它及其相关的延长线
       if (element.type === 'note' || element.type === 'rest') {
-        let deleteCount = 1;
         
         // 检查并删除后面的延长线
         for (let i = selectedNoteIndex + 1; i < measure.elements.length; i++) {
@@ -665,6 +824,31 @@ export const useScoreStore = create<ScoreStore>()(
           expression => !(expression.measureIndex === selectedMeasureIndex && expression.noteIndex === selectedNoteIndex)
         );
       }
+
+      document.lyrics = reindexPositionMarksAfterElementDelete(
+        document.lyrics,
+        selectedMeasureIndex,
+        selectedNoteIndex,
+        deleteCount
+      );
+      document.expressions = reindexPositionMarksAfterElementDelete(
+        document.expressions,
+        selectedMeasureIndex,
+        selectedNoteIndex,
+        deleteCount
+      );
+      document.ties = reindexTiesAfterElementDelete(
+        document.ties,
+        selectedMeasureIndex,
+        selectedNoteIndex,
+        deleteCount
+      );
+      document.beams = reindexBeamsAfterElementDelete(
+        document.beams,
+        selectedMeasureIndex,
+        selectedNoteIndex,
+        deleteCount
+      );
 
       if (selectedNoteIndex >= measure.elements.length) {
         state.selectedNoteIndex = measure.elements.length > 0 ? measure.elements.length - 1 : null;
@@ -715,9 +899,16 @@ export const useScoreStore = create<ScoreStore>()(
         );
       }
 
+      state.document.lyrics = reindexPositionMarksAfterMeasureDelete(state.document.lyrics, index);
+      state.document.expressions = reindexPositionMarksAfterMeasureDelete(state.document.expressions, index);
+      state.document.ties = reindexTiesAfterMeasureDelete(state.document.ties, index);
+      state.document.beams = reindexBeamsAfterMeasureDelete(state.document.beams, index);
+
       if (state.selectedMeasureIndex === index) {
         state.selectedMeasureIndex = null;
         state.selectedNoteIndex = null;
+      } else if (state.selectedMeasureIndex !== null && state.selectedMeasureIndex > index) {
+        state.selectedMeasureIndex -= 1;
       }
       
       state.document.updatedAt = new Date().toISOString();

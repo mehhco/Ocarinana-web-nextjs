@@ -40,6 +40,8 @@ export async function GET(
     title: data.title,
     measures: data.document?.measures ?? [[]],
     ties: data.document?.ties ?? [],
+    beams: data.document?.beams ?? [],
+    expressions: data.document?.expressions ?? [],
     lyrics: data.document?.lyrics ?? [],
     settings: data.document?.settings ?? {
       keySignature: "C",

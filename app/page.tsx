@@ -42,10 +42,7 @@ export default function Home() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   
   return (
-    <main className="min-h-screen flex flex-col items-stretch">
-      {/* 性能优化：关键图片预加载 */}
-      <ImagePreloader images={CRITICAL_IMAGES} priority={true} />
-      
+    <>
       {/* SEO: 结构化数据 */}
       <WebSiteSchema
         url={baseUrl}
@@ -96,6 +93,10 @@ export default function Home() {
       />
       
       {/* 顶部导航 */}
+      <main className="min-h-screen flex flex-col items-stretch">
+      {/* 性能优化：关键图片预加载 */}
+      <ImagePreloader images={CRITICAL_IMAGES} priority={true} />
+
       <AppNav currentPath="/" />
 
       {/* Hero */}
@@ -253,6 +254,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
-    </main>
+      </main>
+    </>
   );
 }

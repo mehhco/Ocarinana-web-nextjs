@@ -88,6 +88,8 @@ export async function POST(req: Request) {
     title: "未命名简谱",
     measures: [[]],
     ties: [],
+    beams: [],
+    expressions: [],
     lyrics: [],
     settings: {
       keySignature: "C" as const,
