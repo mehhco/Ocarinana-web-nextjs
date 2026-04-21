@@ -23,6 +23,8 @@ import type {
   Tie,
   Beam,
   Lyric,
+  BarlineType,
+  DynamicMark,
   Duration,
   NoteValue,
   History,
@@ -77,7 +79,7 @@ interface ScoreStoreActions {
   toggleLowDot: () => void;
   toggleAugmentationDot: () => void;
   addExtension: () => void;
-  addBarline: () => void;
+  addBarline: (type?: BarlineType) => void;
   deleteSelectedElement: () => void;
   
   // 小节操作
@@ -108,6 +110,9 @@ interface ScoreStoreActions {
   updateLyrics: (measureIndex: number, noteIndex: number, text: string) => void;
   updateLyricsBatch: (entries: Lyric[]) => void;
   clearAllLyrics: () => void;
+
+  toggleExpression: (value: DynamicMark) => void;
+  deleteExpression: (expressionId: string) => void;
   
   // 历史记录
   undo: () => void;
@@ -153,6 +158,7 @@ function createInitialDocument(override?: Partial<ScoreDocument>): ScoreDocument
     })) || [{ id: 'measure-1', elements: [] }],
     ties: override?.ties || [],
     beams: override?.beams || [],
+    expressions: override?.expressions || [],
     lyrics: override?.lyrics || [],
     settings: {
       ...DEFAULT_SETTINGS,
@@ -571,7 +577,7 @@ export const useScoreStore = create<ScoreStore>()(
     });
   },
 
-  addBarline: () => {
+  addBarline: (type = 'single') => {
     set((state) => {
       const { document, selectedMeasureIndex, selectedNoteIndex } = state;
       
@@ -595,6 +601,7 @@ export const useScoreStore = create<ScoreStore>()(
         id: nanoid(),
         type: 'barline',
         value: '|',
+        barlineType: type,
       };
       
       measure.elements.splice(insertIndex, 0, barline);
@@ -653,6 +660,12 @@ export const useScoreStore = create<ScoreStore>()(
         );
       }
       // 更新选中的索引
+      if (document.expressions) {
+        document.expressions = document.expressions.filter(
+          expression => !(expression.measureIndex === selectedMeasureIndex && expression.noteIndex === selectedNoteIndex)
+        );
+      }
+
       if (selectedNoteIndex >= measure.elements.length) {
         state.selectedNoteIndex = measure.elements.length > 0 ? measure.elements.length - 1 : null;
       }
@@ -696,6 +709,12 @@ export const useScoreStore = create<ScoreStore>()(
         );
       }
       // 更新选中状态
+      if (state.document.expressions) {
+        state.document.expressions = state.document.expressions.filter(
+          expression => expression.measureIndex !== index
+        );
+      }
+
       if (state.selectedMeasureIndex === index) {
         state.selectedMeasureIndex = null;
         state.selectedNoteIndex = null;
@@ -784,13 +803,22 @@ export const useScoreStore = create<ScoreStore>()(
 
   endTie: (measureIndex, noteIndex) => {
     set((state) => {
-      const { tieStartPosition } = state;
+      const { tieStartPosition, document } = state;
       
       if (!tieStartPosition) return;
       
       // 不能连接同一个音符
-      if (tieStartPosition.measureIndex === measureIndex && 
-          tieStartPosition.noteIndex === noteIndex) {
+      if (tieStartPosition.measureIndex !== measureIndex || tieStartPosition.noteIndex >= noteIndex) {
+        state.tieStartPosition = null;
+        state.isTieMode = false;
+        return;
+      }
+
+      const measure = document.measures[measureIndex];
+      const startElement = measure?.elements[tieStartPosition.noteIndex];
+      const endElement = measure?.elements[noteIndex];
+
+      if (!measure || startElement?.type !== 'note' || endElement?.type !== 'note') {
         state.tieStartPosition = null;
         state.isTieMode = false;
         return;
@@ -805,10 +833,18 @@ export const useScoreStore = create<ScoreStore>()(
         endNoteIndex: noteIndex,
       };
       
-      state.document.ties = [...(state.document.ties || []), newTie];
+      document.ties = [
+        ...(document.ties || []).filter(
+          tie => tie.startMeasureIndex !== measureIndex ||
+            tie.endMeasureIndex !== measureIndex ||
+            tie.endNoteIndex < tieStartPosition.noteIndex ||
+            tie.startNoteIndex > noteIndex
+        ),
+        newTie,
+      ];
       state.tieStartPosition = null;
       state.isTieMode = false;
-      state.document.updatedAt = new Date().toISOString();
+      document.updatedAt = new Date().toISOString();
       state.isDirty = true;
       saveToHistory(state);
     });
@@ -1009,6 +1045,63 @@ export const useScoreStore = create<ScoreStore>()(
   },
 
   // ============ 历史记录 ============
+  toggleExpression: (value) => {
+    set((state) => {
+      const { document, selectedMeasureIndex, selectedNoteIndex } = state;
+
+      if (selectedMeasureIndex === null || selectedNoteIndex === null) return;
+
+      const element = document.measures[selectedMeasureIndex]?.elements[selectedNoteIndex];
+
+      if (!element || element.type !== 'note') return;
+
+      const expressions = document.expressions || [];
+      const existing = expressions.find(
+        expression =>
+          expression.measureIndex === selectedMeasureIndex &&
+          expression.noteIndex === selectedNoteIndex &&
+          expression.type === 'dynamic'
+      );
+
+      if (existing?.value === value) {
+        document.expressions = expressions.filter(expression => expression.id !== existing.id);
+      } else {
+        document.expressions = [
+          ...expressions.filter(
+            expression =>
+              !(
+                expression.measureIndex === selectedMeasureIndex &&
+                expression.noteIndex === selectedNoteIndex &&
+                expression.type === 'dynamic'
+              )
+          ),
+          {
+            id: nanoid(),
+            measureIndex: selectedMeasureIndex,
+            noteIndex: selectedNoteIndex,
+            type: 'dynamic',
+            value,
+          },
+        ];
+      }
+
+      document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
+  deleteExpression: (expressionId) => {
+    set((state) => {
+      state.document.expressions = state.document.expressions?.filter(
+        expression => expression.id !== expressionId
+      );
+      state.document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
   undo: () => {
     set((state) => {
       if (state.history.currentIndex <= 0) return;

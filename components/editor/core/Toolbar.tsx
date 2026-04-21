@@ -7,9 +7,7 @@ import {
   FileJsonIcon,
   ImageIcon,
   MusicIcon,
-  Redo2Icon,
   SaveIcon,
-  Undo2Icon,
 } from '@/components/ui/icons';
 import {
   Select,
@@ -167,25 +165,27 @@ export const Toolbar = memo(function Toolbar() {
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center overflow-hidden rounded-md border border-slate-200 bg-slate-50 shadow-sm">
           <Button
             variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600"
+            size="sm"
+            className="h-7 rounded-none border-r border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-white hover:text-indigo-600 disabled:text-slate-400 disabled:opacity-50"
             disabled={!canUndo}
             onClick={undo}
+            title="撤销 Ctrl+Z"
           >
-            <Undo2Icon className="h-4 w-4" />
+            撤销
           </Button>
 
           <Button
             variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600"
+            size="sm"
+            className="h-7 rounded-none px-3 text-xs font-medium text-slate-600 hover:bg-white hover:text-indigo-600 disabled:text-slate-400 disabled:opacity-50"
             disabled={!canRedo}
             onClick={redo}
+            title="恢复 Ctrl+Shift+Z"
           >
-            <Redo2Icon className="h-4 w-4" />
+            恢复
           </Button>
         </div>
       </div>

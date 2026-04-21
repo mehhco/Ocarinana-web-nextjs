@@ -1,10 +1,10 @@
 'use client';
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, type ReactNode } from 'react';
 import { EyeIcon, EyeOffIcon, Mic2Icon, MusicIcon, Trash2Icon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
-import type { Duration, NoteValue } from '@/lib/editor/types';
+import type { BarlineType, Duration, DynamicMark, NoteValue } from '@/lib/editor/types';
 
 const NoteButton = memo(function NoteButton({
   display,
@@ -36,20 +36,24 @@ const ActionButton = memo(function ActionButton({
   onClick,
   children,
   active = false,
+  disabled = false,
 }: {
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
   active?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={cn(
         'rounded-md border px-2.5 py-2 text-xs font-medium transition-all',
         'hover:shadow-sm active:scale-95',
         active
           ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-          : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-400 hover:text-indigo-600'
+          : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-400 hover:text-indigo-600',
+        disabled && 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400 opacity-50'
       )}
     >
       {children}
@@ -98,43 +102,54 @@ const DURATION_OPTIONS: { value: Duration; label: string }[] = [
   { value: '1/32', label: '1/32' },
 ];
 
-// 根据调号获取可用的音符
-// C调: 高音 1h-4h, 低音 6l-7l
-// F调: 高音 1h, 低音 3l-7l
-// G调: 高音 b7, 低音 2l-5l
-function getAvailableNotes(keySignature: string): { high: string[]; low: string[] } {
-  const ranges: Record<string, { high: string[]; low: string[] }> = {
-    'C': {
-      high: ['1', '2', '3', '4'],
-      low: ['6', '7'],
-    },
-    'F': {
-      high: ['1'],
-      low: ['3', '4', '5', '6', '7'],
-    },
-    'G': {
-      high: ['b7'],
-      low: ['2', '3', '4', '5'],
-    },
-  };
-  return ranges[keySignature] || ranges['C'];
-}
-
-function getBeamDurationLevel(duration: Duration): number {
-  switch (duration) {
-    case '1/8': return 1;
-    case '1/16': return 2;
-    case '1/32': return 3;
-    default: return 0;
-  }
-}
-
 const REST_OPTIONS: { value: Duration; label: string }[] = [
   { value: '1', label: '全休止符' },
   { value: '1/2', label: '二分休止' },
   { value: '1/4', label: '四分休止' },
   { value: '1/8', label: '八分休止' },
 ];
+
+const BARLINE_OPTIONS: { value: BarlineType; label: string }[] = [
+  { value: 'single', label: '小节线' },
+  { value: 'double', label: '双线' },
+  { value: 'final', label: '终止线' },
+  { value: 'repeat-start', label: '反复起' },
+  { value: 'repeat-end', label: '反复止' },
+];
+
+const DYNAMIC_OPTIONS: DynamicMark[] = ['p', 'mp', 'mf', 'f'];
+
+function getAvailableNotes(keySignature: string): { high: string[]; low: string[] } {
+  const ranges: Record<string, { high: string[]; low: string[] }> = {
+    C: {
+      high: ['1', '2', '3', '4'],
+      low: ['6', '7'],
+    },
+    F: {
+      high: ['1'],
+      low: ['3', '4', '5', '6', '7'],
+    },
+    G: {
+      high: ['b7'],
+      low: ['2', '3', '4', '5'],
+    },
+  };
+
+  return ranges[keySignature] || ranges.C;
+}
+
+function getBeamDurationLevel(duration: Duration): number {
+  switch (duration) {
+    case '1/8':
+      return 1;
+    case '1/16':
+      return 2;
+    case '1/32':
+      return 3;
+    default:
+      return 0;
+  }
+}
 
 export const ElementPanel = memo(function ElementPanel() {
   const addNote = useScoreStore((state) => state.addNote);
@@ -143,11 +158,14 @@ export const ElementPanel = memo(function ElementPanel() {
   const addBarline = useScoreStore((state) => state.addBarline);
   const updateNoteDuration = useScoreStore((state) => state.updateNoteDuration);
   const toggleAugmentationDot = useScoreStore((state) => state.toggleAugmentationDot);
+  const toggleTieMode = useScoreStore((state) => state.toggleTieMode);
   const toggleBeamMode = useScoreStore((state) => state.toggleBeamMode);
   const endBeam = useScoreStore((state) => state.endBeam);
   const cancelBeamMode = useScoreStore((state) => state.cancelBeamMode);
   const clearAllLyrics = useScoreStore((state) => state.clearAllLyrics);
   const clearSelection = useScoreStore((state) => state.clearSelection);
+  const toggleExpression = useScoreStore((state) => state.toggleExpression);
+  const isTieMode = useScoreStore((state) => state.isTieMode);
   const isBeamMode = useScoreStore((state) => state.isBeamMode);
   const beamStartPosition = useScoreStore((state) => state.beamStartPosition);
   const selectedMeasureIndex = useScoreStore((state) => state.selectedMeasureIndex);
@@ -163,15 +181,22 @@ export const ElementPanel = memo(function ElementPanel() {
   const settings = useScoreStore((state) => state.document.settings);
   const updateSettings = useScoreStore((state) => state.updateSettings);
 
-  // 根据调号获取可用的音符
   const availableNotes = getAvailableNotes(settings.keySignature);
-
   const hasSelection = selectedMeasureIndex !== null && selectedNoteIndex !== null;
   const selectedDuration =
     selectedElement && (selectedElement.type === 'note' || selectedElement.type === 'rest')
       ? selectedElement.duration
       : null;
   const hasAugmentationDot = selectedElement?.type === 'note' ? !!selectedElement.hasAugmentationDot : false;
+  const selectedExpression =
+    selectedMeasureIndex !== null && selectedNoteIndex !== null
+      ? document.expressions?.find(
+          (expression) =>
+            expression.measureIndex === selectedMeasureIndex &&
+            expression.noteIndex === selectedNoteIndex &&
+            expression.type === 'dynamic'
+        )?.value ?? null
+      : null;
 
   const canConfirmBeam = (() => {
     if (
@@ -196,10 +221,7 @@ export const ElementPanel = memo(function ElementPanel() {
 
   const handleHighNoteClick = useCallback(
     (noteValue: NoteValue) => {
-      // b7（降7）是G调特有的高音，不需要高音点标记
-      // 其指法图文件名直接是 b7.webp
-      const hasHighDot = noteValue !== 'b7';
-      addNote(noteValue, '1/4', { hasHighDot });
+      addNote(noteValue, '1/4', { hasHighDot: noteValue !== 'b7' });
       if (hasSelection) {
         clearSelection();
       }
@@ -235,13 +257,6 @@ export const ElementPanel = memo(function ElementPanel() {
       }
     },
     [addRest, clearSelection, hasSelection]
-  );
-
-  const handleDurationClick = useCallback(
-    (duration: Duration) => {
-      updateNoteDuration(duration);
-    },
-    [updateNoteDuration]
   );
 
   const toggleFingering = useCallback(() => {
@@ -335,24 +350,20 @@ export const ElementPanel = memo(function ElementPanel() {
             <div className="space-y-1.5">
               <div className="grid grid-cols-7 gap-1.5">
                 <NoteButton
-                  key={`high-${HIGH_FLAT_NOTE.value}`}
                   display={HIGH_FLAT_NOTE.display}
                   onClick={() => handleHighNoteClick(HIGH_FLAT_NOTE.value)}
                   disabled={!availableNotes.high.includes(HIGH_FLAT_NOTE.value)}
                 />
               </div>
               <div className="grid grid-cols-7 gap-1.5">
-                {HIGH_SCALE_NOTES.map((note) => {
-                  const isAvailable = availableNotes.high.includes(note.value);
-                  return (
-                    <NoteButton
-                      key={`high-${note.value}`}
-                      display={note.display}
-                      onClick={() => handleHighNoteClick(note.value)}
-                      disabled={!isAvailable}
-                    />
-                  );
-                })}
+                {HIGH_SCALE_NOTES.map((note) => (
+                  <NoteButton
+                    key={`high-${note.value}`}
+                    display={note.display}
+                    onClick={() => handleHighNoteClick(note.value)}
+                    disabled={!availableNotes.high.includes(note.value)}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -379,17 +390,14 @@ export const ElementPanel = memo(function ElementPanel() {
               <div className="h-px flex-1 bg-slate-200" />
             </div>
             <div className="grid grid-cols-7 gap-1.5">
-              {LOW_NOTES.map((note) => {
-                const isAvailable = availableNotes.low.includes(note.value);
-                return (
-                  <NoteButton
-                    key={`low-${note.value}`}
-                    display={note.display}
-                    onClick={() => handleLowNoteClick(note.value)}
-                    disabled={!isAvailable}
-                  />
-                );
-              })}
+              {LOW_NOTES.map((note) => (
+                <NoteButton
+                  key={`low-${note.value}`}
+                  display={note.display}
+                  onClick={() => handleLowNoteClick(note.value)}
+                  disabled={!availableNotes.low.includes(note.value)}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -403,7 +411,7 @@ export const ElementPanel = memo(function ElementPanel() {
             {DURATION_OPTIONS.map((option) => (
               <ActionButton
                 key={option.value}
-                onClick={() => handleDurationClick(option.value)}
+                onClick={() => updateNoteDuration(option.value)}
                 active={selectedDuration === option.value}
               >
                 {option.label}
@@ -428,16 +436,53 @@ export const ElementPanel = memo(function ElementPanel() {
 
         <div>
           <div className="mb-2 flex items-center gap-2">
-            <span className="text-xs font-semibold tracking-wider text-slate-500">记谱辅助</span>
+            <span className="text-xs font-semibold tracking-wider text-slate-500">音符修饰</span>
             <div className="h-px flex-1 bg-slate-200" />
           </div>
           <div className="grid grid-cols-2 gap-1.5">
-            <ActionButton onClick={toggleAugmentationDot} active={hasAugmentationDot}>附点</ActionButton>
+            <ActionButton onClick={toggleAugmentationDot} active={hasAugmentationDot}>
+              附点
+            </ActionButton>
             <ActionButton onClick={addExtension}>延长线</ActionButton>
-            <ActionButton onClick={addBarline}>小节线</ActionButton>
+            <ActionButton onClick={toggleTieMode} active={isTieMode}>
+              {isTieMode ? '取消圆滑线' : '圆滑线'}
+            </ActionButton>
             <ActionButton onClick={handleBeamAction} active={isBeamMode}>
               {!isBeamMode ? '合并时值线' : canConfirmBeam ? '确认合并' : '取消合并'}
             </ActionButton>
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-xs font-semibold tracking-wider text-slate-500">小节/反复</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {BARLINE_OPTIONS.map((option) => (
+              <ActionButton key={option.value} onClick={() => addBarline(option.value)}>
+                {option.label}
+              </ActionButton>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-xs font-semibold tracking-wider text-slate-500">演奏表达</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+          <div className="grid grid-cols-4 gap-1.5">
+            {DYNAMIC_OPTIONS.map((value) => (
+              <ActionButton
+                key={value}
+                onClick={() => toggleExpression(value)}
+                active={selectedExpression === value}
+                disabled={selectedElement?.type !== 'note'}
+              >
+                <span className="font-serif text-sm italic">{value}</span>
+              </ActionButton>
+            ))}
           </div>
         </div>
       </div>

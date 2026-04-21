@@ -14,6 +14,10 @@ export type SkinType = 'white' | 'light-beige' | 'light-blue';
 
 export type ElementType = 'note' | 'rest' | 'extension' | 'barline';
 
+export type BarlineType = 'single' | 'double' | 'final' | 'repeat-start' | 'repeat-end';
+
+export type DynamicMark = 'p' | 'mp' | 'mf' | 'f';
+
 export interface Note {
   id: string;
   type: 'note';
@@ -44,6 +48,7 @@ export interface Barline {
   id: string;
   type: 'barline';
   value: '|';
+  barlineType?: BarlineType;
 }
 
 export type ScoreElement = Note | Rest | Extension | Barline;
@@ -71,6 +76,14 @@ export interface Lyric {
   text: string;
 }
 
+export interface ExpressionMark {
+  id: string;
+  measureIndex: number;
+  noteIndex: number;
+  type: 'dynamic';
+  value: DynamicMark;
+}
+
 export interface Measure {
   id: string;
   elements: ScoreElement[];
@@ -84,6 +97,7 @@ export interface ScoreDocument {
   measures: Measure[];
   beams?: Beam[];
   ties?: Tie[];
+  expressions?: ExpressionMark[];
   lyrics: Lyric[];
   settings: ScoreSettings;
   createdAt?: string;

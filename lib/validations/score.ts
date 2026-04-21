@@ -22,6 +22,8 @@ export const scoreDocumentSchema = z.object({
   title: z.string().min(1).max(200).default("未命名简谱"),
   measures: z.array(z.array(z.any())).default([[]]),  // 音符数据（结构复杂，暂时用 any）
   ties: z.array(z.any()).default([]),                 // 连音线数据
+  beams: z.array(z.any()).default([]),                // 时值线连接数据
+  expressions: z.array(z.any()).default([]),          // 演奏表达数据
   lyrics: z.array(z.any()).default([]),               // 歌词数据
   settings: scoreSettingsSchema.default({
     keySignature: 'C',

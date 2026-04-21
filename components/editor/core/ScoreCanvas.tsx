@@ -17,7 +17,7 @@ import { PlusIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
 import { LyricsInput } from '../overlay/LyricsInput';
-import type { Beam, Duration, Lyric, Measure, ScoreElement } from '@/lib/editor/types';
+import type { Beam, Duration, ExpressionMark, Lyric, Measure, ScoreElement, Tie } from '@/lib/editor/types';
 
 interface NotePosition {
   measureIndex: number;
@@ -157,6 +157,51 @@ function getDurationBeamSegmentPosition(
   return 'none';
 }
 
+function getTieSegmentPosition(
+  ties: Tie[],
+  measureIndex: number,
+  noteIndex: number
+): 'none' | 'start' | 'middle' | 'end' {
+  for (const tie of ties) {
+    if (
+      tie.startMeasureIndex !== measureIndex ||
+      tie.endMeasureIndex !== measureIndex ||
+      noteIndex < tie.startNoteIndex ||
+      noteIndex > tie.endNoteIndex
+    ) {
+      continue;
+    }
+
+    if (noteIndex === tie.startNoteIndex) return 'start';
+    if (noteIndex === tie.endNoteIndex) return 'end';
+    return 'middle';
+  }
+
+  return 'none';
+}
+
+function renderBarlineSymbol(element: ScoreElement) {
+  if (element.type !== 'barline') return null;
+
+  switch (element.barlineType) {
+    case 'double':
+      return <span className="tracking-[-0.12em]">||</span>;
+    case 'final':
+      return (
+        <span className="flex h-6 items-stretch justify-center gap-1">
+          <span className="block w-px bg-slate-700" />
+          <span className="block w-[3px] bg-slate-700" />
+        </span>
+      );
+    case 'repeat-start':
+      return <span className="tracking-[-0.08em]">||:</span>;
+    case 'repeat-end':
+      return <span className="tracking-[-0.08em]">:||</span>;
+    default:
+      return <span>|</span>;
+  }
+}
+
 function buildNotePositions(measures: Measure[]): NotePosition[] {
   const positions: NotePosition[] = [];
 
@@ -174,6 +219,8 @@ function buildNotePositions(measures: Measure[]): NotePosition[] {
 const DURATION_SLOT_CLASS = 'mt-1 flex h-[12px] w-full flex-shrink-0 flex-col items-center gap-[3px]';
 const LYRIC_ALIGNMENT_SPACER_CLASS = 'mt-1 h-[12px] flex-shrink-0';
 const LYRIC_ROW_CLASS = 'mt-1 flex h-7 flex-shrink-0 items-center justify-center';
+const TIE_SLOT_CLASS = 'relative h-4 w-full flex-shrink-0 overflow-hidden';
+const EXPRESSION_ROW_CLASS = 'mt-0.5 flex h-5 flex-shrink-0 items-center justify-center';
 
 interface LyricFieldProps {
   value: string;
@@ -200,7 +247,13 @@ interface NoteElementProps {
   showLyrics: boolean;
   measureElements: ScoreElement[];
   beams: Beam[];
+  ties: Tie[];
   isBeamStart: boolean;
+  isTieStart: boolean;
+  isTiePreview: boolean;
+  showTieRow: boolean;
+  expression?: ExpressionMark;
+  showExpressionRow: boolean;
   lyricField?: LyricFieldProps;
   onClick: () => void;
 }
@@ -216,7 +269,13 @@ const NoteElementComponent = memo(function NoteElementComponent({
   showLyrics,
   measureElements,
   beams,
+  ties,
   isBeamStart,
+  isTieStart,
+  isTiePreview,
+  showTieRow,
+  expression,
+  showExpressionRow,
   lyricField,
   onClick,
 }: NoteElementProps) {
@@ -237,6 +296,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
           element.hasLowDot || false
         )
       : null;
+    const tieSegmentPosition = getTieSegmentPosition(ties, measureIndex, noteIndex);
 
     return (
       <div
@@ -244,6 +304,8 @@ const NoteElementComponent = memo(function NoteElementComponent({
           'flex w-14 cursor-pointer flex-col items-center py-1 transition-all',
           isBeamStart || isBeamPreview
             ? 'rounded-md bg-amber-50 ring-2 ring-amber-500'
+            : isTieStart || isTiePreview
+              ? 'rounded-md bg-sky-50 ring-2 ring-sky-500'
             : isSelected
               ? 'rounded-md bg-indigo-50 ring-2 ring-indigo-500'
               : 'hover:bg-slate-50'
@@ -262,6 +324,21 @@ const NoteElementComponent = memo(function NoteElementComponent({
             />
           )}
         </div>
+
+        {showTieRow && (
+          <div className={TIE_SLOT_CLASS}>
+            {tieSegmentPosition !== 'none' && (
+              <span
+                className={cn(
+                'block h-3 border-t-2 border-slate-800',
+                tieSegmentPosition === 'middle' && 'absolute bottom-0 left-0 right-0',
+                tieSegmentPosition === 'start' && 'absolute bottom-0 left-1/2 right-0 rounded-tl-full',
+                tieSegmentPosition === 'end' && 'absolute bottom-0 left-0 right-1/2 rounded-tr-full'
+              )}
+            />
+          )}
+          </div>
+        )}
 
         <div className="flex h-4 flex-shrink-0 items-center justify-center">
           {element.hasHighDot && element.value !== 'b7' && (
@@ -297,9 +374,9 @@ const NoteElementComponent = memo(function NoteElementComponent({
                     'block h-0 flex-shrink-0 box-border border-t-[2px] border-solid',
                     shouldShowLine ? 'border-slate-900' : 'border-transparent',
                     beamSegmentPosition === 'middle' && 'w-full',
-                    beamSegmentPosition === 'start' && 'w-[calc(50%+0.625rem)] self-end',
-                    beamSegmentPosition === 'end' && 'w-[calc(50%+0.625rem)] self-start',
-                    beamSegmentPosition === 'none' && 'w-5'
+                    beamSegmentPosition === 'start' && 'w-[calc(50%+0.4375rem)] self-end',
+                    beamSegmentPosition === 'end' && 'w-[calc(50%+0.4375rem)] self-start',
+                    beamSegmentPosition === 'none' && 'w-3.5'
                   )}
                 />
               );
@@ -330,12 +407,22 @@ const NoteElementComponent = memo(function NoteElementComponent({
             />
           </div>
         )}
+
+        {showExpressionRow && (
+          <div className={EXPRESSION_ROW_CLASS}>
+            {expression && (
+              <span className="font-serif text-sm font-semibold italic leading-none text-slate-700">
+                {expression.value}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     );
   }
 
   const widthClass = element.type === 'barline' ? 'w-8' : element.type === 'extension' ? 'w-10' : 'w-14';
-  const symbol = element.type === 'rest' ? '0' : element.type === 'extension' ? '-' : '|';
+  const symbol = element.type === 'rest' ? '0' : element.type === 'extension' ? '-' : null;
   const symbolColor = element.type === 'barline' ? 'text-slate-700' : 'text-slate-800';
 
   return (
@@ -348,13 +435,17 @@ const NoteElementComponent = memo(function NoteElementComponent({
       onClick={onClick}
     >
       <div className={cn('w-12 flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-12' : 'h-0')} />
+      {showTieRow && <div className={TIE_SLOT_CLASS} />}
       <div className="h-4 flex-shrink-0" />
       <div className="flex h-5 flex-shrink-0 items-center justify-center">
-        <span className={cn('text-lg font-bold', symbolColor)}>{symbol}</span>
+        <span className={cn('text-lg font-bold', symbolColor)}>
+          {element.type === 'barline' ? renderBarlineSymbol(element) : symbol}
+        </span>
       </div>
       <div className={LYRIC_ALIGNMENT_SPACER_CLASS} />
       <div className="h-4 flex-shrink-0" />
       {showLyrics && <div className={LYRIC_ROW_CLASS} />}
+      {showExpressionRow && <div className={EXPRESSION_ROW_CLASS} />}
     </div>
   );
 });
@@ -367,10 +458,16 @@ interface MeasureProps {
   showFingering: boolean;
   showLyrics: boolean;
   beams: Beam[];
+  ties: Tie[];
   beamStartPosition: { measureIndex: number; noteIndex: number } | null;
+  tieStartPosition: { measureIndex: number; noteIndex: number } | null;
   isBeamMode: boolean;
+  isTieMode: boolean;
+  showTieRow: boolean;
   lyricsDisabled: boolean;
   lyricsByKey: Map<string, string>;
+  expressionsByKey: Map<string, ExpressionMark>;
+  showExpressionRow: boolean;
   lyricDrafts: Record<string, string>;
   activeLyricKey: string | null;
   registerLyricInput: (measureIndex: number, noteIndex: number, node: HTMLInputElement | null) => void;
@@ -400,10 +497,16 @@ const MeasureComponent = memo(function MeasureComponent({
   showFingering,
   showLyrics,
   beams,
+  ties,
   beamStartPosition,
+  tieStartPosition,
   isBeamMode,
+  isTieMode,
+  showTieRow,
   lyricsDisabled,
   lyricsByKey,
+  expressionsByKey,
+  showExpressionRow,
   lyricDrafts,
   activeLyricKey,
   registerLyricInput,
@@ -444,10 +547,29 @@ const MeasureComponent = memo(function MeasureComponent({
             showLyrics={showLyrics}
             measureElements={measure.elements}
             beams={beams}
+            ties={ties}
             isBeamStart={
               beamStartPosition?.measureIndex === measureIndex &&
               beamStartPosition.noteIndex === noteIndex
             }
+            isTieStart={
+              tieStartPosition?.measureIndex === measureIndex &&
+              tieStartPosition.noteIndex === noteIndex
+            }
+            isTiePreview={
+              !!(
+                isTieMode &&
+                tieStartPosition &&
+                tieStartPosition.measureIndex === measureIndex &&
+                selectedNoteIndex !== null &&
+                selectedNoteIndex > tieStartPosition.noteIndex &&
+                tieStartPosition.noteIndex <= noteIndex &&
+                noteIndex <= selectedNoteIndex
+              )
+            }
+            showTieRow={showTieRow}
+            expression={expressionsByKey.get(positionKey)}
+            showExpressionRow={showExpressionRow}
             lyricField={
               element.type === 'note' && showLyrics
                 ? {
@@ -485,6 +607,11 @@ export function ScoreCanvas() {
     beamStartPosition,
     startBeam,
     cancelBeamMode,
+    isTieMode,
+    tieStartPosition,
+    startTie,
+    endTie,
+    cancelTieMode,
     updateLyrics,
     updateLyricsBatch,
   } = useScoreStore();
@@ -511,6 +638,17 @@ export function ScoreCanvas() {
 
     return map;
   }, [scoreDoc.lyrics]);
+  const expressionsByKey = useMemo(() => {
+    const map = new Map<string, ExpressionMark>();
+
+    (scoreDoc.expressions || []).forEach((expression) => {
+      map.set(createPositionKey(expression.measureIndex, expression.noteIndex), expression);
+    });
+
+    return map;
+  }, [scoreDoc.expressions]);
+  const showExpressionRow = expressionsByKey.size > 0;
+  const showTieRow = (scoreDoc.ties || []).length > 0 || isTieMode;
   const activeLyricKey =
     selectedMeasureIndex !== null && selectedNoteIndex !== null
       ? createPositionKey(selectedMeasureIndex, selectedNoteIndex)
@@ -656,6 +794,28 @@ export function ScoreCanvas() {
         return;
       }
 
+      if (isTieMode) {
+        const element = scoreDoc.measures[measureIndex]?.elements[noteIndex];
+
+        if (!element || element.type !== 'note') return;
+
+        if (!tieStartPosition) {
+          startTie(measureIndex, noteIndex);
+          selectElement(measureIndex, noteIndex);
+          return;
+        }
+
+        if (tieStartPosition.measureIndex !== measureIndex || noteIndex <= tieStartPosition.noteIndex) {
+          startTie(measureIndex, noteIndex);
+          selectElement(measureIndex, noteIndex);
+          return;
+        }
+
+        endTie(measureIndex, noteIndex);
+        selectElement(measureIndex, noteIndex);
+        return;
+      }
+
       if (selectedMeasureIndex === measureIndex && selectedNoteIndex === noteIndex) {
         clearSelection();
       } else {
@@ -665,12 +825,16 @@ export function ScoreCanvas() {
     [
       beamStartPosition,
       clearSelection,
+      endTie,
       isBeamMode,
+      isTieMode,
       scoreDoc.measures,
       selectElement,
       selectedMeasureIndex,
       selectedNoteIndex,
       startBeam,
+      startTie,
+      tieStartPosition,
     ]
   );
 
@@ -775,12 +939,14 @@ export function ScoreCanvas() {
       if (event.target === event.currentTarget) {
         if (isBeamMode) {
           cancelBeamMode();
+        } else if (isTieMode) {
+          cancelTieMode();
         } else {
           clearSelection();
         }
       }
     },
-    [cancelBeamMode, clearSelection, isBeamMode]
+    [cancelBeamMode, cancelTieMode, clearSelection, isBeamMode, isTieMode]
   );
 
   return (
@@ -824,10 +990,16 @@ export function ScoreCanvas() {
                   showFingering={scoreDoc.settings.showFingering}
                   showLyrics={showLyrics}
                   beams={scoreDoc.beams || []}
+                  ties={scoreDoc.ties || []}
                   beamStartPosition={beamStartPosition}
+                  tieStartPosition={tieStartPosition}
                   isBeamMode={isBeamMode}
-                  lyricsDisabled={isBeamMode}
+                  isTieMode={isTieMode}
+                  showTieRow={showTieRow}
+                  lyricsDisabled={isBeamMode || isTieMode}
                   lyricsByKey={lyricsByKey}
+                  expressionsByKey={expressionsByKey}
+                  showExpressionRow={showExpressionRow}
                   lyricDrafts={lyricDrafts}
                   activeLyricKey={activeLyricKey}
                   registerLyricInput={registerLyricInput}
