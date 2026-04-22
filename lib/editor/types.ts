@@ -137,6 +137,7 @@ export interface History {
 }
 
 export type FingeringKey =
+  | 'b7'
   | '1'
   | '2'
   | '3'

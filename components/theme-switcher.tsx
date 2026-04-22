@@ -47,11 +47,11 @@ const ThemeSwitcher = () => {
         <DropdownMenuRadioGroup onValueChange={setTheme} value={theme}>
           <DropdownMenuRadioItem className="flex gap-2" value="light">
             <SunIcon className="text-muted-foreground" size={iconSize} />
-            <span>鏃ラ棿妯″紡</span>
+            <span>日间模式</span>
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem className="flex gap-2" value="dark">
             <MoonIcon className="text-muted-foreground" size={iconSize} />
-            <span>澶滈棿妯″紡</span>
+            <span>夜间模式</span>
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>

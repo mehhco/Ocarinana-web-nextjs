@@ -16,8 +16,9 @@ import {
 import { PlusIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
+import { getFingeringUrl } from '../lib/fingeringMap';
 import { LyricsInput } from '../overlay/LyricsInput';
-import type { Beam, Duration, ExpressionMark, Lyric, Measure, ScoreElement, Tie } from '@/lib/editor/types';
+import type { Beam, Duration, ExpressionMark, KeySignature, Lyric, Measure, ScoreElement, Tie } from '@/lib/editor/types';
 
 interface NotePosition {
   measureIndex: number;
@@ -36,54 +37,6 @@ function tokenizeLyricText(text: string): string[] {
   }
 
   return normalized.match(/[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*|[\u3400-\u9FFF]|[^\s]/g) ?? [];
-}
-
-function getFingeringImage(
-  keySignature: string,
-  noteValue: string,
-  hasHighDot: boolean,
-  hasLowDot: boolean
-): string {
-  const folder = `${keySignature}-graph`;
-
-  let filename = noteValue;
-
-  if (noteValue === 'b7') {
-    return `/webfile/static/${folder}/${filename}.webp`;
-  }
-
-  if (hasHighDot) filename += 'h';
-  if (hasLowDot) filename += 'l';
-
-  return `/webfile/static/${folder}/${filename}.webp`;
-}
-
-function hasFingeringForKey(
-  keySignature: string,
-  noteValue: string,
-  hasHighDot: boolean,
-  hasLowDot: boolean
-): boolean {
-  if (keySignature === 'C') {
-    if (hasHighDot) return ['1', '2', '3', '4'].includes(noteValue);
-    if (hasLowDot) return ['6', '7'].includes(noteValue);
-    return ['1', '2', '3', '4', '5', '6', '7'].includes(noteValue);
-  }
-
-  if (keySignature === 'F') {
-    if (hasHighDot) return ['1'].includes(noteValue);
-    if (hasLowDot) return ['3', '4', '5', '6', '7'].includes(noteValue);
-    return ['1', '2', '3', '4', '5', '6', '7'].includes(noteValue);
-  }
-
-  if (keySignature === 'G') {
-    if (noteValue === 'b7') return true;
-    if (hasHighDot) return false;
-    if (hasLowDot) return ['2', '3', '4', '5'].includes(noteValue);
-    return ['1', '2', '3', '4', '5', '6', '7'].includes(noteValue);
-  }
-
-  return false;
 }
 
 function getDurationLineCount(duration: Duration): number {
@@ -222,6 +175,33 @@ const LYRIC_ROW_CLASS = 'mt-1 flex h-7 flex-shrink-0 items-center justify-center
 const TIE_SLOT_CLASS = 'relative h-4 w-full flex-shrink-0 overflow-hidden';
 const EXPRESSION_ROW_CLASS = 'mt-0.5 flex h-5 flex-shrink-0 items-center justify-center';
 
+function DurationLines({
+  lineCount,
+  getLineClassName,
+}: {
+  lineCount: number;
+  getLineClassName?: (level: number) => string | undefined;
+}) {
+  return (
+    <div className={DURATION_SLOT_CLASS}>
+      {[1, 2, 3].map((level) => {
+        const shouldShowLine = level <= lineCount;
+
+        return (
+          <span
+            key={level}
+            className={cn(
+              'block h-0 flex-shrink-0 box-border border-t-[2px] border-solid',
+              shouldShowLine ? 'border-slate-900' : 'border-transparent',
+              getLineClassName ? getLineClassName(level) : 'w-3.5'
+            )}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 interface LyricFieldProps {
   value: string;
   active: boolean;
@@ -242,7 +222,7 @@ interface NoteElementProps {
   noteIndex: number;
   isSelected: boolean;
   isBeamPreview: boolean;
-  keySignature: string;
+  keySignature: KeySignature;
   showFingering: boolean;
   showLyrics: boolean;
   measureElements: ScoreElement[];
@@ -282,19 +262,8 @@ const NoteElementComponent = memo(function NoteElementComponent({
   if (element.type === 'note') {
     const durationLineCount = getDurationLineCount(element.duration);
     const hasDurationLines = durationLineCount > 0;
-    const hasFingering = showFingering && hasFingeringForKey(
-      keySignature,
-      element.value,
-      element.hasHighDot || false,
-      element.hasLowDot || false
-    );
-    const fingeringUrl = hasFingering
-      ? getFingeringImage(
-          keySignature,
-          element.value,
-          element.hasHighDot || false,
-          element.hasLowDot || false
-        )
+    const fingeringUrl = showFingering
+      ? getFingeringUrl(keySignature, element.value, element.hasHighDot || false, element.hasLowDot || false)
       : null;
     const tieSegmentPosition = getTieSegmentPosition(ties, measureIndex, noteIndex);
 
@@ -356,9 +325,9 @@ const NoteElementComponent = memo(function NoteElementComponent({
         </div>
 
         {hasDurationLines && (
-          <div className={DURATION_SLOT_CLASS}>
-            {[1, 2, 3].map((level) => {
-              const shouldShowLine = level <= durationLineCount;
+          <DurationLines
+            lineCount={durationLineCount}
+            getLineClassName={(level) => {
               const beamSegmentPosition = getDurationBeamSegmentPosition(
                 beams,
                 measureElements,
@@ -367,21 +336,14 @@ const NoteElementComponent = memo(function NoteElementComponent({
                 level
               );
 
-              return (
-                <span
-                  key={level}
-                  className={cn(
-                    'block h-0 flex-shrink-0 box-border border-t-[2px] border-solid',
-                    shouldShowLine ? 'border-slate-900' : 'border-transparent',
-                    beamSegmentPosition === 'middle' && 'w-full',
-                    beamSegmentPosition === 'start' && 'w-[calc(50%+0.4375rem)] self-end',
-                    beamSegmentPosition === 'end' && 'w-[calc(50%+0.4375rem)] self-start',
-                    beamSegmentPosition === 'none' && 'w-3.5'
-                  )}
-                />
+              return cn(
+                beamSegmentPosition === 'middle' && 'w-full',
+                beamSegmentPosition === 'start' && 'w-[calc(50%+0.4375rem)] self-end',
+                beamSegmentPosition === 'end' && 'w-[calc(50%+0.4375rem)] self-start',
+                beamSegmentPosition === 'none' && 'w-3.5'
               );
-            })}
-          </div>
+            }}
+          />
         )}
 
         <div className="flex h-4 flex-shrink-0 items-center justify-center">
@@ -424,6 +386,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
   const widthClass = element.type === 'barline' ? 'w-8' : element.type === 'extension' ? 'w-10' : 'w-14';
   const symbol = element.type === 'rest' ? '0' : element.type === 'extension' ? '-' : null;
   const symbolColor = element.type === 'barline' ? 'text-slate-700' : 'text-slate-800';
+  const restDurationLineCount = element.type === 'rest' ? getDurationLineCount(element.duration) : 0;
 
   return (
     <div
@@ -442,7 +405,11 @@ const NoteElementComponent = memo(function NoteElementComponent({
           {element.type === 'barline' ? renderBarlineSymbol(element) : symbol}
         </span>
       </div>
-      <div className={LYRIC_ALIGNMENT_SPACER_CLASS} />
+      {restDurationLineCount > 0 ? (
+        <DurationLines lineCount={restDurationLineCount} />
+      ) : (
+        <div className={LYRIC_ALIGNMENT_SPACER_CLASS} />
+      )}
       <div className="h-4 flex-shrink-0" />
       {showLyrics && <div className={LYRIC_ROW_CLASS} />}
       {showExpressionRow && <div className={EXPRESSION_ROW_CLASS} />}
@@ -454,7 +421,7 @@ interface MeasureProps {
   measure: Measure;
   measureIndex: number;
   selectedNoteIndex: number | null;
-  keySignature: string;
+  keySignature: KeySignature;
   showFingering: boolean;
   showLyrics: boolean;
   beams: Beam[];

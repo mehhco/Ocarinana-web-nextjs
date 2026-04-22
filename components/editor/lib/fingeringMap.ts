@@ -6,7 +6,7 @@
  * 浏览器会自动选择最优格式
  */
 
-import type { FingeringMap, KeySignature, FingeringKey } from '@/lib/editor/types';
+import type { KeySignature, FingeringKey } from '@/lib/editor/types';
 
 // 指法图基础路径
 const FINGERING_BASE_PATH = '/webfile/static';
@@ -27,9 +27,6 @@ const C_FINGERING: Partial<Record<FingeringKey, string>> = {
   '2-high': `${FINGERING_BASE_PATH}/C-graph/2h.webp`,
   '3-high': `${FINGERING_BASE_PATH}/C-graph/3h.webp`,
   '4-high': `${FINGERING_BASE_PATH}/C-graph/4h.webp`,
-  '5-high': `${FINGERING_BASE_PATH}/C-graph/5h.webp`,
-  '6-high': `${FINGERING_BASE_PATH}/C-graph/6h.webp`,
-  '7-high': `${FINGERING_BASE_PATH}/C-graph/7h.webp`,
   // 低音
   '6-low': `${FINGERING_BASE_PATH}/C-graph/6l.webp`,
   '7-low': `${FINGERING_BASE_PATH}/C-graph/7l.webp`,
@@ -48,12 +45,6 @@ const F_FINGERING: Partial<Record<FingeringKey, string>> = {
   '7': `${FINGERING_BASE_PATH}/F-graph/7.webp`,
   // 高音
   '1-high': `${FINGERING_BASE_PATH}/F-graph/1h.webp`,
-  '2-high': `${FINGERING_BASE_PATH}/F-graph/2h.webp`,
-  '3-high': `${FINGERING_BASE_PATH}/F-graph/3h.webp`,
-  '4-high': `${FINGERING_BASE_PATH}/F-graph/4h.webp`,
-  '5-high': `${FINGERING_BASE_PATH}/F-graph/5h.webp`,
-  '6-high': `${FINGERING_BASE_PATH}/F-graph/6h.webp`,
-  '7-high': `${FINGERING_BASE_PATH}/F-graph/7h.webp`,
   // 低音（F 调特有的低音范围）
   '3-low': `${FINGERING_BASE_PATH}/F-graph/3l.webp`,
   '4-low': `${FINGERING_BASE_PATH}/F-graph/4l.webp`,
@@ -72,20 +63,15 @@ const G_FINGERING: Partial<Record<FingeringKey, string>> = {
   '4': `${FINGERING_BASE_PATH}/G-graph/4.webp`,
   '5': `${FINGERING_BASE_PATH}/G-graph/5.webp`,
   '6': `${FINGERING_BASE_PATH}/G-graph/6.webp`,
-  '7': `${FINGERING_BASE_PATH}/G-graph/7.webp`,
+  'b7': `${FINGERING_BASE_PATH}/G-graph/b7.webp`,
   // 高音
-  '1-high': `${FINGERING_BASE_PATH}/G-graph/1h.webp`,
-  '2-high': `${FINGERING_BASE_PATH}/G-graph/2h.webp`,
-  '3-high': `${FINGERING_BASE_PATH}/G-graph/3h.webp`,
-  '4-high': `${FINGERING_BASE_PATH}/G-graph/4h.webp`,
-  '5-high': `${FINGERING_BASE_PATH}/G-graph/5h.webp`,
-  '6-high': `${FINGERING_BASE_PATH}/G-graph/6h.webp`,
-  '7-high': `${FINGERING_BASE_PATH}/G-graph/7h.webp`,
   // 低音（G 调特有的低音范围）
   '2-low': `${FINGERING_BASE_PATH}/G-graph/2l.webp`,
   '3-low': `${FINGERING_BASE_PATH}/G-graph/3l.webp`,
   '4-low': `${FINGERING_BASE_PATH}/G-graph/4l.webp`,
   '5-low': `${FINGERING_BASE_PATH}/G-graph/5l.webp`,
+  '6-low': `${FINGERING_BASE_PATH}/G-graph/6l.webp`,
+  '7-low': `${FINGERING_BASE_PATH}/G-graph/7l.webp`,
 };
 
 // ============ 完整指法图映射 ============
