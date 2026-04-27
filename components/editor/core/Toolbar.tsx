@@ -85,7 +85,9 @@ export const Toolbar = memo(function Toolbar({ onExportImage }: ToolbarProps) {
 
   return (
     <header className="h-12 shrink-0 border-b border-slate-200 bg-white px-3">
-      <div className="flex h-full items-center gap-2">
+      <div className="flex h-full justify-center">
+        <div className="flex h-full w-[80vw] min-w-[1000px] items-center">
+          <div className="flex h-full w-1/3 items-center gap-2 pr-3">
         <div className="mr-3 flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-600">
             <MusicIcon className="h-3.5 w-3.5 text-white" />
@@ -118,8 +120,9 @@ export const Toolbar = memo(function Toolbar({ onExportImage }: ToolbarProps) {
           </Button>
 
         </div>
+          </div>
 
-        <div className="mx-1.5 h-5 w-px bg-slate-200" />
+          <div className="flex h-full w-2/3 items-center gap-2">
 
         <div className="max-w-xs flex-1">
           <Input
@@ -203,7 +206,9 @@ export const Toolbar = memo(function Toolbar({ onExportImage }: ToolbarProps) {
           >
             恢复
           </Button>
+          </div>
         </div>
+      </div>
       </div>
     </header>
   );
