@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, memo } from 'react';
+import { useCallback, useEffect, memo, useRef } from 'react';
 import { useScoreStore } from '../hooks/useScoreStore';
 import { Toolbar } from './Toolbar';
 import { ElementPanel } from './ElementPanel';
 import { ScoreCanvas } from './ScoreCanvas';
+import { exportAsImage } from '../lib/exportUtils';
+import { showError, showSuccess } from '@/lib/toast';
 import type { ScoreDocument } from '@/lib/editor/types';
 
 interface ScoreEditorProps {
@@ -14,22 +16,48 @@ interface ScoreEditorProps {
 
 export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId }: ScoreEditorProps) {
   const initialize = useScoreStore((state) => state.initialize);
+  const documentTitle = useScoreStore((state) => state.document.title);
+  const setExporting = useScoreStore((state) => state.setExporting);
+  const isExporting = useScoreStore((state) => state.isExporting);
+  const scoreExportRef = useRef<HTMLDivElement>(null);
   void scoreId;
 
   useEffect(() => {
     initialize(initialDocument);
   }, [initialize, initialDocument]);
 
+  const handleExportImage = useCallback(async () => {
+    if (isExporting) return;
+
+    setExporting(true);
+
+    try {
+      await new Promise<void>((resolve) => {
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => resolve());
+        });
+      });
+
+      await exportAsImage(scoreExportRef, documentTitle);
+      showSuccess('图片已导出');
+    } catch (error) {
+      console.error('Failed to export score image', error);
+      showError(error instanceof Error ? error.message : '图片导出失败');
+    } finally {
+      setExporting(false);
+    }
+  }, [documentTitle, isExporting, setExporting]);
+
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-slate-50">
-      <Toolbar />
+      <Toolbar onExportImage={handleExportImage} />
       <div className="flex flex-1 justify-center overflow-hidden px-3 pb-3 pt-1.5">
         <div className="flex h-full min-h-0 w-[80vw] min-w-[1000px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-md">
           <div className="h-full min-h-0 w-1/3 overflow-hidden border-r border-slate-200 bg-slate-50/50">
             <ElementPanel />
           </div>
           <div className="h-full min-h-0 w-2/3 overflow-hidden bg-white">
-            <ScoreCanvas />
+            <ScoreCanvas exportRef={scoreExportRef} />
           </div>
         </div>
       </div>

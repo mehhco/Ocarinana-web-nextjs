@@ -12,6 +12,7 @@ import {
   type CompositionEvent,
   type KeyboardEvent,
   type MouseEvent,
+  type RefObject,
 } from 'react';
 import { PlusIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,10 @@ import type { Beam, Duration, ExpressionMark, KeySignature, Lyric, Measure, Scor
 interface NotePosition {
   measureIndex: number;
   noteIndex: number;
+}
+
+interface ScoreCanvasProps {
+  exportRef?: RefObject<HTMLDivElement | null>;
 }
 
 function createPositionKey(measureIndex: number, noteIndex: number): string {
@@ -55,6 +60,29 @@ function getDurationLineCount(duration: Duration): number {
 function getElementDurationLineCount(element: ScoreElement): number {
   if (element.type !== 'note') return 0;
   return getDurationLineCount(element.duration);
+}
+
+function getMeasureDurationLineCount(measure: Measure): number {
+  return measure.elements.reduce((maxLineCount, element) => {
+    if (element.type !== 'note' && element.type !== 'rest') {
+      return maxLineCount;
+    }
+
+    return Math.max(maxLineCount, getDurationLineCount(element.duration));
+  }, 0);
+}
+
+function getLowDotOffsetClassName(durationLineCount: number): string {
+  switch (durationLineCount) {
+    case 1:
+      return '-top-[6px]';
+    case 2:
+      return '-top-[4px]';
+    case 3:
+      return '-top-[2px]';
+    default:
+      return '';
+  }
 }
 
 function getDurationBeamSegmentPosition(
@@ -108,6 +136,16 @@ function getDurationBeamSegmentPosition(
   }
 
   return 'none';
+}
+
+function isPositionInDurationBeam(beams: Beam[], measureIndex: number, noteIndex: number): boolean {
+  return beams.some(
+    (beam) =>
+      beam.startMeasureIndex === measureIndex &&
+      beam.endMeasureIndex === measureIndex &&
+      beam.startNoteIndex <= noteIndex &&
+      noteIndex <= beam.endNoteIndex
+  );
 }
 
 function getTieSegmentPosition(
@@ -169,31 +207,57 @@ function buildNotePositions(measures: Measure[]): NotePosition[] {
   return positions;
 }
 
-const DURATION_SLOT_CLASS = 'mt-1 flex h-[12px] w-full flex-shrink-0 flex-col items-center gap-[3px]';
-const LYRIC_ALIGNMENT_SPACER_CLASS = 'mt-1 h-[12px] flex-shrink-0';
 const LYRIC_ROW_CLASS = 'mt-1 flex h-7 flex-shrink-0 items-center justify-center';
-const TIE_SLOT_CLASS = 'relative h-4 w-full flex-shrink-0 overflow-hidden';
+const TIE_SLOT_CLASS = 'relative h-[10px] w-full flex-shrink-0 overflow-hidden';
 const EXPRESSION_ROW_CLASS = 'mt-0.5 flex h-5 flex-shrink-0 items-center justify-center';
+
+function getDurationSlotClassName(slotLineCount: number): string {
+  switch (slotLineCount) {
+    case 1:
+      return 'mt-1 flex h-[13px] w-full flex-shrink-0 flex-col items-center gap-[3px] pt-[8px]';
+    case 2:
+      return 'mt-1 flex h-[16px] w-full flex-shrink-0 flex-col items-center gap-[3px] pt-[8px]';
+    case 3:
+      return 'mt-1 flex h-[21px] w-full flex-shrink-0 flex-col items-center gap-[3px] pt-[8px]';
+    default:
+      return 'hidden';
+  }
+}
+
+function getDurationSpacerClassName(slotLineCount: number): string {
+  switch (slotLineCount) {
+    case 1:
+      return 'mt-1 h-[13px] flex-shrink-0';
+    case 2:
+      return 'mt-1 h-[16px] flex-shrink-0';
+    case 3:
+      return 'mt-1 h-[21px] flex-shrink-0';
+    default:
+      return 'hidden';
+  }
+}
 
 function DurationLines({
   lineCount,
+  slotLineCount,
   getLineClassName,
 }: {
   lineCount: number;
+  slotLineCount: number;
   getLineClassName?: (level: number) => string | undefined;
 }) {
   return (
-    <div className={DURATION_SLOT_CLASS}>
-      {[1, 2, 3].map((level) => {
+    <div className={getDurationSlotClassName(slotLineCount)}>
+      {[1, 2, 3].slice(0, slotLineCount).map((level) => {
         const shouldShowLine = level <= lineCount;
 
         return (
           <span
             key={level}
             className={cn(
-              'block h-0 flex-shrink-0 box-border border-t-[2px] border-solid',
-              shouldShowLine ? 'border-slate-900' : 'border-transparent',
-              getLineClassName ? getLineClassName(level) : 'w-3.5'
+              'block h-[2px] flex-shrink-0',
+              shouldShowLine ? 'bg-slate-900' : 'bg-transparent',
+              getLineClassName ? getLineClassName(level) : 'w-3.5 rounded-full'
             )}
           />
         );
@@ -206,6 +270,7 @@ interface LyricFieldProps {
   value: string;
   active: boolean;
   disabled: boolean;
+  placeholder?: string;
   inputRef: (node: HTMLInputElement | null) => void;
   onChange: (text: string) => void;
   onFocus: () => void;
@@ -226,11 +291,13 @@ interface NoteElementProps {
   showFingering: boolean;
   showLyrics: boolean;
   measureElements: ScoreElement[];
+  durationSlotLineCount: number;
   beams: Beam[];
   ties: Tie[];
   isBeamStart: boolean;
   isTieStart: boolean;
   isTiePreview: boolean;
+  isExporting: boolean;
   showTieRow: boolean;
   expression?: ExpressionMark;
   showExpressionRow: boolean;
@@ -248,11 +315,13 @@ const NoteElementComponent = memo(function NoteElementComponent({
   showFingering,
   showLyrics,
   measureElements,
+  durationSlotLineCount,
   beams,
   ties,
   isBeamStart,
   isTieStart,
   isTiePreview,
+  isExporting,
   showTieRow,
   expression,
   showExpressionRow,
@@ -266,6 +335,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
       ? getFingeringUrl(keySignature, element.value, element.hasHighDot || false, element.hasLowDot || false)
       : null;
     const tieSegmentPosition = getTieSegmentPosition(ties, measureIndex, noteIndex);
+    const isInDurationBeam = isPositionInDurationBeam(beams, measureIndex, noteIndex);
 
     return (
       <div
@@ -299,7 +369,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
             {tieSegmentPosition !== 'none' && (
               <span
                 className={cn(
-                'block h-3 border-t-2 border-slate-800',
+                'block h-2 border-t-2 border-slate-800',
                 tieSegmentPosition === 'middle' && 'absolute bottom-0 left-0 right-0',
                 tieSegmentPosition === 'start' && 'absolute bottom-0 left-1/2 right-0 rounded-tl-full',
                 tieSegmentPosition === 'end' && 'absolute bottom-0 left-0 right-1/2 rounded-tr-full'
@@ -327,6 +397,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         {hasDurationLines && (
           <DurationLines
             lineCount={durationLineCount}
+            slotLineCount={durationSlotLineCount}
             getLineClassName={(level) => {
               const beamSegmentPosition = getDurationBeamSegmentPosition(
                 beams,
@@ -337,36 +408,56 @@ const NoteElementComponent = memo(function NoteElementComponent({
               );
 
               return cn(
-                beamSegmentPosition === 'middle' && 'w-full',
-                beamSegmentPosition === 'start' && 'w-[calc(50%+0.4375rem)] self-end',
-                beamSegmentPosition === 'end' && 'w-[calc(50%+0.4375rem)] self-start',
-                beamSegmentPosition === 'none' && 'w-3.5'
+                beamSegmentPosition === 'middle' && '-mx-px w-[calc(100%+2px)] rounded-none',
+                beamSegmentPosition === 'start' && '-mr-px w-[calc(50%+0.5625rem)] self-end rounded-l-full rounded-r-none',
+                beamSegmentPosition === 'end' && '-ml-px w-[calc(50%+0.5625rem)] self-start rounded-l-none rounded-r-full',
+                beamSegmentPosition === 'none' && isInDurationBeam && 'w-4 rounded-[1px]',
+                beamSegmentPosition === 'none' && !isInDurationBeam && 'w-3.5 rounded-full'
               );
             }}
           />
         )}
 
         <div className="flex h-4 flex-shrink-0 items-center justify-center">
-          {element.hasLowDot && <span className="text-xl font-bold leading-none text-slate-800">•</span>}
+          {element.hasLowDot && (
+            <span
+              className={cn(
+                'text-xl font-bold leading-none text-slate-800',
+                hasDurationLines && 'relative',
+                getLowDotOffsetClassName(durationLineCount)
+              )}
+            >
+              •
+            </span>
+          )}
         </div>
 
-        {showLyrics && !hasDurationLines && <div className={LYRIC_ALIGNMENT_SPACER_CLASS} />}
+        {showLyrics && !hasDurationLines && durationSlotLineCount > 0 && (
+          <div className={getDurationSpacerClassName(durationSlotLineCount)} />
+        )}
 
         {showLyrics && lyricField && (
           <div className={LYRIC_ROW_CLASS}>
-            <LyricsInput
-              value={lyricField.value}
-              active={lyricField.active}
-              disabled={lyricField.disabled}
-              inputRef={lyricField.inputRef}
-              onChange={lyricField.onChange}
-              onFocus={lyricField.onFocus}
-              onBlur={lyricField.onBlur}
-              onKeyDown={lyricField.onKeyDown}
-              onPaste={lyricField.onPaste}
-              onCompositionStart={lyricField.onCompositionStart}
-              onCompositionEnd={lyricField.onCompositionEnd}
-            />
+            {isExporting ? (
+              <span className="flex h-7 w-16 items-center justify-center px-1 text-center text-sm leading-none text-slate-700">
+                {lyricField.value}
+              </span>
+            ) : (
+              <LyricsInput
+                value={lyricField.value}
+                active={lyricField.active}
+                disabled={lyricField.disabled}
+                placeholder={lyricField.placeholder}
+                inputRef={lyricField.inputRef}
+                onChange={lyricField.onChange}
+                onFocus={lyricField.onFocus}
+                onBlur={lyricField.onBlur}
+                onKeyDown={lyricField.onKeyDown}
+                onPaste={lyricField.onPaste}
+                onCompositionStart={lyricField.onCompositionStart}
+                onCompositionEnd={lyricField.onCompositionEnd}
+              />
+            )}
           </div>
         )}
 
@@ -406,10 +497,10 @@ const NoteElementComponent = memo(function NoteElementComponent({
         </span>
       </div>
       {restDurationLineCount > 0 ? (
-        <DurationLines lineCount={restDurationLineCount} />
-      ) : (
-        <div className={LYRIC_ALIGNMENT_SPACER_CLASS} />
-      )}
+        <DurationLines lineCount={restDurationLineCount} slotLineCount={durationSlotLineCount} />
+      ) : durationSlotLineCount > 0 ? (
+        <div className={getDurationSpacerClassName(durationSlotLineCount)} />
+      ) : null}
       <div className="h-4 flex-shrink-0" />
       {showLyrics && <div className={LYRIC_ROW_CLASS} />}
       {showExpressionRow && <div className={EXPRESSION_ROW_CLASS} />}
@@ -424,12 +515,14 @@ interface MeasureProps {
   keySignature: KeySignature;
   showFingering: boolean;
   showLyrics: boolean;
+  durationSlotLineCount: number;
   beams: Beam[];
   ties: Tie[];
   beamStartPosition: { measureIndex: number; noteIndex: number } | null;
   tieStartPosition: { measureIndex: number; noteIndex: number } | null;
   isBeamMode: boolean;
   isTieMode: boolean;
+  isExporting: boolean;
   showTieRow: boolean;
   lyricsDisabled: boolean;
   lyricsByKey: Map<string, string>;
@@ -463,12 +556,14 @@ const MeasureComponent = memo(function MeasureComponent({
   keySignature,
   showFingering,
   showLyrics,
+  durationSlotLineCount,
   beams,
   ties,
   beamStartPosition,
   tieStartPosition,
   isBeamMode,
   isTieMode,
+  isExporting,
   showTieRow,
   lyricsDisabled,
   lyricsByKey,
@@ -513,6 +608,7 @@ const MeasureComponent = memo(function MeasureComponent({
             showFingering={showFingering}
             showLyrics={showLyrics}
             measureElements={measure.elements}
+            durationSlotLineCount={durationSlotLineCount}
             beams={beams}
             ties={ties}
             isBeamStart={
@@ -523,6 +619,7 @@ const MeasureComponent = memo(function MeasureComponent({
               tieStartPosition?.measureIndex === measureIndex &&
               tieStartPosition.noteIndex === noteIndex
             }
+            isExporting={isExporting}
             isTiePreview={
               !!(
                 isTieMode &&
@@ -543,6 +640,7 @@ const MeasureComponent = memo(function MeasureComponent({
                     value: lyricDrafts[positionKey] ?? lyricsByKey.get(positionKey) ?? '',
                     active: activeLyricKey === positionKey,
                     disabled: lyricsDisabled,
+                    placeholder: isExporting ? '' : undefined,
                     inputRef: (node) => registerLyricInput(measureIndex, noteIndex, node),
                     onChange: (text) => onLyricChange(measureIndex, noteIndex, text),
                     onFocus: () => onLyricFocus(measureIndex, noteIndex),
@@ -562,7 +660,7 @@ const MeasureComponent = memo(function MeasureComponent({
   );
 });
 
-export function ScoreCanvas() {
+export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
   const {
     document: scoreDoc,
     selectedMeasureIndex,
@@ -581,6 +679,7 @@ export function ScoreCanvas() {
     cancelTieMode,
     updateLyrics,
     updateLyricsBatch,
+    isExporting,
   } = useScoreStore();
 
   const [lyricDrafts, setLyricDrafts] = useState<Record<string, string>>({});
@@ -614,10 +713,19 @@ export function ScoreCanvas() {
 
     return map;
   }, [scoreDoc.expressions]);
+  const tieMeasureIndexes = useMemo(() => {
+    const indexes = new Set<number>();
+
+    (scoreDoc.ties || []).forEach((tie) => {
+      indexes.add(tie.startMeasureIndex);
+      indexes.add(tie.endMeasureIndex);
+    });
+
+    return indexes;
+  }, [scoreDoc.ties]);
   const showExpressionRow = expressionsByKey.size > 0;
-  const showTieRow = (scoreDoc.ties || []).length > 0 || isTieMode;
   const activeLyricKey =
-    selectedMeasureIndex !== null && selectedNoteIndex !== null
+    !isExporting && selectedMeasureIndex !== null && selectedNoteIndex !== null
       ? createPositionKey(selectedMeasureIndex, selectedNoteIndex)
       : null;
 
@@ -918,80 +1026,92 @@ export function ScoreCanvas() {
 
   return (
     <div className="h-full w-full overflow-y-auto bg-white">
-      <div className="border-b border-slate-200 bg-slate-50/50 py-3 text-center">
-        <h1 className="mb-1 text-lg font-bold text-slate-800">{scoreDoc.title}</h1>
-        <div className="flex items-center justify-center gap-3 text-[11px] text-slate-500">
-          <span>
-            调号: <span className="font-medium text-slate-700">{scoreDoc.settings.keySignature}</span>
-          </span>
-          <span>
-            拍号: <span className="font-medium text-slate-700">{scoreDoc.settings.timeSignature}</span>
-          </span>
-          <span>
-            速度: <span className="font-medium text-slate-700">♩ {scoreDoc.settings.tempo}</span>
-          </span>
-        </div>
-      </div>
-
-      <div className="w-full px-4 pb-4 pt-3" onClick={handleBackgroundClick}>
-        <div className="mb-3 flex w-full items-center gap-3 border-b border-slate-200 pb-2">
-          <div className="text-xs font-semibold text-slate-800">
-            {scoreDoc.settings.keySignature} {scoreDoc.settings.timeSignature}
+      <div ref={exportRef} className="bg-white">
+        <div className="border-b border-slate-200 bg-slate-50/50 py-3 text-center">
+          <h1 className="mb-1 text-lg font-bold text-slate-800">{scoreDoc.title}</h1>
+          <div className="flex items-center justify-center gap-3 text-[11px] text-slate-500">
+            <span>
+              调号: <span className="font-medium text-slate-700">{scoreDoc.settings.keySignature}</span>
+            </span>
+            <span>
+              拍号: <span className="font-medium text-slate-700">{scoreDoc.settings.timeSignature}</span>
+            </span>
+            <span>
+              速度: <span className="font-medium text-slate-700">♩ {scoreDoc.settings.tempo}</span>
+            </span>
           </div>
         </div>
 
-        <div className="w-full space-y-2.5">
-          {scoreDoc.measures.map((measure, measureIndex) => {
-            const isSelected = selectedMeasureIndex === measureIndex;
+        <div className="w-full px-4 pb-4 pt-3" onClick={handleBackgroundClick}>
+          <div className="mb-3 flex w-full items-center gap-3 border-b border-slate-200 pb-2">
+            <div className="text-xs font-semibold text-slate-800">
+              {scoreDoc.settings.keySignature} {scoreDoc.settings.timeSignature}
+            </div>
+          </div>
 
-            return (
-              <div
-                key={measure.id}
-                className={cn('w-full border-b border-slate-300 pb-2.5', isSelected && 'bg-amber-50/30')}
-              >
-                <MeasureComponent
-                  measure={measure}
-                  measureIndex={measureIndex}
-                  selectedNoteIndex={isSelected ? selectedNoteIndex : null}
-                  keySignature={scoreDoc.settings.keySignature}
-                  showFingering={scoreDoc.settings.showFingering}
-                  showLyrics={showLyrics}
-                  beams={scoreDoc.beams || []}
-                  ties={scoreDoc.ties || []}
-                  beamStartPosition={beamStartPosition}
-                  tieStartPosition={tieStartPosition}
-                  isBeamMode={isBeamMode}
-                  isTieMode={isTieMode}
-                  showTieRow={showTieRow}
-                  lyricsDisabled={isBeamMode || isTieMode}
-                  lyricsByKey={lyricsByKey}
-                  expressionsByKey={expressionsByKey}
-                  showExpressionRow={showExpressionRow}
-                  lyricDrafts={lyricDrafts}
-                  activeLyricKey={activeLyricKey}
-                  registerLyricInput={registerLyricInput}
-                  onSelectNote={(noteIndex) => handleSelectNote(measureIndex, noteIndex)}
-                  onLyricChange={handleLyricChange}
-                  onLyricFocus={handleLyricFocus}
-                  onLyricBlur={handleLyricBlur}
-                  onLyricKeyDown={handleLyricKeyDown}
-                  onLyricPaste={handleLyricPaste}
-                  onLyricCompositionStart={handleLyricCompositionStart}
-                  onLyricCompositionEnd={handleLyricCompositionEnd}
-                />
-              </div>
-            );
-          })}
+          <div className="w-full space-y-2.5">
+            {scoreDoc.measures.map((measure, measureIndex) => {
+              const isSelected = !isExporting && selectedMeasureIndex === measureIndex;
+              const durationSlotLineCount = getMeasureDurationLineCount(measure);
+              const showTieRow =
+                tieMeasureIndexes.has(measureIndex) ||
+                (!isExporting &&
+                  isTieMode &&
+                  (tieStartPosition?.measureIndex === measureIndex || selectedMeasureIndex === measureIndex));
+
+              return (
+                <div
+                  key={measure.id}
+                  className={cn('w-full border-b border-slate-300 pb-2.5', isSelected && 'bg-amber-50/30')}
+                >
+                  <MeasureComponent
+                    measure={measure}
+                    measureIndex={measureIndex}
+                    selectedNoteIndex={isSelected ? selectedNoteIndex : null}
+                    keySignature={scoreDoc.settings.keySignature}
+                    showFingering={scoreDoc.settings.showFingering}
+                    showLyrics={showLyrics}
+                    durationSlotLineCount={durationSlotLineCount}
+                    beams={scoreDoc.beams || []}
+                    ties={scoreDoc.ties || []}
+                    beamStartPosition={isExporting ? null : beamStartPosition}
+                    tieStartPosition={isExporting ? null : tieStartPosition}
+                    isBeamMode={!isExporting && isBeamMode}
+                    isTieMode={!isExporting && isTieMode}
+                    isExporting={isExporting}
+                    showTieRow={showTieRow}
+                    lyricsDisabled={isBeamMode || isTieMode}
+                    lyricsByKey={lyricsByKey}
+                    expressionsByKey={expressionsByKey}
+                    showExpressionRow={showExpressionRow}
+                    lyricDrafts={lyricDrafts}
+                    activeLyricKey={activeLyricKey}
+                    registerLyricInput={registerLyricInput}
+                    onSelectNote={(noteIndex) => handleSelectNote(measureIndex, noteIndex)}
+                    onLyricChange={handleLyricChange}
+                    onLyricFocus={handleLyricFocus}
+                    onLyricBlur={handleLyricBlur}
+                    onLyricKeyDown={handleLyricKeyDown}
+                    onLyricPaste={handleLyricPaste}
+                    onLyricCompositionStart={handleLyricCompositionStart}
+                    onLyricCompositionEnd={handleLyricCompositionEnd}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
+      </div>
 
+      {!isExporting && (
         <button
           onClick={addMeasure}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 py-2 text-sm font-medium text-slate-400 transition-all hover:border-indigo-400 hover:text-indigo-600"
+          className="mx-4 mb-4 mt-3 flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 py-2 text-sm font-medium text-slate-400 transition-all hover:border-indigo-400 hover:text-indigo-600"
         >
           <PlusIcon className="h-4 w-4" />
           添加小节
         </button>
-      </div>
+      )}
     </div>
   );
 }

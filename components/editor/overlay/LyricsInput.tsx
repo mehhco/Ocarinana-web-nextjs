@@ -7,6 +7,7 @@ interface LyricsInputProps {
   value: string;
   active?: boolean;
   disabled?: boolean;
+  placeholder?: string;
   inputRef?: (node: HTMLInputElement | null) => void;
   onChange: (text: string) => void;
   onFocus?: () => void;
@@ -21,6 +22,7 @@ export function LyricsInput({
   value,
   active = false,
   disabled = false,
+  placeholder = '歌词',
   inputRef,
   onChange,
   onFocus,
@@ -40,7 +42,7 @@ export function LyricsInput({
       type="text"
       value={value}
       disabled={disabled}
-      placeholder="歌词"
+      placeholder={placeholder}
       onChange={(event) => onChange(event.target.value)}
       onFocus={onFocus}
       onBlur={onBlur}

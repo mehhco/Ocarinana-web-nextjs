@@ -4,7 +4,6 @@ import { memo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  FileJsonIcon,
   ImageIcon,
   MusicIcon,
   SaveIcon,
@@ -32,7 +31,11 @@ const TIME_SIGNATURE_OPTIONS: { value: TimeSignature; label: string }[] = [
   { value: '6/8', label: '6/8' },
 ];
 
-export const Toolbar = memo(function Toolbar() {
+interface ToolbarProps {
+  onExportImage: () => void;
+}
+
+export const Toolbar = memo(function Toolbar({ onExportImage }: ToolbarProps) {
   const document = useScoreStore((state) => state.document);
   const updateTitle = useScoreStore((state) => state.updateTitle);
   const updateSettings = useScoreStore((state) => state.updateSettings);
@@ -40,6 +43,7 @@ export const Toolbar = memo(function Toolbar() {
   const redo = useScoreStore((state) => state.redo);
   const canUndo = useScoreStore((state) => state.canUndo);
   const canRedo = useScoreStore((state) => state.canRedo);
+  const isExporting = useScoreStore((state) => state.isExporting);
 
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,13 +66,18 @@ export const Toolbar = memo(function Toolbar() {
     [updateSettings]
   );
 
-  const handleExportImage = useCallback(() => {
-    console.log('export image');
-  }, []);
+  const handleTempoChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const nextTempo = Number.parseInt(e.target.value, 10);
 
-  const handleExportJson = useCallback(() => {
-    console.log('export json');
-  }, []);
+      if (!Number.isFinite(nextTempo)) {
+        return;
+      }
+
+      updateSettings({ tempo: Math.min(300, Math.max(40, nextTempo)) });
+    },
+    [updateSettings]
+  );
 
   const handleSave = useCallback(() => {
     console.log('save score');
@@ -101,21 +110,13 @@ export const Toolbar = memo(function Toolbar() {
             variant="ghost"
             size="sm"
             className="gap-1.5 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600"
-            onClick={handleExportImage}
+            onClick={onExportImage}
+            disabled={isExporting}
           >
             <ImageIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">导出图片</span>
+            <span className="hidden sm:inline">{isExporting ? '导出中' : '导出图片'}</span>
           </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1.5 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600"
-            onClick={handleExportJson}
-          >
-            <FileJsonIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">导出 JSON</span>
-          </Button>
         </div>
 
         <div className="mx-1.5 h-5 w-px bg-slate-200" />
@@ -161,6 +162,21 @@ export const Toolbar = memo(function Toolbar() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="hidden items-center gap-1.5 lg:flex">
+          <span className="text-xs font-medium text-slate-500">速度</span>
+          <span className="text-sm font-semibold leading-none text-slate-600">♩</span>
+          <Input
+            type="number"
+            min={40}
+            max={300}
+            step={1}
+            value={document.settings.tempo}
+            onChange={handleTempoChange}
+            aria-label="速度"
+            className="h-7 w-16 border-slate-200 bg-slate-50 px-2 text-center text-xs focus:border-indigo-500 focus:bg-white"
+          />
         </div>
 
         <div className="flex-1" />
