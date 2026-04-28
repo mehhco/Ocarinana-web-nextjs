@@ -6,6 +6,7 @@ import { Toolbar } from './Toolbar';
 import { ElementPanel } from './ElementPanel';
 import { ScoreCanvas } from './ScoreCanvas';
 import { exportAsImage } from '../lib/exportUtils';
+import { useAutoSave } from '../hooks/useAutoSave';
 import { showError, showSuccess } from '@/lib/toast';
 import type { ScoreDocument } from '@/lib/editor/types';
 
@@ -20,7 +21,7 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId 
   const setExporting = useScoreStore((state) => state.setExporting);
   const isExporting = useScoreStore((state) => state.isExporting);
   const scoreExportRef = useRef<HTMLDivElement>(null);
-  void scoreId;
+  const { isDirty, isSaving, saveNow } = useAutoSave(scoreId);
 
   useEffect(() => {
     initialize(initialDocument);
@@ -48,9 +49,25 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId 
     }
   }, [documentTitle, isExporting, setExporting]);
 
+  const handleManualSave = useCallback(async () => {
+    const result = await saveNow();
+
+    if (result.success) {
+      showSuccess(result.skipped ? '没有需要保存的更改' : '乐谱已保存');
+      return;
+    }
+
+    showError(result.error || '保存失败');
+  }, [saveNow]);
+
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-slate-50">
-      <Toolbar onExportImage={handleExportImage} />
+      <Toolbar
+        isDirty={isDirty}
+        isSaving={isSaving}
+        onExportImage={handleExportImage}
+        onSave={handleManualSave}
+      />
       <div className="flex flex-1 justify-center overflow-hidden px-3 pb-3 pt-1.5">
         <div className="flex h-full min-h-0 w-[80vw] min-w-[1000px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-md">
           <div className="h-full min-h-0 w-1/3 overflow-hidden border-r border-slate-200 bg-slate-50/50">

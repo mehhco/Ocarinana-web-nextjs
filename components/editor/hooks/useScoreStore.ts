@@ -145,7 +145,7 @@ function generateStableId(): string {
  */
 function createInitialDocument(override?: Partial<ScoreDocument>): ScoreDocument {
   return {
-    version: '1.0',
+    version: override?.version || '2.0',
     scoreId: override?.scoreId || 'draft-new',
     ownerUserId: override?.ownerUserId,
     title: override?.title || DEFAULT_TITLE,

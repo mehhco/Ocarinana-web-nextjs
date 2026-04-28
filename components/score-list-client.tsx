@@ -26,6 +26,7 @@ interface Score {
   title: string;
   updatedAt: string;
   createdAt: string;
+  editorHref?: string;
   settings: {
     keySignature: string;
     timeSignature: string;
@@ -311,6 +312,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
             keySignature={score.settings.keySignature}
             timeSignature={score.settings.timeSignature}
             updatedAt={score.updatedAt}
+            editorHref={score.editorHref}
             onDelete={handleDelete}
           />
         ))}

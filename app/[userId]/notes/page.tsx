@@ -58,6 +58,10 @@ export default async function UserNotesPage({ params }: PageProps) {
     title: row.title,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    editorHref:
+      row.document?.version === "2.0"
+        ? `/protected/editor/v2?scoreId=${encodeURIComponent(row.score_id)}`
+        : `/protected/scores?scoreId=${encodeURIComponent(row.score_id)}`,
     settings: {
       keySignature: row.document?.settings?.keySignature || "C",
       timeSignature: row.document?.settings?.timeSignature || "4/4",

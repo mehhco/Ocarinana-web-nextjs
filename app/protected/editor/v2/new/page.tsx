@@ -3,28 +3,59 @@ import { createClient } from '@/lib/supabase/server';
 
 export default async function NewScoreV2Page() {
   const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
   if (error || !user) {
     redirect('/auth/login');
   }
-  
-  // 创建一个新乐谱并重定向到编辑器
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || '';
+
+  const now = new Date().toISOString();
+  const document = {
+    version: '2.0',
+    title: '未命名简谱',
+    measures: [{ id: 'measure-1', elements: [] }],
+    ties: [],
+    beams: [],
+    expressions: [],
+    lyrics: [],
+    settings: {
+      keySignature: 'C',
+      timeSignature: '4/4',
+      tempo: 120,
+      skin: 'white',
+      showLyrics: false,
+      showFingering: true,
+    },
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  let createdScoreId: string | null = null;
+
   try {
-    const res = await fetch(`${origin}/api/scores`, { 
-      method: 'POST', 
-      cache: 'no-store' 
-    });
-    
-    if (res.ok) {
-      const { scoreId } = await res.json();
-      redirect(`/protected/editor/v2?scoreId=${encodeURIComponent(scoreId)}`);
+    const { data, error: createError } = await supabase
+      .from('scores')
+      .insert({
+        owner_user_id: user.id,
+        title: document.title,
+        document,
+      })
+      .select('score_id')
+      .single();
+
+    if (!createError && data?.score_id) {
+      createdScoreId = data.score_id;
     }
   } catch (error) {
-    console.error('创建乐谱失败:', error);
+    console.error('Failed to create v2 score:', error);
   }
-  
-  // 失败时仍然进入空白编辑器
+
+  if (createdScoreId) {
+    redirect(`/protected/editor/v2?scoreId=${encodeURIComponent(createdScoreId)}`);
+  }
+
   redirect('/protected/editor/v2');
 }

@@ -1,156 +1,146 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useScoreStore } from './useScoreStore';
 import { saveToCloud } from '../lib/exportUtils';
-import { useIsDirty, useDocumentSnapshot, useIsSaving } from './useSelectors';
+import { useDocumentSnapshot, useIsDirty, useIsSaving } from './useSelectors';
+import type { ScoreDocument } from '@/lib/editor/types';
 
-/**
- * 自动保存配置
- */
 const AUTO_SAVE_CONFIG = {
-  DEBOUNCE_MS: 2000,    // 防抖时间：用户停止编辑 2 秒后保存
-  THROTTLE_MS: 10000,   // 节流时间：最少每 10 秒保存一次
-  MAX_WAIT_MS: 30000,   // 最大等待：最多 30 秒必须保存一次
+  DEBOUNCE_MS: 2000,
+  THROTTLE_MS: 10000,
+  MAX_WAIT_MS: 30000,
 };
 
-/**
- * 增强版自动保存 Hook
- * 使用防抖 + 节流策略
- */
+type SaveResult = {
+  success: boolean;
+  error?: string;
+  skipped?: boolean;
+};
+
 export function useAutoSave(scoreId: string | undefined) {
   const document = useDocumentSnapshot();
   const isDirty = useIsDirty();
   const isSaving = useIsSaving();
-
   const setSaving = useScoreStore((state) => state.setSaving);
   const markAsSaved = useScoreStore((state) => state.markAsSaved);
 
-  // 使用 refs 管理定时器和状态
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaveTimeRef = useRef<number>(0);
-  const isSavingInProgressRef = useRef<boolean>(false);
-  const pendingSaveRef = useRef<boolean>(false);
-  const documentRef = useRef(document);
+  const isSavingInProgressRef = useRef(false);
+  const pendingSaveRef = useRef(false);
+  const documentRef = useRef<ScoreDocument>(document);
+  const isDirtyRef = useRef(isDirty);
 
-  // 保持 document 引用最新
   documentRef.current = document;
+  isDirtyRef.current = isDirty;
 
-  // 执行保存的函数
-  const executeSave = useCallback(async () => {
-    if (isSavingInProgressRef.current || !scoreId) {
-      pendingSaveRef.current = true;
-      return;
-    }
-
-    const docToSave = documentRef.current;
-    if (!docToSave) return;
-
-    isSavingInProgressRef.current = true;
-    pendingSaveRef.current = false;
-    setSaving(true);
-
-    try {
-      const result = await saveToCloud(docToSave, scoreId);
-
-      if (result.success) {
-        markAsSaved();
-        lastSaveTimeRef.current = Date.now();
-        console.log('自动保存成功');
-      } else {
-        console.error('自动保存失败:', result.error);
-      }
-    } catch (error) {
-      console.error('自动保存异常:', error);
-    } finally {
-      setSaving(false);
-      isSavingInProgressRef.current = false;
-
-      // 如果有待保存的操作，继续保存
-      if (pendingSaveRef.current) {
-        timeoutRef.current = setTimeout(executeSave, 100);
-      }
-    }
-  }, [scoreId, setSaving, markAsSaved]);
-
-  // 触发保存的策略函数
-  const triggerSave = useCallback(() => {
-    if (!scoreId || !isDirty) return;
-
-    const now = Date.now();
-    const timeSinceLastSave = now - lastSaveTimeRef.current;
-
-    // 清除现有的定时器
+  const clearPendingTimer = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
+  }, []);
 
-    // 如果超过最大等待时间，立即保存
-    if (timeSinceLastSave >= AUTO_SAVE_CONFIG.MAX_WAIT_MS) {
-      executeSave();
+  const executeSave = useCallback(
+    async (options: { force?: boolean } = {}): Promise<SaveResult> => {
+      if (!scoreId) {
+        return { success: false, error: '乐谱 ID 不存在' };
+      }
+
+      if (!options.force && !isDirtyRef.current) {
+        return { success: true, skipped: true };
+      }
+
+      if (isSavingInProgressRef.current) {
+        pendingSaveRef.current = true;
+        return { success: true, skipped: true };
+      }
+
+      isSavingInProgressRef.current = true;
+      pendingSaveRef.current = false;
+      setSaving(true);
+
+      try {
+        const docToSave = documentRef.current;
+        const savedPayload = JSON.stringify(docToSave);
+        const result = await saveToCloud(docToSave, scoreId);
+
+        if (result.success) {
+          if (JSON.stringify(documentRef.current) === savedPayload) {
+            markAsSaved();
+          } else {
+            pendingSaveRef.current = true;
+          }
+          lastSaveTimeRef.current = Date.now();
+        }
+
+        return result;
+      } finally {
+        setSaving(false);
+        isSavingInProgressRef.current = false;
+
+        if (pendingSaveRef.current) {
+          timeoutRef.current = setTimeout(() => {
+            void executeSave();
+          }, 100);
+        }
+      }
+    },
+    [markAsSaved, scoreId, setSaving]
+  );
+
+  const saveNow = useCallback(async () => {
+    clearPendingTimer();
+    return executeSave({ force: true });
+  }, [clearPendingTimer, executeSave]);
+
+  const triggerAutoSave = useCallback(() => {
+    if (!scoreId || !isDirtyRef.current) return;
+
+    const now = Date.now();
+    const timeSinceLastSave = now - lastSaveTimeRef.current;
+
+    clearPendingTimer();
+
+    if (
+      timeSinceLastSave >= AUTO_SAVE_CONFIG.MAX_WAIT_MS ||
+      timeSinceLastSave >= AUTO_SAVE_CONFIG.THROTTLE_MS
+    ) {
+      void executeSave();
       return;
     }
 
-    // 如果超过节流时间，立即保存
-    if (timeSinceLastSave >= AUTO_SAVE_CONFIG.THROTTLE_MS) {
-      executeSave();
-      return;
-    }
-
-    // 否则使用防抖：等待用户停止编辑
     timeoutRef.current = setTimeout(() => {
-      executeSave();
+      void executeSave();
     }, AUTO_SAVE_CONFIG.DEBOUNCE_MS);
-  }, [scoreId, isDirty, executeSave]);
+  }, [clearPendingTimer, executeSave, scoreId]);
 
-  // 监听 document 变化触发自动保存
   useEffect(() => {
     if (!isDirty || !scoreId || isSaving) return;
 
-    triggerSave();
+    triggerAutoSave();
 
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [document, isDirty, scoreId, isSaving, triggerSave]);
+    return clearPendingTimer;
+  }, [clearPendingTimer, document, isDirty, isSaving, scoreId, triggerAutoSave]);
 
-  // 手动保存事件处理
-  useEffect(() => {
-    const handleManualSave = () => {
-      if (!scoreId || isSavingInProgressRef.current) return;
-
-      // 清除现有的自动保存定时器
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-
-      executeSave();
-    };
-
-    window.addEventListener('editor:manual-save', handleManualSave);
-    return () => window.removeEventListener('editor:manual-save', handleManualSave);
-  }, [scoreId, executeSave]);
-
-  // 页面关闭前强制保存
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (isDirty && scoreId && !isSavingInProgressRef.current) {
-        // 使用 sendBeacon 确保数据发送
-        const data = JSON.stringify({ document, scoreId });
-        navigator.sendBeacon?.('/api/scores/auto-save', data);
-      }
+      if (!isDirtyRef.current || !scoreId || isSavingInProgressRef.current) return;
+
+      const payload = new Blob([JSON.stringify(documentRef.current)], {
+        type: 'application/json',
+      });
+      navigator.sendBeacon?.(`/api/scores/${encodeURIComponent(scoreId)}`, payload);
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty, scoreId, document]);
+  }, [scoreId]);
 
   return {
     isSaving,
     isDirty,
+    saveNow,
   };
 }

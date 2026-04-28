@@ -13,6 +13,7 @@ interface ScoreCardProps {
   keySignature: string;
   timeSignature: string;
   updatedAt: string;
+  editorHref?: string;
   onDelete: (scoreId: string) => void;
 }
 
@@ -35,9 +36,11 @@ export function ScoreCard({
   keySignature,
   timeSignature,
   updatedAt,
+  editorHref,
   onDelete,
 }: ScoreCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const href = editorHref || `/protected/scores?scoreId=${encodeURIComponent(scoreId)}`;
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -64,7 +67,7 @@ export function ScoreCard({
   return (
     <Card className="group hover:shadow-lg transition-shadow duration-200 relative">
       <CardHeader className="pb-3">
-        <Link href={`/protected/scores?scoreId=${encodeURIComponent(scoreId)}`}>
+        <Link href={href}>
           <CardTitle className="text-lg line-clamp-2 group-hover:text-emerald-600 transition-colors cursor-pointer">
             {title}
           </CardTitle>
@@ -89,7 +92,7 @@ export function ScoreCard({
             className="flex-1"
             asChild
           >
-            <Link href={`/protected/scores?scoreId=${encodeURIComponent(scoreId)}`}>
+            <Link href={href}>
               <Edit2Icon className="mr-1 h-3 w-3" />
               编辑
             </Link>
