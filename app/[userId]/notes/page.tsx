@@ -5,7 +5,7 @@ import { LazyThemeSwitcher, LazyScoreListClient } from "@/components/lazy-compon
 import { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { PlusIcon, SparklesIcon } from "@/components/ui/icons";
+import { PlusIcon } from "@/components/ui/icons";
 
 export const metadata: Metadata = {
   title: "我的乐谱 - Ocarinana",
@@ -84,17 +84,10 @@ export default async function UserNotesPage({ params }: PageProps) {
             </p>
           </div>
           <div className="flex gap-3">
-            {/* 试用新版编辑器按钮 */}
-            <Button asChild size="lg" variant="outline" className="gap-2">
-              <Link href="/protected/editor/v2/new">
-                <SparklesIcon className="h-5 w-5 text-yellow-500" />
-                试用新版编辑器
-              </Link>
-            </Button>
             <Button asChild size="lg" className="gap-2">
-              <Link href="/protected/scores/new">
+              <Link href="/protected/editor/v2/new">
                 <PlusIcon className="h-5 w-5" />
-                新建
+                新建乐谱
               </Link>
             </Button>
           </div>

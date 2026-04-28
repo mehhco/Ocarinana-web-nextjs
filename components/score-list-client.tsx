@@ -133,7 +133,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
           </p>
         </div>
         <Button asChild size="lg">
-          <Link href="/protected/scores/new">创建第一个乐谱</Link>
+          <Link href="/protected/editor/v2/new">创建第一个乐谱</Link>
         </Button>
       </div>
     );

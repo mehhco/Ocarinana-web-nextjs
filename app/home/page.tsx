@@ -134,7 +134,7 @@ export default async function HomeDashboardPage() {
           <CardContent className="space-y-3">
             <p className="text-sm text-foreground/70">直接前往编辑器创建新的乐谱。</p>
             <Button asChild>
-              <Link href="/protected/scores/new">打开编辑器</Link>
+              <Link href="/protected/editor/v2/new">打开编辑器</Link>
             </Button>
           </CardContent>
         </Card>

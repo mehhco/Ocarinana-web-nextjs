@@ -15,9 +15,7 @@ export function CtaStartButton() {
       const supabase = createClient();
       const { data } = await supabase.auth.getUser();
       if (data?.user) {
-        // 生成临时草稿ID，不立即创建云端记录
-        const tempId = `draft-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        router.push(`/protected/scores?scoreId=${encodeURIComponent(tempId)}&isDraft=true`);
+        router.push("/protected/editor/v2/new");
       } else {
         router.push("/auth/login");
       }
