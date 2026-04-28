@@ -100,82 +100,138 @@ export default function Home() {
       <AppNav currentPath="/" />
 
       {/* Hero */}
-      <section className="w-full border-b">
-        <div className="w-full max-w-6xl mx-auto px-5 py-20 grid md:grid-cols-2 gap-10 items-center">
-          <div className="flex flex-col gap-5">
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-              生成你的数字简谱与陶笛指法谱
-            </h1>
-            <p className="text-foreground/70 text-base md:text-lg leading-relaxed">
-              Ocarinana 是一款面向音乐爱好者与创作者的在线乐谱生成器。通过直观的交互面板，快速编排数字简谱，并自动匹配陶笛指法图，随时导出与分享。
+      <section className="relative w-full overflow-hidden border-b bg-[#fbfaf6]">
+        <div className="absolute inset-0 opacity-[0.08]">
+          <Image
+            src="/webfile/static/Cfinger.png"
+            alt=""
+            fill
+            className="object-cover object-center"
+            priority
+            aria-hidden="true"
+          />
+        </div>
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(251,250,246,0.98)_0%,rgba(251,250,246,0.9)_48%,rgba(251,250,246,0.68)_100%)]" />
+
+        <div className="relative mx-auto flex w-full max-w-6xl flex-col px-5 py-14 md:py-20">
+          <div className="max-w-3xl">
+            <p className="mb-4 text-sm font-semibold text-emerald-800">
+              在线陶笛谱生成器
             </p>
-            <div className="flex items-center gap-4">
+            <h1 className="text-4xl font-extrabold leading-tight tracking-normal text-zinc-950 md:text-6xl">
+              在线制作数字简谱，自动生成陶笛指法图
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-8 text-zinc-700 md:text-lg">
+              Ocarinana 面向陶笛学习者、音乐教师和内容创作者。输入简谱音符，实时预览 C/F/G 调指法图，完成后可导出适合打印与分享的高清图片。
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <CtaStartButton />
-              <Link href="#features" className="text-sm underline underline-offset-4">
-                了解功能
+              <Link
+                href="#features"
+                className="inline-flex h-12 items-center justify-center rounded-md border border-zinc-300 bg-white/70 px-6 text-sm font-medium text-zinc-800 transition-colors hover:border-emerald-700 hover:text-emerald-800"
+              >
+                查看功能
               </Link>
             </div>
-            <div className="flex items-center gap-8 pt-2 text-xs text-foreground/60">
+            <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-zinc-600">
               <span>无需安装</span>
-              <span>实时编辑</span>
-              <span>导出图片</span>
+              <span>支持指法图联动</span>
+              <span>PNG 高清导出</span>
+              <span>云端乐谱管理</span>
             </div>
           </div>
-          <div className="rounded-xl overflow-hidden shadow border bg-muted/20">
-            {/* Hero 图片：首屏可见，使用 priority 优先加载 */}
-            <Image
-              src="/webfile/static/Cfinger.png"
-              alt="陶笛和数字简谱 - Ocarinana陶笛谱生成器展示图"
-              width={1200}
-              height={800}
-              className="w-full h-full object-cover"
-              priority
-            />
+
+          <div className="mt-12 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
+            <div className="grid border-b border-zinc-200 bg-zinc-50/80 px-4 py-3 text-xs font-medium text-zinc-500 md:grid-cols-[1fr_auto] md:items-center">
+              <span>示例输出：天空之城片段 · 1=C · 4/4</span>
+              <span className="mt-1 text-emerald-800 md:mt-0">简谱 + 陶笛指法图</span>
+            </div>
+            <div className="grid gap-6 p-5 md:grid-cols-[1.4fr_0.8fr] md:p-6">
+              <div className="rounded-md bg-[#fffdf7] p-5 ring-1 ring-zinc-200">
+                <div className="mb-4 flex items-center justify-between text-xs text-zinc-500">
+                  <span>1=C</span>
+                  <span>4/4</span>
+                  <span>♩=88</span>
+                </div>
+                <div className="grid grid-cols-4 gap-y-5 text-center text-2xl font-bold leading-none text-zinc-900 md:text-3xl">
+                  {["5", "6", "7", "1", "7", "6", "5", "3", "5", "3", "2", "1"].map((note, index) => (
+                    <span key={`${note}-${index}`} className="relative pb-4">
+                      {note}
+                      {index === 3 && (
+                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-base leading-none">·</span>
+                      )}
+                      {[1, 5, 9].includes(index) && (
+                        <span className="absolute bottom-1 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-zinc-900" />
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-center rounded-md bg-zinc-950 p-4">
+                <Image
+                  src="/webfile/static/Cfinger.png"
+                  alt="陶笛指法图预览"
+                  width={440}
+                  height={300}
+                  className="max-h-56 w-full object-contain"
+                  priority
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features */}
-      <section id="features" className="w-full border-b">
-        <div className="w-full max-w-6xl mx-auto px-5 py-16 grid md:grid-cols-3 gap-6">
+      <section id="features" className="w-full border-b bg-white">
+        <div className="w-full max-w-6xl mx-auto px-5 py-14">
+          <div className="mb-8 max-w-2xl">
+            <h2 className="text-2xl font-bold text-zinc-950 md:text-3xl">
+              为陶笛谱制作而设计的核心流程
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-zinc-600">
+              从输入音符到生成指法图，再到导出图片，围绕实际练习、教学和分享场景组织功能。
+            </p>
+          </div>
+          <div className="grid gap-5 md:grid-cols-3">
           {[
             { title: "所见即所得", desc: "点击即可编排音符、休止与修饰符号。" },
             { title: "陶笛指法联动", desc: "自动根据调号与音高显示指法图。" },
             { title: "一键导出", desc: "高分辨率图片导出，适合打印与分享。" },
           ].map((f) => (
-            <div key={f.title} className="rounded-lg border p-6 bg-background">
-              <h3 className="font-semibold mb-2">{f.title}</h3>
-              <p className="text-sm text-foreground/70">{f.desc}</p>
+            <div key={f.title} className="rounded-md border border-zinc-200 bg-[#fbfaf6] p-6">
+              <h3 className="mb-2 font-semibold text-zinc-950">{f.title}</h3>
+              <p className="text-sm leading-6 text-zinc-600">{f.desc}</p>
             </div>
           ))}
+          </div>
         </div>
       </section>
 
       {/* Bento Grids */}
-      <section className="w-full border-b">
-        <div className="w-full max-w-6xl mx-auto px-5 py-16 grid md:grid-cols-3 gap-6 auto-rows-[200px]">
-          <div className="md:col-span-2 row-span-2 rounded-xl border p-6 flex flex-col justify-between bg-gradient-to-br from-muted/40 to-background">
+      <section className="w-full border-b bg-[#fbfaf6]">
+        <div className="w-full max-w-6xl mx-auto px-5 py-16 grid md:grid-cols-3 gap-5 auto-rows-[200px]">
+          <div className="md:col-span-2 row-span-2 rounded-md border border-zinc-200 p-6 flex flex-col justify-between bg-white">
             <div>
-              <h3 className="font-semibold mb-2">快速上手</h3>
-              <p className="text-sm text-foreground/70">打开即用，内置常用节拍与调号模版。</p>
+              <h3 className="font-semibold mb-2 text-zinc-950">快速上手</h3>
+              <p className="text-sm leading-6 text-zinc-600">打开即用，内置常用节拍与调号模版。</p>
             </div>
-            {/* 性能优化：下方图片懒加载，减少初始加载时间 */}
             <Image
-              src="https://images.unsplash.com/photo-1507838153414-b4b713384a76?q=80&w=1200&auto=format&fit=crop"
-              alt="音乐乐谱和音符 - 在线数字简谱编辑工具"
+              src="/webfile/static/Cfinger.png"
+              alt="陶笛指法图和简谱编辑预览"
               width={1200}
               height={400}
-              className="rounded-lg object-cover w-full h-40"
+              className="rounded-md object-contain w-full h-40 bg-[#fffdf7] p-3 ring-1 ring-zinc-200"
               loading="lazy"
             />
           </div>
-          <div className="rounded-xl border p-6 bg-background">
-            <h3 className="font-semibold mb-2">键盘友好</h3>
-            <p className="text-sm text-foreground/70">支持键盘输入、快捷切换与撤销/恢复。</p>
+          <div className="rounded-md border border-zinc-200 p-6 bg-white">
+            <h3 className="font-semibold mb-2 text-zinc-950">键盘友好</h3>
+            <p className="text-sm leading-6 text-zinc-600">支持键盘输入、快捷切换与撤销/恢复。</p>
           </div>
-          <div className="rounded-xl border p-6 bg-background">
-            <h3 className="font-semibold mb-2">本地保存</h3>
-            <p className="text-sm text-foreground/70">自动保存到浏览器，随时继续创作。</p>
+          <div className="rounded-md border border-zinc-200 p-6 bg-white">
+            <h3 className="font-semibold mb-2 text-zinc-950">本地保存</h3>
+            <p className="text-sm leading-6 text-zinc-600">自动保存到浏览器，随时继续创作。</p>
           </div>
         </div>
       </section>

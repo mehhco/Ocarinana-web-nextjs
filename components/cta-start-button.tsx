@@ -29,7 +29,7 @@ export function CtaStartButton() {
       size="lg"
       onClick={handleClick}
       disabled={loading}
-      className="px-10 py-6 text-base md:text-lg rounded-xl shadow-2xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white ring-2 ring-indigo-200/40"
+      className="h-12 rounded-md bg-emerald-700 px-8 text-base text-white shadow-sm hover:bg-emerald-800 focus-visible:ring-emerald-700 md:text-lg"
     >
       {loading ? "请稍候..." : "立即开始编辑"}
     </Button>
