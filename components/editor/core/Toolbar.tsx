@@ -30,6 +30,7 @@ const TIME_SIGNATURE_OPTIONS: { value: TimeSignature; label: string }[] = [
 interface ToolbarProps {
   isDirty: boolean;
   isSaving: boolean;
+  cloudSaveAvailable?: boolean;
   onExportImage: () => void;
   onSave: () => void;
 }
@@ -37,6 +38,7 @@ interface ToolbarProps {
 export const Toolbar = memo(function Toolbar({
   isDirty,
   isSaving,
+  cloudSaveAvailable = true,
   onExportImage,
   onSave,
 }: ToolbarProps) {
@@ -111,7 +113,7 @@ export const Toolbar = memo(function Toolbar({
               >
                 <SaveIcon className="h-4 w-4" />
                 <span className="hidden sm:inline">
-                  {isSaving ? '保存中' : isDirty ? '保存' : '已保存'}
+                  {!cloudSaveAvailable ? '登录保存' : isSaving ? '保存中' : isDirty ? '保存' : '已保存'}
                 </span>
               </Button>
 

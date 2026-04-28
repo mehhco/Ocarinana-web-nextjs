@@ -6,6 +6,11 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 });
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: __dirname,
+  turbopack: {
+    root: __dirname,
+  },
+
   // 性能优化：图片配置
   images: {
     remotePatterns: [

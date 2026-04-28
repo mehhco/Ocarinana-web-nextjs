@@ -2,6 +2,28 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasEnvVars } from "../utils";
 
+const PUBLIC_PATH_PREFIXES = [
+  "/auth",
+  "/editor",
+  "/legal",
+  "/shop",
+];
+
+const PUBLIC_PATHS = new Set([
+  "/",
+  "/robots.txt",
+  "/sitemap.xml",
+  "/manifest.json",
+  "/baidu-site-verification",
+]);
+
+function isPublicPath(pathname: string) {
+  return (
+    PUBLIC_PATHS.has(pathname) ||
+    PUBLIC_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+  );
+}
+
 export async function updateSession(request: NextRequest) {
   // 跳过API路由的处理，直接返回（API路由不需要认证检查）
   if (request.nextUrl.pathname.startsWith('/api/')) {
@@ -62,10 +84,8 @@ export async function updateSession(request: NextRequest) {
   const user = data?.claims;
 
   if (
-    request.nextUrl.pathname !== "/" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
+    !isPublicPath(request.nextUrl.pathname) &&
+    !user
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();

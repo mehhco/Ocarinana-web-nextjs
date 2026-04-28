@@ -17,7 +17,7 @@ export function CtaStartButton() {
       if (data?.user) {
         router.push("/protected/editor/v2/new");
       } else {
-        router.push("/auth/login");
+        router.push("/editor");
       }
     } finally {
       setLoading(false);

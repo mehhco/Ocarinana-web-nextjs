@@ -7,7 +7,7 @@ import { ElementPanel } from './ElementPanel';
 import { ScoreCanvas } from './ScoreCanvas';
 import { exportAsImage } from '../lib/exportUtils';
 import { useAutoSave } from '../hooks/useAutoSave';
-import { showError, showSuccess } from '@/lib/toast';
+import { showError, showSuccess, showToast } from '@/lib/toast';
 import type { ScoreDocument } from '@/lib/editor/types';
 
 interface ScoreEditorProps {
@@ -27,12 +27,35 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId 
     initialize(initialDocument);
   }, [initialize, initialDocument]);
 
+  const reserveGuestExport = useCallback(async () => {
+    if (scoreId) return true;
+
+    const response = await fetch('/api/guest-export-limit', {
+      method: 'POST',
+    });
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok || !payload?.allowed) {
+      showError(payload?.error || '今日游客导出次数已用完，请注册登录后继续导出。');
+      return false;
+    }
+
+    if (typeof payload.remaining === 'number') {
+      showToast(`游客今日还可导出 ${payload.remaining} 次`);
+    }
+
+    return true;
+  }, [scoreId]);
+
   const handleExportImage = useCallback(async () => {
     if (isExporting) return;
 
     setExporting(true);
 
     try {
+      const canExport = await reserveGuestExport();
+      if (!canExport) return;
+
       await new Promise<void>((resolve) => {
         window.requestAnimationFrame(() => {
           window.requestAnimationFrame(() => resolve());
@@ -47,9 +70,14 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId 
     } finally {
       setExporting(false);
     }
-  }, [documentTitle, isExporting, setExporting]);
+  }, [documentTitle, isExporting, reserveGuestExport, setExporting]);
 
   const handleManualSave = useCallback(async () => {
+    if (!scoreId) {
+      showToast('登录后可保存到云端，当前可先导出图片');
+      return;
+    }
+
     const result = await saveNow();
 
     if (result.success) {
@@ -58,13 +86,14 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId 
     }
 
     showError(result.error || '保存失败');
-  }, [saveNow]);
+  }, [saveNow, scoreId]);
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-slate-50">
       <Toolbar
         isDirty={isDirty}
         isSaving={isSaving}
+        cloudSaveAvailable={Boolean(scoreId)}
         onExportImage={handleExportImage}
         onSave={handleManualSave}
       />
