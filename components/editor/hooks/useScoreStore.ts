@@ -225,6 +225,10 @@ function getDurationLevel(duration: Duration): number {
   }
 }
 
+function isBeamableElement(element: ScoreElement | undefined): element is ScoreElement & { duration: Duration } {
+  return !!element && (element.type === 'note' || element.type === 'rest') && getDurationLevel(element.duration) > 0;
+}
+
 function beamTouchesPosition(beam: Beam, measureIndex: number, noteIndex: number): boolean {
   if (beam.startMeasureIndex !== measureIndex || beam.endMeasureIndex !== measureIndex) {
     return false;
@@ -725,9 +729,9 @@ export const useScoreStore = create<ScoreStore>()(
       
       measure.elements.splice(insertIndex, 0, extension);
       
-      // 选中新添加的延长线，方便连续添加
-      state.selectedMeasureIndex = targetMeasureIndex;
-      state.selectedNoteIndex = insertIndex;
+      // 插入后清空选择，避免下一次添加音符时替换掉延长线
+      state.selectedMeasureIndex = null;
+      state.selectedNoteIndex = null;
       
       document.updatedAt = new Date().toISOString();
       state.isDirty = true;
@@ -764,9 +768,9 @@ export const useScoreStore = create<ScoreStore>()(
       
       measure.elements.splice(insertIndex, 0, barline);
       
-      // 选中新添加的小节线，方便连续添加
-      state.selectedMeasureIndex = targetMeasureIndex;
-      state.selectedNoteIndex = insertIndex;
+      // 插入后清空选择，避免下一次添加音符时替换掉小节/反复线
+      state.selectedMeasureIndex = null;
+      state.selectedNoteIndex = null;
       
       document.updatedAt = new Date().toISOString();
       state.isDirty = true;
@@ -785,26 +789,8 @@ export const useScoreStore = create<ScoreStore>()(
       
       if (!element) return;
 
-      let deleteCount = 1;
-      
-      // 如果是音符或休止符，删除它及其相关的延长线
-      if (element.type === 'note' || element.type === 'rest') {
-        
-        // 检查并删除后面的延长线
-        for (let i = selectedNoteIndex + 1; i < measure.elements.length; i++) {
-          const nextItem = measure.elements[i];
-          if (nextItem && nextItem.type === 'extension') {
-            deleteCount++;
-          } else {
-            break;
-          }
-        }
-        
-        measure.elements.splice(selectedNoteIndex, deleteCount);
-      } else {
-        // 其他类型直接删除
-        measure.elements.splice(selectedNoteIndex, 1);
-      }
+      const deleteCount = 1;
+      measure.elements.splice(selectedNoteIndex, deleteCount);
       
       // 删除相关的连音线
       document.ties = document.ties?.filter(
@@ -1116,7 +1102,7 @@ export const useScoreStore = create<ScoreStore>()(
       }
 
       const durationLevels = rangeElements.map(element => {
-        if (!element || element.type !== 'note') return 0;
+        if (!isBeamableElement(element)) return 0;
         return getDurationLevel(element.duration);
       });
 

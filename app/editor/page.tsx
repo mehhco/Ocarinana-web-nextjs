@@ -29,7 +29,7 @@ export default function PublicEditorPage() {
         </div>
       </div>
       <div className="min-h-0 flex-1">
-        <ScoreEditor />
+        <ScoreEditor backHref="/" />
       </div>
     </main>
   );

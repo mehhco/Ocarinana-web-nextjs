@@ -1,9 +1,11 @@
 'use client';
 
 import { memo, useCallback } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { ImageIcon, MusicIcon, SaveIcon } from '@/components/ui/icons';
+import { ArrowLeftIcon, ImageIcon, SaveIcon } from '@/components/ui/icons';
 import {
   Select,
   SelectContent,
@@ -31,6 +33,7 @@ interface ToolbarProps {
   isDirty: boolean;
   isSaving: boolean;
   cloudSaveAvailable?: boolean;
+  backHref?: string;
   onExportImage: () => void;
   onSave: () => void;
 }
@@ -39,6 +42,7 @@ export const Toolbar = memo(function Toolbar({
   isDirty,
   isSaving,
   cloudSaveAvailable = true,
+  backHref,
   onExportImage,
   onSave,
 }: ToolbarProps) {
@@ -85,6 +89,13 @@ export const Toolbar = memo(function Toolbar({
     [updateSettings]
   );
 
+  const handleShowTempoChange = useCallback(
+    (checked: boolean | 'indeterminate') => {
+      updateSettings({ showTempo: checked === true });
+    },
+    [updateSettings]
+  );
+
   const handleSave = useCallback(() => {
     onSave();
   }, [onSave]);
@@ -94,14 +105,19 @@ export const Toolbar = memo(function Toolbar({
       <div className="flex h-full justify-center">
         <div className="flex h-full w-[80vw] min-w-[1000px] items-center">
           <div className="flex h-full w-1/3 items-center gap-2 pr-3">
-            <div className="mr-3 flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-600">
-                <MusicIcon className="h-3.5 w-3.5 text-white" />
-              </div>
-              <span className="hidden text-sm font-semibold text-slate-800 lg:block">
-                陶笛谱编辑器
-              </span>
-            </div>
+            {backHref && (
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="mr-2 gap-1.5 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600"
+              >
+                <Link href={backHref}>
+                  <ArrowLeftIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">我的乐谱</span>
+                </Link>
+              </Button>
+            )}
 
             <div className="flex items-center gap-1">
               <Button
@@ -177,18 +193,30 @@ export const Toolbar = memo(function Toolbar({
             </div>
 
             <div className="hidden items-center gap-1.5 lg:flex">
-              <span className="text-xs font-medium text-slate-500">速度</span>
-              <span className="text-sm font-semibold leading-none text-slate-600">♩</span>
-              <Input
-                type="number"
-                min={40}
-                max={300}
-                step={1}
-                value={document.settings.tempo}
-                onChange={handleTempoChange}
-                aria-label="速度"
-                className="h-7 w-16 border-slate-200 bg-slate-50 px-2 text-center text-xs focus:border-indigo-500 focus:bg-white"
-              />
+              <label className="flex h-7 items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 text-xs font-medium text-slate-600">
+                <Checkbox
+                  checked={document.settings.showTempo !== false}
+                  onCheckedChange={handleShowTempoChange}
+                  aria-label="显示速度"
+                  className="h-3.5 w-3.5 border-slate-300 data-[state=checked]:border-indigo-600 data-[state=checked]:bg-indigo-600"
+                />
+                <span>速度</span>
+              </label>
+              {document.settings.showTempo !== false && (
+                <>
+                  <span className="text-sm font-semibold leading-none text-slate-600">♩</span>
+                  <Input
+                    type="number"
+                    min={40}
+                    max={300}
+                    step={1}
+                    value={document.settings.tempo}
+                    onChange={handleTempoChange}
+                    aria-label="速度"
+                    className="h-7 w-16 border-slate-200 bg-slate-50 px-2 text-center text-xs focus:border-indigo-500 focus:bg-white"
+                  />
+                </>
+              )}
             </div>
 
             <div className="flex-1" />

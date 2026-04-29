@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     "在线乐谱工具登录",
   ],
   robots: {
-    index: true,
+    index: false,
     follow: true,
   },
 };

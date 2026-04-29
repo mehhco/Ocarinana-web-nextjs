@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     "在线乐谱工具注册",
   ],
   robots: {
-    index: true,
+    index: false,
     follow: true,
   },
 };

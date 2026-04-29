@@ -22,6 +22,10 @@ export const metadata: Metadata = {
     description: "管理你的账户与作品，查看你的乐谱收藏",
     type: "website",
   },
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default async function HomeDashboardPage() {

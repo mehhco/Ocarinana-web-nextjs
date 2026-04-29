@@ -108,6 +108,7 @@ export interface ScoreSettings {
   keySignature: KeySignature;
   timeSignature: TimeSignature;
   tempo: number;
+  showTempo: boolean;
   skin: SkinType;
   showLyrics: boolean;
   showFingering: boolean;

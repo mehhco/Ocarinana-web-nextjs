@@ -177,7 +177,6 @@ function BeamPreview() {
 }
 
 const HIGH_NOTES: { value: NoteValue; display: string }[] = [
-  { value: 'b7', display: '↑b7' },
   { value: '1', display: '↑1' },
   { value: '2', display: '↑2' },
   { value: '3', display: '↑3' },
@@ -186,9 +185,6 @@ const HIGH_NOTES: { value: NoteValue; display: string }[] = [
   { value: '6', display: '↑6' },
   { value: '7', display: '↑7' },
 ];
-
-const HIGH_FLAT_NOTE = HIGH_NOTES[0];
-const HIGH_SCALE_NOTES = HIGH_NOTES.slice(1);
 
 const BASIC_NOTES: { value: NoteValue; display: string }[] = [
   { value: '1', display: '1' },
@@ -199,6 +195,17 @@ const BASIC_NOTES: { value: NoteValue; display: string }[] = [
   { value: '6', display: '6' },
   { value: '7', display: '7' },
 ];
+
+const G_BASIC_NOTES: { value: NoteValue; display: string }[] = [
+  { value: '1', display: '1' },
+  { value: '2', display: '2' },
+  { value: '3', display: '3' },
+  { value: '4', display: '4' },
+  { value: '5', display: '5' },
+  { value: '6', display: '6' },
+  { value: 'b7', display: '♭7' },
+];
+
 
 const LOW_NOTES: { value: NoteValue; display: string }[] = [
   { value: '1', display: '↓1' },
@@ -436,19 +443,22 @@ const UTILITY_HELP = {
   },
 };
 
-function getAvailableNotes(keySignature: string): { high: string[]; low: string[] } {
-  const ranges: Record<string, { high: string[]; low: string[] }> = {
+function getAvailableNotes(keySignature: string): { high: string[]; basic: string[]; low: string[] } {
+  const ranges: Record<string, { high: string[]; basic: string[]; low: string[] }> = {
     C: {
       high: ['1', '2', '3', '4'],
+      basic: ['1', '2', '3', '4', '5', '6', '7'],
       low: ['6', '7'],
     },
     F: {
       high: ['1'],
+      basic: ['1', '2', '3', '4', '5', '6', '7'],
       low: ['3', '4', '5', '6', '7'],
     },
     G: {
-      high: ['b7'],
-      low: ['2', '3', '4', '5'],
+      high: [],
+      basic: ['1', '2', '3', '4', '5', '6', 'b7'],
+      low: ['2', '3', '4', '5', '6', '7'],
     },
   };
 
@@ -466,6 +476,17 @@ function getBeamDurationLevel(duration: Duration): number {
     default:
       return 0;
   }
+}
+
+function isBeamableElement(element: unknown): element is { type: 'note' | 'rest'; duration: Duration } {
+  return (
+    !!element &&
+    typeof element === 'object' &&
+    'type' in element &&
+    'duration' in element &&
+    ((element as { type?: string }).type === 'note' || (element as { type?: string }).type === 'rest') &&
+    getBeamDurationLevel((element as { duration: Duration }).duration) > 0
+  );
 }
 
 export const ElementPanel = memo(function ElementPanel() {
@@ -500,6 +521,7 @@ export const ElementPanel = memo(function ElementPanel() {
   const updateSettings = useScoreStore((state) => state.updateSettings);
 
   const availableNotes = getAvailableNotes(settings.keySignature);
+  const basicNotes = settings.keySignature === 'G' ? G_BASIC_NOTES : BASIC_NOTES;
   const hasSelection = selectedMeasureIndex !== null && selectedNoteIndex !== null;
   const selectedDuration =
     selectedElement && (selectedElement.type === 'note' || selectedElement.type === 'rest')
@@ -533,13 +555,13 @@ export const ElementPanel = memo(function ElementPanel() {
 
     return (
       rangeElements.length >= 2 &&
-      rangeElements.every((element) => element.type === 'note' && getBeamDurationLevel(element.duration) > 0)
+      rangeElements.every(isBeamableElement)
     );
   })();
 
   const handleHighNoteClick = useCallback(
     (noteValue: NoteValue) => {
-      addNote(noteValue, '1/4', { hasHighDot: noteValue !== 'b7' });
+      addNote(noteValue, '1/4', { hasHighDot: true });
       if (hasSelection) {
         clearSelection();
       }
@@ -694,24 +716,15 @@ export const ElementPanel = memo(function ElementPanel() {
                 <span className="text-xs font-semibold tracking-wider text-slate-500">高音</span>
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
-              <div className="space-y-1.5">
-                <div className="grid grid-cols-7 gap-1.5">
+              <div className="grid grid-cols-7 gap-1.5">
+                {HIGH_NOTES.map((note) => (
                   <NoteButton
-                    display={HIGH_FLAT_NOTE.display}
-                    onClick={() => handleHighNoteClick(HIGH_FLAT_NOTE.value)}
-                    disabled={!availableNotes.high.includes(HIGH_FLAT_NOTE.value)}
+                    key={`high-${note.value}`}
+                    display={note.display}
+                    onClick={() => handleHighNoteClick(note.value)}
+                    disabled={!availableNotes.high.includes(note.value)}
                   />
-                </div>
-                <div className="grid grid-cols-7 gap-1.5">
-                  {HIGH_SCALE_NOTES.map((note) => (
-                    <NoteButton
-                      key={`high-${note.value}`}
-                      display={note.display}
-                      onClick={() => handleHighNoteClick(note.value)}
-                      disabled={!availableNotes.high.includes(note.value)}
-                    />
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
 
@@ -721,11 +734,12 @@ export const ElementPanel = memo(function ElementPanel() {
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
               <div className="grid grid-cols-7 gap-1.5">
-                {BASIC_NOTES.map((note) => (
+                {basicNotes.map((note) => (
                   <NoteButton
                     key={`basic-${note.value}`}
                     display={note.display}
                     onClick={() => handleBasicNoteClick(note.value)}
+                    disabled={!availableNotes.basic.includes(note.value)}
                   />
                 ))}
               </div>

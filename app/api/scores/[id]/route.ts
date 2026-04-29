@@ -47,6 +47,7 @@ export async function GET(
       keySignature: "C",
       timeSignature: "4/4",
       tempo: 120,
+      showTempo: true,
       skin: "white",
       showLyrics: false,
       showFingering: false,

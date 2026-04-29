@@ -25,6 +25,7 @@ export default async function NewScoreV2Page() {
       keySignature: 'C',
       timeSignature: '4/4',
       tempo: 120,
+      showTempo: true,
       skin: 'white',
       showLyrics: false,
       showFingering: true,

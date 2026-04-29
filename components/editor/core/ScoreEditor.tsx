@@ -13,19 +13,47 @@ import type { ScoreDocument } from '@/lib/editor/types';
 interface ScoreEditorProps {
   initialDocument?: Partial<ScoreDocument>;
   scoreId?: string;
+  backHref?: string;
 }
 
-export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId }: ScoreEditorProps) {
+export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId, backHref }: ScoreEditorProps) {
   const initialize = useScoreStore((state) => state.initialize);
   const documentTitle = useScoreStore((state) => state.document.title);
   const setExporting = useScoreStore((state) => state.setExporting);
   const isExporting = useScoreStore((state) => state.isExporting);
+  const deleteSelectedElement = useScoreStore((state) => state.deleteSelectedElement);
   const scoreExportRef = useRef<HTMLDivElement>(null);
   const { isDirty, isSaving, saveNow } = useAutoSave(scoreId);
 
   useEffect(() => {
     initialize(initialDocument);
   }, [initialize, initialDocument]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Delete' || event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+      }
+
+      if (event.target instanceof HTMLElement) {
+        const tagName = event.target.tagName;
+        if (
+          event.target.isContentEditable ||
+          tagName === 'INPUT' ||
+          tagName === 'TEXTAREA' ||
+          tagName === 'SELECT'
+        ) {
+          return;
+        }
+      }
+
+      event.preventDefault();
+      deleteSelectedElement();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [deleteSelectedElement]);
 
   const reserveGuestExport = useCallback(async () => {
     if (scoreId) return true;
@@ -94,6 +122,7 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId 
         isDirty={isDirty}
         isSaving={isSaving}
         cloudSaveAvailable={Boolean(scoreId)}
+        backHref={backHref}
         onExportImage={handleExportImage}
         onSave={handleManualSave}
       />

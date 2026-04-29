@@ -92,7 +92,7 @@ export const LOW_NOTES = [
 // 根据 fingeringMap.ts 分析得出:
 // C调: 高音 1̇-4̇, 基础 1-7, 低音 6̣-7̣
 // F调: 高音 1̇, 基础 1-7, 低音 3̣-7̣
-// G调: 高音 b7̇, 基础 1-7, 低音 2̣-5̣
+// G调: 无高音映射, 基础 1-6 + ♭7, 低音 2̣-7̣
 export const KEY_SIGNATURE_RANGES: Record<string, {
   high: string[];
   basic: string[];
@@ -109,9 +109,9 @@ export const KEY_SIGNATURE_RANGES: Record<string, {
     low: ['3', '4', '5', '6', '7'],  // 3̣-7̣
   },
   G: {
-    high: ['b7'],  // b7̇
-    basic: ['1', '2', '3', '4', '5', '6', '7'],  // 1-7
-    low: ['2', '3', '4', '5'],  // 2̣-5̣
+    high: [],
+    basic: ['1', '2', '3', '4', '5', '6', 'b7'],  // 1-6 + ♭7
+    low: ['2', '3', '4', '5', '6', '7'],  // 2̣-7̣
   },
 };
 
@@ -187,6 +187,7 @@ export const DEFAULT_SETTINGS = {
   keySignature: 'C' as const,
   timeSignature: '4/4' as const,
   tempo: 120,
+  showTempo: true,
   skin: 'white' as const,
   showLyrics: false,
   showFingering: true,

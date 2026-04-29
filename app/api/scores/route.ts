@@ -95,6 +95,7 @@ export async function POST(req: Request) {
       keySignature: "C" as const,
       timeSignature: "4/4" as const,
       tempo: 120,
+      showTempo: true,
       skin: "white" as const,
       showLyrics: false,
       showFingering: false,

@@ -57,8 +57,12 @@ function getDurationLineCount(duration: Duration): number {
   }
 }
 
-function getElementDurationLineCount(element: ScoreElement): number {
-  if (element.type !== 'note') return 0;
+function isBeamableElement(element: ScoreElement | undefined): element is ScoreElement & { duration: Duration } {
+  return !!element && (element.type === 'note' || element.type === 'rest') && getDurationLineCount(element.duration) > 0;
+}
+
+function getElementDurationLineCount(element: ScoreElement | undefined): number {
+  if (!isBeamableElement(element)) return 0;
   return getDurationLineCount(element.duration);
 }
 
@@ -171,6 +175,27 @@ function getTieSegmentPosition(
   return 'none';
 }
 
+function TieSegment({
+  position,
+}: {
+  position: 'none' | 'start' | 'middle' | 'end';
+}) {
+  return (
+    <div className={TIE_SLOT_CLASS}>
+      {position !== 'none' && (
+        <span
+          className={cn(
+            'block h-2 border-t-2 border-slate-800',
+            position === 'middle' && 'absolute bottom-0 left-0 right-0',
+            position === 'start' && 'absolute bottom-0 left-1/2 right-0 rounded-tl-full',
+            position === 'end' && 'absolute bottom-0 left-0 right-1/2 rounded-tr-full'
+          )}
+        />
+      )}
+    </div>
+  );
+}
+
 function renderBarlineSymbol(element: ScoreElement) {
   if (element.type !== 'barline') return null;
 
@@ -191,6 +216,10 @@ function renderBarlineSymbol(element: ScoreElement) {
     default:
       return <span>|</span>;
   }
+}
+
+function renderNoteValue(value: string) {
+  return value === 'b7' ? '♭7' : value;
 }
 
 function buildNotePositions(measures: Measure[]): NotePosition[] {
@@ -365,18 +394,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         </div>
 
         {showTieRow && (
-          <div className={TIE_SLOT_CLASS}>
-            {tieSegmentPosition !== 'none' && (
-              <span
-                className={cn(
-                'block h-2 border-t-2 border-slate-800',
-                tieSegmentPosition === 'middle' && 'absolute bottom-0 left-0 right-0',
-                tieSegmentPosition === 'start' && 'absolute bottom-0 left-1/2 right-0 rounded-tl-full',
-                tieSegmentPosition === 'end' && 'absolute bottom-0 left-0 right-1/2 rounded-tr-full'
-              )}
-            />
-          )}
-          </div>
+          <TieSegment position={tieSegmentPosition} />
         )}
 
         <div className="flex h-4 flex-shrink-0 items-center justify-center">
@@ -387,7 +405,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
 
         <div className="flex h-5 flex-shrink-0 items-center justify-center">
           <div className="relative flex h-5 w-9 items-end justify-center">
-            <span className="text-lg font-bold leading-none text-slate-800">{element.value}</span>
+            <span className="text-lg font-bold leading-none text-slate-800">{renderNoteValue(element.value)}</span>
             {element.hasAugmentationDot && (
               <span className="absolute bottom-0 right-0 text-sm font-bold leading-none text-slate-800">•</span>
             )}
@@ -478,18 +496,24 @@ const NoteElementComponent = memo(function NoteElementComponent({
   const symbol = element.type === 'rest' ? '0' : element.type === 'extension' ? '-' : null;
   const symbolColor = element.type === 'barline' ? 'text-slate-700' : 'text-slate-800';
   const restDurationLineCount = element.type === 'rest' ? getDurationLineCount(element.duration) : 0;
+  const isInDurationBeam = isPositionInDurationBeam(beams, measureIndex, noteIndex);
+  const tieSegmentPosition = getTieSegmentPosition(ties, measureIndex, noteIndex);
 
   return (
     <div
       className={cn(
         'flex cursor-pointer flex-col items-center py-1 transition-all',
         widthClass,
-        isSelected ? 'rounded-md bg-indigo-50 ring-2 ring-indigo-500' : 'hover:bg-slate-50'
+        isBeamStart || isBeamPreview
+          ? 'rounded-md bg-amber-50 ring-2 ring-amber-500'
+          : isSelected
+            ? 'rounded-md bg-indigo-50 ring-2 ring-indigo-500'
+            : 'hover:bg-slate-50'
       )}
       onClick={onClick}
     >
       <div className={cn('w-12 flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-12' : 'h-0')} />
-      {showTieRow && <div className={TIE_SLOT_CLASS} />}
+      {showTieRow && <TieSegment position={tieSegmentPosition} />}
       <div className="h-4 flex-shrink-0" />
       <div className="flex h-5 flex-shrink-0 items-center justify-center">
         <span className={cn('text-lg font-bold', symbolColor)}>
@@ -497,7 +521,27 @@ const NoteElementComponent = memo(function NoteElementComponent({
         </span>
       </div>
       {restDurationLineCount > 0 ? (
-        <DurationLines lineCount={restDurationLineCount} slotLineCount={durationSlotLineCount} />
+        <DurationLines
+          lineCount={restDurationLineCount}
+          slotLineCount={durationSlotLineCount}
+          getLineClassName={(level) => {
+            const beamSegmentPosition = getDurationBeamSegmentPosition(
+              beams,
+              measureElements,
+              measureIndex,
+              noteIndex,
+              level
+            );
+
+            return cn(
+              beamSegmentPosition === 'middle' && '-mx-px w-[calc(100%+2px)] rounded-none',
+              beamSegmentPosition === 'start' && '-mr-px w-[calc(50%+0.5625rem)] self-end rounded-l-full rounded-r-none',
+              beamSegmentPosition === 'end' && '-ml-px w-[calc(50%+0.5625rem)] self-start rounded-l-none rounded-r-full',
+              beamSegmentPosition === 'none' && isInDurationBeam && 'w-4 rounded-[1px]',
+              beamSegmentPosition === 'none' && !isInDurationBeam && 'w-3.5 rounded-full'
+            );
+          }}
+        />
       ) : durationSlotLineCount > 0 ? (
         <div className={getDurationSpacerClassName(durationSlotLineCount)} />
       ) : null}
@@ -851,7 +895,7 @@ export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
       if (isBeamMode) {
         const element = scoreDoc.measures[measureIndex]?.elements[noteIndex];
 
-        if (!element || element.type !== 'note') return;
+        if (!isBeamableElement(element)) return;
 
         if (!beamStartPosition) {
           startBeam(measureIndex, noteIndex);
@@ -1036,9 +1080,11 @@ export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
             <span>
               拍号: <span className="font-medium text-slate-700">{scoreDoc.settings.timeSignature}</span>
             </span>
-            <span>
-              速度: <span className="font-medium text-slate-700">♩ {scoreDoc.settings.tempo}</span>
-            </span>
+            {scoreDoc.settings.showTempo !== false && (
+              <span>
+                速度: <span className="font-medium text-slate-700">♩ {scoreDoc.settings.tempo}</span>
+              </span>
+            )}
           </div>
         </div>
 

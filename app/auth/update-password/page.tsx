@@ -4,6 +4,10 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "更新密码 - Ocarinana",
   description: "更新您的 Ocarinana 账户密码",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function Page() {
