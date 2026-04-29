@@ -1,4 +1,6 @@
 /* 性能优化：Critical CSS - 首屏关键样式 */
+@import url("https://fonts.googleapis.com/css2?family=Spicy+Rice&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -33,6 +35,10 @@
   
   .will-change-scroll {
     will-change: scroll-position;
+  }
+
+  .brand-font {
+    font-family: "Spicy Rice", Georgia, "Times New Roman", serif;
   }
 }
 

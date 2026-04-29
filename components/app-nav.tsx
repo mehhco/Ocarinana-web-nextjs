@@ -22,8 +22,7 @@ export async function AppNav({ currentPath = "/" }: AppNavProps) {
         <div className="flex items-center gap-6">
           <Link 
             href="/" 
-            className="font-bold text-4xl text-emerald-600 drop-shadow transition-colors hover:text-emerald-700"
-            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+            className="brand-font text-4xl text-emerald-600 drop-shadow transition-colors hover:text-emerald-700"
           >
             Ocarinana
           </Link>
