@@ -103,7 +103,7 @@ export default function Home() {
       <section className="relative w-full overflow-hidden border-b bg-[#fbfaf6]">
         <div className="absolute inset-0 opacity-[0.08]">
           <Image
-            src="/webfile/static/Cfinger.png"
+            src="/webfile/static/note.webp"
             alt=""
             fill
             className="object-cover object-center"
@@ -143,40 +143,18 @@ export default function Home() {
 
           <div className="mt-12 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
             <div className="grid border-b border-zinc-200 bg-zinc-50/80 px-4 py-3 text-xs font-medium text-zinc-500 md:grid-cols-[1fr_auto] md:items-center">
-              <span>示例输出：天空之城片段 · 1=C · 4/4</span>
-              <span className="mt-1 text-emerald-800 md:mt-0">简谱 + 陶笛指法图</span>
+              <span>示例输出：故乡的原风景片段 1=G 4/4</span>
+              <span className="mt-1 text-emerald-800 md:mt-0">成品谱面预览</span>
             </div>
-            <div className="grid gap-6 p-5 md:grid-cols-[1.4fr_0.8fr] md:p-6">
-              <div className="rounded-md bg-[#fffdf7] p-5 ring-1 ring-zinc-200">
-                <div className="mb-4 flex items-center justify-between text-xs text-zinc-500">
-                  <span>1=C</span>
-                  <span>4/4</span>
-                  <span>♩=88</span>
-                </div>
-                <div className="grid grid-cols-4 gap-y-5 text-center text-2xl font-bold leading-none text-zinc-900 md:text-3xl">
-                  {["5", "6", "7", "1", "7", "6", "5", "3", "5", "3", "2", "1"].map((note, index) => (
-                    <span key={`${note}-${index}`} className="relative pb-4">
-                      {note}
-                      {index === 3 && (
-                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-base leading-none">·</span>
-                      )}
-                      {[1, 5, 9].includes(index) && (
-                        <span className="absolute bottom-1 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-zinc-900" />
-                      )}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center justify-center rounded-md bg-zinc-950 p-4">
-                <Image
-                  src="/webfile/static/Cfinger.png"
-                  alt="陶笛指法图预览"
-                  width={440}
-                  height={300}
-                  className="max-h-56 w-full object-contain"
-                  priority
-                />
-              </div>
+            <div className="bg-[#fffdf7] p-3 md:p-5">
+              <Image
+                src="/webfile/static/note.webp"
+                alt="故乡的原风景片段陶笛谱示例输出"
+                width={2266}
+                height={742}
+                className="h-auto w-full rounded-md object-contain ring-1 ring-zinc-200"
+                priority
+              />
             </div>
           </div>
         </div>
@@ -217,7 +195,7 @@ export default function Home() {
               <p className="text-sm leading-6 text-zinc-600">打开即用，内置常用节拍与调号模版。</p>
             </div>
             <Image
-              src="/webfile/static/Cfinger.png"
+              src="/webfile/static/note.webp"
               alt="陶笛指法图和简谱编辑预览"
               width={1200}
               height={400}

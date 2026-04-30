@@ -90,9 +90,9 @@ export const COMMON_RESOURCE_HINTS = {
   // 预加载 - 关键资源
   preload: [
     {
-      href: '/webfile/static/Cfinger.png',
+      href: '/webfile/static/note.webp',
       as: 'image',
-      type: 'image/png',
+      type: 'image/webp',
     },
     {
       href: '/webfile/script.js',

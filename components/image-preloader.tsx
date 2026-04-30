@@ -48,7 +48,7 @@ export function ImagePreloader({ images, priority = false }: ImagePreloaderProps
 // 预定义的关键图片列表
 export const CRITICAL_IMAGES = [
   // 主页关键图片
-  '/webfile/static/Cfinger.png',
+  '/webfile/static/note.webp',
   
   // 编辑器关键指法图（前几张，最常用）
   '/webfile/static/C-graph/1.webp',
