@@ -53,7 +53,7 @@ export function LyricsInput({
       onClick={stopPointerPropagation}
       onMouseDown={stopPointerPropagation}
       className={cn(
-        'h-7 w-16 rounded-md border px-1 text-center text-sm leading-none transition-all',
+        'h-6 w-16 rounded-md border px-1 text-center text-sm leading-none transition-all',
         'bg-transparent text-slate-700 placeholder:text-slate-300',
         active
           ? 'border-indigo-400 bg-white shadow-sm ring-1 ring-indigo-300'

@@ -236,18 +236,18 @@ function buildNotePositions(measures: Measure[]): NotePosition[] {
   return positions;
 }
 
-const LYRIC_ROW_CLASS = 'mt-1 flex h-7 flex-shrink-0 items-center justify-center';
-const TIE_SLOT_CLASS = 'relative h-[10px] w-full flex-shrink-0 overflow-hidden';
-const EXPRESSION_ROW_CLASS = 'mt-0.5 flex h-5 flex-shrink-0 items-center justify-center';
+const LYRIC_ROW_CLASS = 'mt-0.5 flex h-6 flex-shrink-0 items-center justify-center';
+const TIE_SLOT_CLASS = 'relative h-2 w-full flex-shrink-0 overflow-hidden';
+const EXPRESSION_ROW_CLASS = 'flex h-4 flex-shrink-0 items-center justify-center';
 
 function getDurationSlotClassName(slotLineCount: number): string {
   switch (slotLineCount) {
     case 1:
-      return 'mt-1 flex h-[13px] w-full flex-shrink-0 flex-col items-center gap-[3px] pt-[8px]';
+      return 'mt-0.5 flex h-[12px] w-full flex-shrink-0 flex-col items-center gap-[3px] pt-[7px]';
     case 2:
-      return 'mt-1 flex h-[16px] w-full flex-shrink-0 flex-col items-center gap-[3px] pt-[8px]';
+      return 'mt-0.5 flex h-[15px] w-full flex-shrink-0 flex-col items-center gap-[3px] pt-[7px]';
     case 3:
-      return 'mt-1 flex h-[21px] w-full flex-shrink-0 flex-col items-center gap-[3px] pt-[8px]';
+      return 'mt-0.5 flex h-5 w-full flex-shrink-0 flex-col items-center gap-[3px] pt-[7px]';
     default:
       return 'hidden';
   }
@@ -256,11 +256,11 @@ function getDurationSlotClassName(slotLineCount: number): string {
 function getDurationSpacerClassName(slotLineCount: number): string {
   switch (slotLineCount) {
     case 1:
-      return 'mt-1 h-[13px] flex-shrink-0';
+      return 'mt-0.5 h-[12px] flex-shrink-0';
     case 2:
-      return 'mt-1 h-[16px] flex-shrink-0';
+      return 'mt-0.5 h-[15px] flex-shrink-0';
     case 3:
-      return 'mt-1 h-[21px] flex-shrink-0';
+      return 'mt-0.5 h-5 flex-shrink-0';
     default:
       return 'hidden';
   }
@@ -369,7 +369,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
     return (
       <div
         className={cn(
-          'flex w-14 cursor-pointer flex-col items-center py-1 transition-all',
+          'flex w-14 cursor-pointer flex-col items-center py-0.5 transition-all',
           isBeamStart || isBeamPreview
             ? 'rounded-md bg-amber-50 ring-2 ring-amber-500'
             : isTieStart || isTiePreview
@@ -380,7 +380,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         )}
         onClick={onClick}
       >
-        <div className={cn('w-12 flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-12' : 'h-0')}>
+        <div className={cn('w-12 flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-11' : 'h-0')}>
           {fingeringUrl && (
             <Image
               src={fingeringUrl}
@@ -397,7 +397,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
           <TieSegment position={tieSegmentPosition} />
         )}
 
-        <div className="flex h-4 flex-shrink-0 items-center justify-center">
+        <div className="flex h-3.5 flex-shrink-0 items-center justify-center">
           {element.hasHighDot && element.value !== 'b7' && (
             <span className="text-xl font-bold leading-none text-slate-800">•</span>
           )}
@@ -436,7 +436,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
           />
         )}
 
-        <div className="flex h-4 flex-shrink-0 items-center justify-center">
+        <div className="flex h-3.5 flex-shrink-0 items-center justify-center">
           {element.hasLowDot && (
             <span
               className={cn(
@@ -457,7 +457,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         {showLyrics && lyricField && (
           <div className={LYRIC_ROW_CLASS}>
             {isExporting ? (
-              <span className="flex h-7 w-16 items-center justify-center px-1 text-center text-sm leading-none text-slate-700">
+              <span className="flex h-6 w-16 items-center justify-center px-1 text-center text-sm leading-none text-slate-700">
                 {lyricField.value}
               </span>
             ) : (
@@ -502,7 +502,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
   return (
     <div
       className={cn(
-        'flex cursor-pointer flex-col items-center py-1 transition-all',
+        'flex cursor-pointer flex-col items-center py-0.5 transition-all',
         widthClass,
         isBeamStart || isBeamPreview
           ? 'rounded-md bg-amber-50 ring-2 ring-amber-500'
@@ -512,9 +512,9 @@ const NoteElementComponent = memo(function NoteElementComponent({
       )}
       onClick={onClick}
     >
-      <div className={cn('w-12 flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-12' : 'h-0')} />
+      <div className={cn('w-12 flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-11' : 'h-0')} />
       {showTieRow && <TieSegment position={tieSegmentPosition} />}
-      <div className="h-4 flex-shrink-0" />
+      <div className="h-3.5 flex-shrink-0" />
       <div className="flex h-5 flex-shrink-0 items-center justify-center">
         <span className={cn('text-lg font-bold', symbolColor)}>
           {element.type === 'barline' ? renderBarlineSymbol(element) : symbol}
@@ -545,7 +545,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
       ) : durationSlotLineCount > 0 ? (
         <div className={getDurationSpacerClassName(durationSlotLineCount)} />
       ) : null}
-      <div className="h-4 flex-shrink-0" />
+      <div className="h-3.5 flex-shrink-0" />
       {showLyrics && <div className={LYRIC_ROW_CLASS} />}
       {showExpressionRow && <div className={EXPRESSION_ROW_CLASS} />}
     </div>
@@ -626,7 +626,7 @@ const MeasureComponent = memo(function MeasureComponent({
   onLyricCompositionEnd,
 }: MeasureProps) {
   return (
-    <div className="flex w-full flex-wrap items-start px-1 py-2">
+    <div className="flex w-full flex-wrap items-start px-1 py-1">
       {measure.elements.map((element, noteIndex) => {
         const positionKey = createPositionKey(measureIndex, noteIndex);
 
@@ -1071,8 +1071,8 @@ export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
   return (
     <div className="h-full w-full overflow-y-auto bg-white">
       <div ref={exportRef} className="bg-white">
-        <div className="border-b border-slate-200 bg-slate-50/50 py-3 text-center">
-          <h1 className="mb-1 text-lg font-bold text-slate-800">{scoreDoc.title}</h1>
+        <div className="border-b border-slate-200 bg-slate-50/50 py-2 text-center">
+          <h1 className="mb-0.5 text-lg font-bold text-slate-800">{scoreDoc.title}</h1>
           <div className="flex items-center justify-center gap-3 text-[11px] text-slate-500">
             <span>
               调号: <span className="font-medium text-slate-700">{scoreDoc.settings.keySignature}</span>
@@ -1088,14 +1088,14 @@ export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
           </div>
         </div>
 
-        <div className="w-full px-4 pb-4 pt-3" onClick={handleBackgroundClick}>
-          <div className="mb-3 flex w-full items-center gap-3 border-b border-slate-200 pb-2">
+        <div className="w-full px-4 pb-3 pt-2" onClick={handleBackgroundClick}>
+          <div className="mb-2 flex w-full items-center gap-3 border-b border-slate-200 pb-1.5">
             <div className="text-xs font-semibold text-slate-800">
               {scoreDoc.settings.keySignature} {scoreDoc.settings.timeSignature}
             </div>
           </div>
 
-          <div className="w-full space-y-2.5">
+          <div className="w-full space-y-1.5">
             {scoreDoc.measures.map((measure, measureIndex) => {
               const isSelected = !isExporting && selectedMeasureIndex === measureIndex;
               const durationSlotLineCount = getMeasureDurationLineCount(measure);
@@ -1108,7 +1108,7 @@ export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
               return (
                 <div
                   key={measure.id}
-                  className={cn('w-full border-b border-slate-300 pb-2.5', isSelected && 'bg-amber-50/30')}
+                  className={cn('w-full border-b border-slate-300 pb-1.5', isSelected && 'bg-amber-50/30')}
                 >
                   <MeasureComponent
                     measure={measure}
@@ -1152,7 +1152,7 @@ export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
       {!isExporting && (
         <button
           onClick={addMeasure}
-          className="mx-4 mb-4 mt-3 flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 py-2 text-sm font-medium text-slate-400 transition-all hover:border-indigo-400 hover:text-indigo-600"
+          className="mx-4 mb-3 mt-2 flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 py-1.5 text-sm font-medium text-slate-400 transition-all hover:border-indigo-400 hover:text-indigo-600"
         >
           <PlusIcon className="h-4 w-4" />
           添加小节
