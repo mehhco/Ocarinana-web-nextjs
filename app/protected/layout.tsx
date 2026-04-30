@@ -12,11 +12,14 @@ export default function ProtectedLayout({
   return (
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-full flex flex-col items-center">
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-          <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
-            <div className="flex gap-5 items-center font-semibold">
-              <Link href={"/"}>Ocarinana 陶笛谱生成器</Link>
-            </div>
+        <nav className="relative flex h-16 w-full items-center justify-center border-b border-b-foreground/10 px-5 text-sm">
+          <Link
+            href={"/"}
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-semibold"
+          >
+            Ocarinana 陶笛谱生成器
+          </Link>
+          <div className="ml-auto flex items-center">
             {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
           </div>
         </nav>
