@@ -8,7 +8,6 @@ export { ElementPanel } from './core/ElementPanel';
 export { ScoreCanvas } from './core/ScoreCanvas';
 
 export { useScoreStore } from './hooks/useScoreStore';
-export { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 export * from './hooks/useSelectors';
 
 export * from './lib/constants';
