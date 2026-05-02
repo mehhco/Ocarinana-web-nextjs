@@ -1071,6 +1071,11 @@ export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
   return (
     <div className="h-full w-full overflow-y-auto bg-white">
       <div ref={exportRef} className="bg-white">
+        {isExporting && (
+          <div className="flex justify-end px-4 pt-2 text-[10px] font-medium leading-none tracking-normal text-slate-400">
+            www.ocarinana.com
+          </div>
+        )}
         <div className="border-b border-slate-200 bg-slate-50/50 py-2 text-center">
           <h1 className="mb-0.5 text-lg font-bold text-slate-800">{scoreDoc.title}</h1>
           <div className="flex items-center justify-center gap-3 text-[11px] text-slate-500">
