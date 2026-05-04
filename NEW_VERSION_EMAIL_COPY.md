@@ -112,3 +112,54 @@ Ocarinana 新版已经上线。
 现在就可以点击首页“立即开始编辑”体验。
 
 Ocarinana
+
+
+
+
+
+
+
+• 最简化且效果最稳的操作方式是：
+
+  Supabase 只负责导出注册用户邮箱，Resend 负责群发。
+
+  不要让网站接口一次性给所有用户发，这类任务容易遇到 Vercel 超时、重复发送、失败不可追踪、退订合规问题。
+
+  推荐流程
+
+  1. 在 Supabase SQL Editor 查询已验证邮箱：
+
+  select
+    id,
+    email,
+    created_at
+  from auth.users
+  where email is not null
+    and email_confirmed_at is not null
+  order by created_at desc;
+
+  然后导出 CSV。
+
+  2. 在 Resend 中导入联系人
+     进入 Resend 的 Contacts / Audiences，把 CSV 导入进去。
+  3. 用 Resend Broadcasts 创建更新推荐邮件
+     你可以使用之前项目根目录里的邮件文案：
+
+  NEW_VERSION_EMAIL_COPY.md
+
+  建议邮件里包含：
+
+  - 新版首页和编辑器截图
+  - “立即体验新版”按钮：https://www.ocarinana.com
+  - 一句退订说明，例如：“如果你不希望继续收到产品更新邮件，可以回复本邮件退订。”
+
+  4. 先发测试邮件
+     先发给你自己的 QQ、Gmail、Outlook 邮箱各一封，确认：
+
+  - 中文正常显示
+  - 图片正常加载
+  - 按钮链接正确
+  - 没进垃圾箱
+
+  5. 再正式群发
+     如果用户数量不多，Resend Broadcasts 是最省事的方式。
