@@ -19,6 +19,18 @@ type ResendErrorResponse = {
 
 const RESEND_EMAIL_ENDPOINT = "https://api.resend.com/emails";
 
+function ensureHtmlCharset(html: string) {
+  if (/<meta\s+charset=/i.test(html)) {
+    return html;
+  }
+
+  if (/<html[\s>]/i.test(html)) {
+    return html.replace(/<head([\s\S]*?)>/i, '<head$1><meta charset="UTF-8">');
+  }
+
+  return `<!doctype html><html><head><meta charset="UTF-8"></head><body>${html}</body></html>`;
+}
+
 function getResendApiKey() {
   const apiKey = process.env.RESEND_API_KEY?.trim();
 
@@ -38,13 +50,13 @@ export async function sendEmail(input: SendEmailInput): Promise<ResendEmailRespo
     method: "POST",
     headers: {
       Authorization: `Bearer ${getResendApiKey()}`,
-      "Content-Type": "application/json",
+      "Content-Type": "application/json; charset=utf-8",
     },
     body: JSON.stringify({
       from: input.from || getDefaultFromEmail(),
       to: input.to,
       subject: input.subject,
-      html: input.html,
+      html: ensureHtmlCharset(input.html),
       text: input.text,
       reply_to: input.replyTo,
     }),

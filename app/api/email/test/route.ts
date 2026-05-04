@@ -3,6 +3,9 @@ import { sendEmail } from "@/lib/email/resend";
 
 export const runtime = "nodejs";
 
+const DEFAULT_TEST_SUBJECT = "Ocarinana 邮件测试";
+const DEFAULT_TEST_HTML = "<p>生产环境 Resend 中文邮件测试成功。</p>";
+
 function isAuthorized(request: NextRequest) {
   const secret = process.env.EMAIL_SEND_SECRET;
 
@@ -45,11 +48,8 @@ export async function POST(request: NextRequest) {
 
     const result = await sendEmail({
       to,
-      subject: typeof body.subject === "string" ? body.subject : "Hello World",
-      html:
-        typeof body.html === "string"
-          ? body.html
-          : "<p>Congrats on sending your <strong>first email</strong>!</p>",
+      subject: typeof body.subject === "string" ? body.subject : DEFAULT_TEST_SUBJECT,
+      html: typeof body.html === "string" ? body.html : DEFAULT_TEST_HTML,
     });
 
     return NextResponse.json({
