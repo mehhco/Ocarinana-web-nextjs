@@ -163,3 +163,68 @@ Ocarinana
 
   5. 再正式群发
      如果用户数量不多，Resend Broadcasts 是最省事的方式。
+
+
+
+
+
+如果我才用你推荐的supabase导出+Resend群发的方式，并且加上了退订提醒，用户真的回复退订了，我该如何处理，下次不再发送
+
+
+• 可以，用最简化方式也能处理好：维护一个“退订名单”，下次导入 Resend 前把这些邮箱排除掉。
+
+  最简单流程
+
+  1. 用户回复“退订”
+  2. 你把他的邮箱加入一个本地表格，例如：
+
+  unsubscribed_emails.csv
+
+  内容：
+
+  email,unsubscribed_at,source
+  user@example.com,2026-05-04,reply
+
+  3. 下次从 Supabase 导出全部用户邮箱后，在 Excel / Google Sheets 里用退订名单做排除
+  4. 只把未退订用户导入 Resend 群发
+
+  更推荐的做法
+
+  在 Supabase 建一张退订表：
+
+  create table if not exists public.email_unsubscribes (
+    email text primary key,
+    unsubscribed_at timestamptz not null default now(),
+    source text not null default 'manual_reply'
+  );
+
+  用户回复退订后，你手动执行：
+
+  insert into public.email_unsubscribes (email, source)
+  values ('user@example.com', 'manual_reply')
+  on conflict (email) do update
+  set unsubscribed_at = now(),
+      source = excluded.source;
+
+  下次导出群发名单时，用这个 SQL 自动排除：
+
+  select
+    u.email
+  from auth.users u
+  left join public.email_unsubscribes e
+    on lower(u.email) = lower(e.email)
+  where u.email is not null
+    and u.email_confirmed_at is not null
+    and e.email is null
+  order by u.created_at desc;
+
+  这样你就不会再次给退订用户发推广邮件。
+
+  如果用 Resend Broadcasts
+
+  Resend 里通常也会有联系人状态或 suppression/unsubscribe 管理。你可以同时做两件事：
+
+  - 在 Resend 里把该联系人标记为退订或移除出受众
+  - 在 Supabase 的 email_unsubscribes 表里记录一份
+
+  以 Supabase 这份为准，避免以后换邮件工具时丢失退订记录。
