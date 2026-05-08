@@ -28,6 +28,7 @@ interface NotePosition {
 
 interface ScoreCanvasProps {
   exportRef?: RefObject<HTMLDivElement | null>;
+  readOnly?: boolean;
 }
 
 function createPositionKey(measureIndex: number, noteIndex: number): string {
@@ -704,7 +705,7 @@ const MeasureComponent = memo(function MeasureComponent({
   );
 });
 
-export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
+export function ScoreCanvas({ exportRef, readOnly = false }: ScoreCanvasProps) {
   const {
     document: scoreDoc,
     selectedMeasureIndex,
@@ -769,7 +770,7 @@ export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
   }, [scoreDoc.ties]);
   const showExpressionRow = expressionsByKey.size > 0;
   const activeLyricKey =
-    !isExporting && selectedMeasureIndex !== null && selectedNoteIndex !== null
+    !readOnly && !isExporting && selectedMeasureIndex !== null && selectedNoteIndex !== null
       ? createPositionKey(selectedMeasureIndex, selectedNoteIndex)
       : null;
 
@@ -892,6 +893,8 @@ export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
 
   const handleSelectNote = useCallback(
     (measureIndex: number, noteIndex: number) => {
+      if (readOnly) return;
+
       if (isBeamMode) {
         const element = scoreDoc.measures[measureIndex]?.elements[noteIndex];
 
@@ -954,6 +957,7 @@ export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
       startBeam,
       startTie,
       tieStartPosition,
+      readOnly,
     ]
   );
 
@@ -1102,7 +1106,7 @@ export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
 
           <div className="w-full space-y-1.5">
             {scoreDoc.measures.map((measure, measureIndex) => {
-              const isSelected = !isExporting && selectedMeasureIndex === measureIndex;
+              const isSelected = !readOnly && !isExporting && selectedMeasureIndex === measureIndex;
               const durationSlotLineCount = getMeasureDurationLineCount(measure);
               const showTieRow =
                 tieMeasureIndexes.has(measureIndex) ||
@@ -1125,13 +1129,13 @@ export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
                     durationSlotLineCount={durationSlotLineCount}
                     beams={scoreDoc.beams || []}
                     ties={scoreDoc.ties || []}
-                    beamStartPosition={isExporting ? null : beamStartPosition}
-                    tieStartPosition={isExporting ? null : tieStartPosition}
-                    isBeamMode={!isExporting && isBeamMode}
-                    isTieMode={!isExporting && isTieMode}
+                    beamStartPosition={isExporting || readOnly ? null : beamStartPosition}
+                    tieStartPosition={isExporting || readOnly ? null : tieStartPosition}
+                    isBeamMode={!readOnly && !isExporting && isBeamMode}
+                    isTieMode={!readOnly && !isExporting && isTieMode}
                     isExporting={isExporting}
                     showTieRow={showTieRow}
-                    lyricsDisabled={isBeamMode || isTieMode}
+                    lyricsDisabled={readOnly || isBeamMode || isTieMode}
                     lyricsByKey={lyricsByKey}
                     expressionsByKey={expressionsByKey}
                     showExpressionRow={showExpressionRow}
@@ -1154,7 +1158,7 @@ export function ScoreCanvas({ exportRef }: ScoreCanvasProps) {
         </div>
       </div>
 
-      {!isExporting && (
+      {!isExporting && !readOnly && (
         <button
           onClick={addMeasure}
           className="mx-4 mb-3 mt-2 flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 py-1.5 text-sm font-medium text-slate-400 transition-all hover:border-indigo-400 hover:text-indigo-600"

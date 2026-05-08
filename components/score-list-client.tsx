@@ -26,6 +26,8 @@ interface Score {
   title: string;
   updatedAt: string;
   createdAt: string;
+  isPublic: boolean;
+  publishedAt?: string | null;
   editorHref?: string;
   settings: {
     keySignature: string;
@@ -42,13 +44,8 @@ const ITEMS_PER_PAGE = 12;
 const KEY_OPTIONS = [
   { value: "all", label: "全部调号" },
   { value: "C", label: "1=C" },
-  { value: "G", label: "1=G" },
-  { value: "D", label: "1=D" },
-  { value: "A", label: "1=A" },
-  { value: "E", label: "1=E" },
   { value: "F", label: "1=F" },
-  { value: "Bb", label: "1=Bb" },
-  { value: "Eb", label: "1=Eb" },
+  { value: "G", label: "1=G" },
 ];
 
 const TIME_OPTIONS = [
@@ -111,6 +108,23 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
   // 删除乐谱（乐观更新）
   const handleDelete = (scoreId: string) => {
     setScores((prev) => prev.filter((s) => s.scoreId !== scoreId));
+  };
+
+  const handleVisibilityChange = (
+    scoreId: string,
+    nextState: { isPublic: boolean; publishedAt?: string | null }
+  ) => {
+    setScores((prev) =>
+      prev.map((score) =>
+        score.scoreId === scoreId
+          ? {
+              ...score,
+              isPublic: nextState.isPublic,
+              publishedAt: nextState.publishedAt ?? score.publishedAt,
+            }
+          : score
+      )
+    );
   };
 
   // 重置到第一页当筛选条件改变时
@@ -312,8 +326,11 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
             keySignature={score.settings.keySignature}
             timeSignature={score.settings.timeSignature}
             updatedAt={score.updatedAt}
+            isPublic={score.isPublic}
+            publishedAt={score.publishedAt}
             editorHref={score.editorHref}
             onDelete={handleDelete}
+            onVisibilityChange={handleVisibilityChange}
           />
         ))}
       </div>

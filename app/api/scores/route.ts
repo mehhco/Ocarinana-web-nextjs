@@ -3,6 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { createScoreSchema } from "@/lib/validations/score";
 import { checkRateLimit, getIdentifier, RATE_LIMITS, rateLimitResponse } from "@/lib/rate-limit";
 
+interface ScoreListRow {
+  score_id: string;
+  title: string;
+  updated_at: string;
+  is_public?: boolean | null;
+  published_at?: string | null;
+}
+
 // 列表当前用户的乐谱（精简字段）
 // 性能优化：添加分页、缓存、计数
 export async function GET(req: Request) {
@@ -27,12 +35,30 @@ export async function GET(req: Request) {
   const offset = (page - 1) * limit;
 
   // 优化查询：只查询需要的字段，添加分页，获取总数
-  const { data, error, count } = await supabase
+  const primaryScoresResult = await supabase
     .from("scores")
-    .select("score_id, title, updated_at", { count: 'exact' })
+    .select("score_id, title, updated_at, is_public, published_at", { count: 'exact' })
     .eq("owner_user_id", user.id)
     .order("updated_at", { ascending: false })
     .range(offset, offset + limit - 1);
+  let data = primaryScoresResult.data as ScoreListRow[] | null;
+  let error = primaryScoresResult.error;
+  let count = primaryScoresResult.count;
+
+  if (error) {
+    const fallback = await supabase
+      .from("scores")
+      .select("score_id, title, updated_at", { count: 'exact' })
+      .eq("owner_user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (!fallback.error) {
+      data = fallback.data as ScoreListRow[] | null;
+      error = null;
+      count = fallback.count;
+    }
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -42,6 +68,8 @@ export async function GET(req: Request) {
       scoreId: row.score_id,
       title: row.title,
       updatedAt: row.updated_at,
+      isPublic: row.is_public ?? false,
+      publishedAt: row.published_at,
     })),
     pagination: {
       page,

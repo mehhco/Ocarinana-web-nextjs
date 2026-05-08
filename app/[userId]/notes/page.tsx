@@ -22,6 +22,16 @@ interface PageProps {
   }>;
 }
 
+interface ScoreRow {
+  score_id: string;
+  title: string;
+  document: any;
+  created_at: string;
+  updated_at: string;
+  is_public?: boolean | null;
+  published_at?: string | null;
+}
+
 export default async function UserNotesPage({ params }: PageProps) {
   const { userId } = await params;
   const supabase = await createClient();
@@ -34,11 +44,26 @@ export default async function UserNotesPage({ params }: PageProps) {
   }
 
   // 获取用户的所有乐谱
-  const { data: scoresData, error } = await supabase
+  const primaryScoresResult = await supabase
     .from("scores")
-    .select("score_id, title, document, created_at, updated_at")
+    .select("score_id, title, document, created_at, updated_at, is_public, published_at")
     .eq("owner_user_id", user.id)
     .order("updated_at", { ascending: false });
+  let scoresData = primaryScoresResult.data as ScoreRow[] | null;
+  let error = primaryScoresResult.error;
+
+  if (error) {
+    const fallback = await supabase
+      .from("scores")
+      .select("score_id, title, document, created_at, updated_at")
+      .eq("owner_user_id", user.id)
+      .order("updated_at", { ascending: false });
+
+    if (!fallback.error) {
+      scoresData = fallback.data as ScoreRow[] | null;
+      error = null;
+    }
+  }
 
   if (error) {
     console.error("Failed to fetch scores:", error);
@@ -58,6 +83,8 @@ export default async function UserNotesPage({ params }: PageProps) {
     title: row.title,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    isPublic: row.is_public ?? false,
+    publishedAt: row.published_at,
     editorHref:
       row.document?.version === "2.0"
         ? `/protected/editor/v2?scoreId=${encodeURIComponent(row.score_id)}`
