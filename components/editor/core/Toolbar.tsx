@@ -112,7 +112,7 @@ export const Toolbar = memo(function Toolbar({
                 size="sm"
                 className="mr-2 gap-1.5 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600"
               >
-                <Link href={backHref}>
+                <Link href={backHref} prefetch={false}>
                   <ArrowLeftIcon className="h-4 w-4" />
                   <span className="hidden sm:inline">我的乐谱</span>
                 </Link>

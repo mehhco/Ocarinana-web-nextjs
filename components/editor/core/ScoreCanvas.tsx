@@ -573,6 +573,7 @@ interface MeasureProps {
   lyricsByKey: Map<string, string>;
   expressionsByKey: Map<string, ExpressionMark>;
   showExpressionRow: boolean;
+  readOnly: boolean;
   lyricDrafts: Record<string, string>;
   activeLyricKey: string | null;
   registerLyricInput: (measureIndex: number, noteIndex: number, node: HTMLInputElement | null) => void;
@@ -614,6 +615,7 @@ const MeasureComponent = memo(function MeasureComponent({
   lyricsByKey,
   expressionsByKey,
   showExpressionRow,
+  readOnly,
   lyricDrafts,
   activeLyricKey,
   registerLyricInput,
@@ -685,7 +687,7 @@ const MeasureComponent = memo(function MeasureComponent({
                     value: lyricDrafts[positionKey] ?? lyricsByKey.get(positionKey) ?? '',
                     active: activeLyricKey === positionKey,
                     disabled: lyricsDisabled,
-                    placeholder: isExporting ? '' : undefined,
+                    placeholder: isExporting || readOnly ? '' : undefined,
                     inputRef: (node) => registerLyricInput(measureIndex, noteIndex, node),
                     onChange: (text) => onLyricChange(measureIndex, noteIndex, text),
                     onFocus: () => onLyricFocus(measureIndex, noteIndex),
@@ -1139,6 +1141,7 @@ export function ScoreCanvas({ exportRef, readOnly = false }: ScoreCanvasProps) {
                     lyricsByKey={lyricsByKey}
                     expressionsByKey={expressionsByKey}
                     showExpressionRow={showExpressionRow}
+                    readOnly={readOnly}
                     lyricDrafts={lyricDrafts}
                     activeLyricKey={activeLyricKey}
                     registerLyricInput={registerLyricInput}
