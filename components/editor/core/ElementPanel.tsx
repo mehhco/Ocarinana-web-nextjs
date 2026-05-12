@@ -320,6 +320,18 @@ const REST_HELP: Record<Duration, HelpContent> = {
 };
 
 const MODIFIER_HELP = {
+  replaceMode: {
+    title: '替换模式',
+    meaning: '选中音符后点击数字，会改写当前选中位置。',
+    usage: '适合修正写错的音符；未选中时继续添加到乐谱末尾。',
+    summary: '点击音符会替换选中位置。',
+  },
+  insertMode: {
+    title: '插入模式',
+    meaning: '选中一个元素后，点击数字或休止符会插入到它后方。',
+    usage: '适合补漏音：先选中漏音前一个位置，再点要补的音符；新音符会保持选中，方便连续插入。',
+    summary: '点击音符会插入到选中元素后方。',
+  },
   dot: {
     title: '附点',
     meaning: '写在数字右下角，表示音符时值延长一半。',
@@ -335,9 +347,9 @@ const MODIFIER_HELP = {
     summary: '在音符后延长发声。',
   },
   tie: {
-    title: '圆滑线',
+    title: '连音线',
     meaning: '连接相邻或相近音符，表示连贯演奏。',
-    usage: '点圆滑线后，依次点击同一小节内从左到右的两个音符。',
+    usage: '点连音线后，依次点击同一小节内从左到右的两个音符。',
     preview: <TextPreview>1 ︵ 2</TextPreview>,
     summary: '点击两个音符生成连线。',
   },
@@ -497,6 +509,7 @@ export const ElementPanel = memo(function ElementPanel() {
   const addBarline = useScoreStore((state) => state.addBarline);
   const updateNoteDuration = useScoreStore((state) => state.updateNoteDuration);
   const toggleAugmentationDot = useScoreStore((state) => state.toggleAugmentationDot);
+  const toggleInsertMode = useScoreStore((state) => state.toggleInsertMode);
   const toggleTieMode = useScoreStore((state) => state.toggleTieMode);
   const toggleBeamMode = useScoreStore((state) => state.toggleBeamMode);
   const endBeam = useScoreStore((state) => state.endBeam);
@@ -505,6 +518,7 @@ export const ElementPanel = memo(function ElementPanel() {
   const clearSelection = useScoreStore((state) => state.clearSelection);
   const toggleExpression = useScoreStore((state) => state.toggleExpression);
   const isTieMode = useScoreStore((state) => state.isTieMode);
+  const isInsertMode = useScoreStore((state) => state.isInsertMode);
   const isBeamMode = useScoreStore((state) => state.isBeamMode);
   const beamStartPosition = useScoreStore((state) => state.beamStartPosition);
   const selectedMeasureIndex = useScoreStore((state) => state.selectedMeasureIndex);
@@ -562,42 +576,54 @@ export const ElementPanel = memo(function ElementPanel() {
   const handleHighNoteClick = useCallback(
     (noteValue: NoteValue) => {
       addNote(noteValue, '1/4', { hasHighDot: true });
-      if (hasSelection) {
+      if (hasSelection && !isInsertMode) {
         clearSelection();
       }
     },
-    [addNote, clearSelection, hasSelection]
+    [addNote, clearSelection, hasSelection, isInsertMode]
   );
 
   const handleBasicNoteClick = useCallback(
     (noteValue: NoteValue) => {
       addNote(noteValue, '1/4');
-      if (hasSelection) {
+      if (hasSelection && !isInsertMode) {
         clearSelection();
       }
     },
-    [addNote, clearSelection, hasSelection]
+    [addNote, clearSelection, hasSelection, isInsertMode]
   );
 
   const handleLowNoteClick = useCallback(
     (noteValue: NoteValue) => {
       addNote(noteValue, '1/4', { hasLowDot: true });
-      if (hasSelection) {
+      if (hasSelection && !isInsertMode) {
         clearSelection();
       }
     },
-    [addNote, clearSelection, hasSelection]
+    [addNote, clearSelection, hasSelection, isInsertMode]
   );
 
   const handleRestClick = useCallback(
     (duration: Duration) => {
       addRest(duration);
-      if (hasSelection) {
+      if (hasSelection && !isInsertMode) {
         clearSelection();
       }
     },
-    [addRest, clearSelection, hasSelection]
+    [addRest, clearSelection, hasSelection, isInsertMode]
   );
+
+  const handleReplaceModeClick = useCallback(() => {
+    if (isInsertMode) {
+      toggleInsertMode();
+    }
+  }, [isInsertMode, toggleInsertMode]);
+
+  const handleInsertModeClick = useCallback(() => {
+    if (!isInsertMode) {
+      toggleInsertMode();
+    }
+  }, [isInsertMode, toggleInsertMode]);
 
   const toggleFingering = useCallback(() => {
     updateSettings({ showFingering: !settings.showFingering });
@@ -676,6 +702,34 @@ export const ElementPanel = memo(function ElementPanel() {
               {settings.showFingering ? <EyeOffIcon className="h-3 w-3" /> : <EyeIcon className="h-3 w-3" />}
               {settings.showFingering ? '隐藏指法图' : '显示指法图'}
             </ActionButton>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-xs font-semibold tracking-wider text-slate-500">编辑方式</span>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <ActionButton
+                onClick={handleReplaceModeClick}
+                active={!isInsertMode}
+                help={MODIFIER_HELP.replaceMode}
+                showInlineHelp={showHelp}
+              >
+                替换
+              </ActionButton>
+              <ActionButton
+                onClick={handleInsertModeClick}
+                active={isInsertMode}
+                help={MODIFIER_HELP.insertMode}
+                showInlineHelp={showHelp}
+                className={cn(
+                  isInsertMode && 'border-emerald-600 bg-emerald-50 text-emerald-700 hover:border-emerald-600 hover:text-emerald-700'
+                )}
+              >
+                插入
+              </ActionButton>
+            </div>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm">
@@ -825,7 +879,7 @@ export const ElementPanel = memo(function ElementPanel() {
                 help={MODIFIER_HELP.tie}
                 showInlineHelp={showHelp}
               >
-                {isTieMode ? '取消圆滑线' : '圆滑线'}
+                {isTieMode ? '取消连音线' : '连音线'}
               </ActionButton>
               <ActionButton
                 onClick={handleBeamAction}

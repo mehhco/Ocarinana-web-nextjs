@@ -114,6 +114,10 @@ export async function POST(req: Request) {
   const defaultDocument = {
     version: "1.0",
     title: "未命名简谱",
+    producer: "www.ocarinana.com",
+    lyricist: "",
+    composer: "",
+    additionalInfo: "",
     measures: [[]],
     ties: [],
     beams: [],

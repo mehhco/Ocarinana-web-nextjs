@@ -10,6 +10,7 @@ import {
   useState,
   type ClipboardEvent,
   type CompositionEvent,
+  type CSSProperties,
   type KeyboardEvent,
   type MouseEvent,
   type RefObject,
@@ -17,6 +18,8 @@ import {
 import { PlusIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
+import { DEFAULT_PRODUCER } from '../lib/constants';
+import { getNormalizedScoreDisplayScale } from '../hooks/useScoreDisplayScale';
 import { getFingeringUrl } from '../lib/fingeringMap';
 import { LyricsInput } from '../overlay/LyricsInput';
 import type { Beam, Duration, ExpressionMark, KeySignature, Lyric, Measure, ScoreElement, Tie } from '@/lib/editor/types';
@@ -29,6 +32,50 @@ interface NotePosition {
 interface ScoreCanvasProps {
   exportRef?: RefObject<HTMLDivElement | null>;
   readOnly?: boolean;
+  displayScale?: number;
+}
+
+function createScoreScaleStyle(displayScale: number): CSSProperties {
+  const scale = getNormalizedScoreDisplayScale(displayScale) / 100;
+  const rem = (value: number) => `${Number((value * scale).toFixed(4))}rem`;
+
+  return {
+    '--score-note-width': rem(3.5),
+    '--score-extension-width': rem(2.5),
+    '--score-barline-width': rem(2),
+    '--score-element-py': rem(0.125),
+    '--score-measure-px': rem(0.25),
+    '--score-measure-py': rem(0.25),
+    '--score-fingering-width': rem(3),
+    '--score-fingering-height': rem(2.75),
+    '--score-tie-height': rem(0.5),
+    '--score-dot-row-height': rem(0.875),
+    '--score-main-row-height': rem(1.25),
+    '--score-note-body-width': rem(2.25),
+    '--score-note-font': rem(1.125),
+    '--score-dot-font': rem(1.25),
+    '--score-augmentation-dot-font': rem(0.875),
+    '--score-duration-slot-1': rem(0.75),
+    '--score-duration-slot-2': rem(0.9375),
+    '--score-duration-slot-3': rem(1.25),
+    '--score-duration-line-gap': rem(0.1875),
+    '--score-duration-slot-pad-top': rem(0.4375),
+    '--score-duration-line-height': rem(0.125),
+    '--score-duration-line-width': rem(0.875),
+    '--score-duration-beam-isolated-width': rem(1),
+    '--score-beam-overlap': rem(0.5625),
+    '--score-low-dot-offset-1': rem(-0.375),
+    '--score-low-dot-offset-2': rem(-0.25),
+    '--score-low-dot-offset-3': rem(-0.125),
+    '--score-lyric-row-height': rem(1.5),
+    '--score-lyric-text-width': rem(4),
+    '--score-lyric-text-font': rem(0.875),
+    '--score-expression-row-height': rem(1),
+    '--score-expression-font': rem(0.875),
+    '--score-final-barline-height': rem(1.5),
+    '--score-final-barline-gap': rem(0.25),
+    '--score-thick-bar-width': rem(0.1875),
+  } as CSSProperties;
 }
 
 function createPositionKey(measureIndex: number, noteIndex: number): string {
@@ -80,11 +127,11 @@ function getMeasureDurationLineCount(measure: Measure): number {
 function getLowDotOffsetClassName(durationLineCount: number): string {
   switch (durationLineCount) {
     case 1:
-      return '-top-[6px]';
+      return 'top-[var(--score-low-dot-offset-1)]';
     case 2:
-      return '-top-[4px]';
+      return 'top-[var(--score-low-dot-offset-2)]';
     case 3:
-      return '-top-[2px]';
+      return 'top-[var(--score-low-dot-offset-3)]';
     default:
       return '';
   }
@@ -205,9 +252,9 @@ function renderBarlineSymbol(element: ScoreElement) {
       return <span className="tracking-[-0.12em]">||</span>;
     case 'final':
       return (
-        <span className="flex h-6 items-stretch justify-center gap-1">
+        <span className="flex h-[var(--score-final-barline-height)] items-stretch justify-center gap-[var(--score-final-barline-gap)]">
           <span className="block w-px bg-slate-700" />
-          <span className="block w-[3px] bg-slate-700" />
+          <span className="block w-[var(--score-thick-bar-width)] bg-slate-700" />
         </span>
       );
     case 'repeat-start':
@@ -237,18 +284,18 @@ function buildNotePositions(measures: Measure[]): NotePosition[] {
   return positions;
 }
 
-const LYRIC_ROW_CLASS = 'mt-0.5 flex h-6 flex-shrink-0 items-center justify-center';
-const TIE_SLOT_CLASS = 'relative h-2 w-full flex-shrink-0 overflow-hidden';
-const EXPRESSION_ROW_CLASS = 'flex h-4 flex-shrink-0 items-center justify-center';
+const LYRIC_ROW_CLASS = 'mt-0.5 flex h-[var(--score-lyric-row-height)] flex-shrink-0 items-center justify-center';
+const TIE_SLOT_CLASS = 'relative h-[var(--score-tie-height)] w-full flex-shrink-0 overflow-hidden';
+const EXPRESSION_ROW_CLASS = 'flex h-[var(--score-expression-row-height)] flex-shrink-0 items-center justify-center';
 
 function getDurationSlotClassName(slotLineCount: number): string {
   switch (slotLineCount) {
     case 1:
-      return 'mt-0.5 flex h-[12px] w-full flex-shrink-0 flex-col items-center gap-[3px] pt-[7px]';
+      return 'mt-0.5 flex h-[var(--score-duration-slot-1)] w-full flex-shrink-0 flex-col items-center gap-[var(--score-duration-line-gap)] pt-[var(--score-duration-slot-pad-top)]';
     case 2:
-      return 'mt-0.5 flex h-[15px] w-full flex-shrink-0 flex-col items-center gap-[3px] pt-[7px]';
+      return 'mt-0.5 flex h-[var(--score-duration-slot-2)] w-full flex-shrink-0 flex-col items-center gap-[var(--score-duration-line-gap)] pt-[var(--score-duration-slot-pad-top)]';
     case 3:
-      return 'mt-0.5 flex h-5 w-full flex-shrink-0 flex-col items-center gap-[3px] pt-[7px]';
+      return 'mt-0.5 flex h-[var(--score-duration-slot-3)] w-full flex-shrink-0 flex-col items-center gap-[var(--score-duration-line-gap)] pt-[var(--score-duration-slot-pad-top)]';
     default:
       return 'hidden';
   }
@@ -257,11 +304,11 @@ function getDurationSlotClassName(slotLineCount: number): string {
 function getDurationSpacerClassName(slotLineCount: number): string {
   switch (slotLineCount) {
     case 1:
-      return 'mt-0.5 h-[12px] flex-shrink-0';
+      return 'mt-0.5 h-[var(--score-duration-slot-1)] flex-shrink-0';
     case 2:
-      return 'mt-0.5 h-[15px] flex-shrink-0';
+      return 'mt-0.5 h-[var(--score-duration-slot-2)] flex-shrink-0';
     case 3:
-      return 'mt-0.5 h-5 flex-shrink-0';
+      return 'mt-0.5 h-[var(--score-duration-slot-3)] flex-shrink-0';
     default:
       return 'hidden';
   }
@@ -285,9 +332,9 @@ function DurationLines({
           <span
             key={level}
             className={cn(
-              'block h-[2px] flex-shrink-0',
+              'block h-[var(--score-duration-line-height)] flex-shrink-0',
               shouldShowLine ? 'bg-slate-900' : 'bg-transparent',
-              getLineClassName ? getLineClassName(level) : 'w-3.5 rounded-full'
+              getLineClassName ? getLineClassName(level) : 'w-[var(--score-duration-line-width)] rounded-full'
             )}
           />
         );
@@ -327,6 +374,7 @@ interface NoteElementProps {
   isBeamStart: boolean;
   isTieStart: boolean;
   isTiePreview: boolean;
+  isInsertTarget: boolean;
   isExporting: boolean;
   showTieRow: boolean;
   expression?: ExpressionMark;
@@ -351,6 +399,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
   isBeamStart,
   isTieStart,
   isTiePreview,
+  isInsertTarget,
   isExporting,
   showTieRow,
   expression,
@@ -370,8 +419,10 @@ const NoteElementComponent = memo(function NoteElementComponent({
     return (
       <div
         className={cn(
-          'flex w-14 cursor-pointer flex-col items-center py-0.5 transition-all',
-          isBeamStart || isBeamPreview
+          'flex w-[var(--score-note-width)] cursor-pointer flex-col items-center py-[var(--score-element-py)] transition-all',
+          isInsertTarget
+            ? 'relative rounded-md bg-emerald-50 ring-2 ring-emerald-500 after:absolute after:-right-1 after:top-1 after:h-[calc(100%-0.5rem)] after:w-0.5 after:rounded-full after:bg-emerald-500'
+            : isBeamStart || isBeamPreview
             ? 'rounded-md bg-amber-50 ring-2 ring-amber-500'
             : isTieStart || isTiePreview
               ? 'rounded-md bg-sky-50 ring-2 ring-sky-500'
@@ -381,7 +432,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         )}
         onClick={onClick}
       >
-        <div className={cn('w-12 flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-11' : 'h-0')}>
+        <div className={cn('w-[var(--score-fingering-width)] flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-[var(--score-fingering-height)]' : 'h-0')}>
           {fingeringUrl && (
             <Image
               src={fingeringUrl}
@@ -398,17 +449,17 @@ const NoteElementComponent = memo(function NoteElementComponent({
           <TieSegment position={tieSegmentPosition} />
         )}
 
-        <div className="flex h-3.5 flex-shrink-0 items-center justify-center">
+        <div className="flex h-[var(--score-dot-row-height)] flex-shrink-0 items-center justify-center">
           {element.hasHighDot && element.value !== 'b7' && (
-            <span className="text-xl font-bold leading-none text-slate-800">•</span>
+            <span className="text-[length:var(--score-dot-font)] font-bold leading-none text-slate-800">•</span>
           )}
         </div>
 
-        <div className="flex h-5 flex-shrink-0 items-center justify-center">
-          <div className="relative flex h-5 w-9 items-end justify-center">
-            <span className="text-lg font-bold leading-none text-slate-800">{renderNoteValue(element.value)}</span>
+        <div className="flex h-[var(--score-main-row-height)] flex-shrink-0 items-center justify-center">
+          <div className="relative flex h-[var(--score-main-row-height)] w-[var(--score-note-body-width)] items-end justify-center">
+            <span className="text-[length:var(--score-note-font)] font-bold leading-none text-slate-800">{renderNoteValue(element.value)}</span>
             {element.hasAugmentationDot && (
-              <span className="absolute bottom-0 right-0 text-sm font-bold leading-none text-slate-800">•</span>
+              <span className="absolute bottom-0 right-0 text-[length:var(--score-augmentation-dot-font)] font-bold leading-none text-slate-800">•</span>
             )}
           </div>
         </div>
@@ -428,20 +479,20 @@ const NoteElementComponent = memo(function NoteElementComponent({
 
               return cn(
                 beamSegmentPosition === 'middle' && '-mx-px w-[calc(100%+2px)] rounded-none',
-                beamSegmentPosition === 'start' && '-mr-px w-[calc(50%+0.5625rem)] self-end rounded-l-full rounded-r-none',
-                beamSegmentPosition === 'end' && '-ml-px w-[calc(50%+0.5625rem)] self-start rounded-l-none rounded-r-full',
-                beamSegmentPosition === 'none' && isInDurationBeam && 'w-4 rounded-[1px]',
-                beamSegmentPosition === 'none' && !isInDurationBeam && 'w-3.5 rounded-full'
+                beamSegmentPosition === 'start' && '-mr-px w-[calc(50%+var(--score-beam-overlap))] self-end rounded-l-full rounded-r-none',
+                beamSegmentPosition === 'end' && '-ml-px w-[calc(50%+var(--score-beam-overlap))] self-start rounded-l-none rounded-r-full',
+                beamSegmentPosition === 'none' && isInDurationBeam && 'w-[var(--score-duration-beam-isolated-width)] rounded-[1px]',
+                beamSegmentPosition === 'none' && !isInDurationBeam && 'w-[var(--score-duration-line-width)] rounded-full'
               );
             }}
           />
         )}
 
-        <div className="flex h-3.5 flex-shrink-0 items-center justify-center">
+        <div className="flex h-[var(--score-dot-row-height)] flex-shrink-0 items-center justify-center">
           {element.hasLowDot && (
             <span
               className={cn(
-                'text-xl font-bold leading-none text-slate-800',
+                'text-[length:var(--score-dot-font)] font-bold leading-none text-slate-800',
                 hasDurationLines && 'relative',
                 getLowDotOffsetClassName(durationLineCount)
               )}
@@ -458,7 +509,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         {showLyrics && lyricField && (
           <div className={LYRIC_ROW_CLASS}>
             {isExporting ? (
-              <span className="flex h-6 w-16 items-center justify-center px-1 text-center text-sm leading-none text-slate-700">
+              <span className="flex h-[var(--score-lyric-row-height)] w-[var(--score-lyric-text-width)] items-center justify-center px-1 text-center text-[length:var(--score-lyric-text-font)] leading-none text-slate-700">
                 {lyricField.value}
               </span>
             ) : (
@@ -483,7 +534,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         {showExpressionRow && (
           <div className={EXPRESSION_ROW_CLASS}>
             {expression && (
-              <span className="font-serif text-sm font-semibold italic leading-none text-slate-700">
+              <span className="font-serif text-[length:var(--score-expression-font)] font-semibold italic leading-none text-slate-700">
                 {expression.value}
               </span>
             )}
@@ -493,7 +544,12 @@ const NoteElementComponent = memo(function NoteElementComponent({
     );
   }
 
-  const widthClass = element.type === 'barline' ? 'w-8' : element.type === 'extension' ? 'w-10' : 'w-14';
+  const widthClass =
+    element.type === 'barline'
+      ? 'w-[var(--score-barline-width)]'
+      : element.type === 'extension'
+        ? 'w-[var(--score-extension-width)]'
+        : 'w-[var(--score-note-width)]';
   const symbol = element.type === 'rest' ? '0' : element.type === 'extension' ? '-' : null;
   const symbolColor = element.type === 'barline' ? 'text-slate-700' : 'text-slate-800';
   const restDurationLineCount = element.type === 'rest' ? getDurationLineCount(element.duration) : 0;
@@ -503,9 +559,11 @@ const NoteElementComponent = memo(function NoteElementComponent({
   return (
     <div
       className={cn(
-        'flex cursor-pointer flex-col items-center py-0.5 transition-all',
+        'flex cursor-pointer flex-col items-center py-[var(--score-element-py)] transition-all',
         widthClass,
-        isBeamStart || isBeamPreview
+        isInsertTarget
+          ? 'relative rounded-md bg-emerald-50 ring-2 ring-emerald-500 after:absolute after:-right-1 after:top-1 after:h-[calc(100%-0.5rem)] after:w-0.5 after:rounded-full after:bg-emerald-500'
+          : isBeamStart || isBeamPreview
           ? 'rounded-md bg-amber-50 ring-2 ring-amber-500'
           : isSelected
             ? 'rounded-md bg-indigo-50 ring-2 ring-indigo-500'
@@ -513,11 +571,11 @@ const NoteElementComponent = memo(function NoteElementComponent({
       )}
       onClick={onClick}
     >
-      <div className={cn('w-12 flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-11' : 'h-0')} />
+      <div className={cn('w-[var(--score-fingering-width)] flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-[var(--score-fingering-height)]' : 'h-0')} />
       {showTieRow && <TieSegment position={tieSegmentPosition} />}
-      <div className="h-3.5 flex-shrink-0" />
-      <div className="flex h-5 flex-shrink-0 items-center justify-center">
-        <span className={cn('text-lg font-bold', symbolColor)}>
+      <div className="h-[var(--score-dot-row-height)] flex-shrink-0" />
+      <div className="flex h-[var(--score-main-row-height)] flex-shrink-0 items-center justify-center">
+        <span className={cn('text-[length:var(--score-note-font)] font-bold', symbolColor)}>
           {element.type === 'barline' ? renderBarlineSymbol(element) : symbol}
         </span>
       </div>
@@ -536,17 +594,17 @@ const NoteElementComponent = memo(function NoteElementComponent({
 
             return cn(
               beamSegmentPosition === 'middle' && '-mx-px w-[calc(100%+2px)] rounded-none',
-              beamSegmentPosition === 'start' && '-mr-px w-[calc(50%+0.5625rem)] self-end rounded-l-full rounded-r-none',
-              beamSegmentPosition === 'end' && '-ml-px w-[calc(50%+0.5625rem)] self-start rounded-l-none rounded-r-full',
-              beamSegmentPosition === 'none' && isInDurationBeam && 'w-4 rounded-[1px]',
-              beamSegmentPosition === 'none' && !isInDurationBeam && 'w-3.5 rounded-full'
+              beamSegmentPosition === 'start' && '-mr-px w-[calc(50%+var(--score-beam-overlap))] self-end rounded-l-full rounded-r-none',
+              beamSegmentPosition === 'end' && '-ml-px w-[calc(50%+var(--score-beam-overlap))] self-start rounded-l-none rounded-r-full',
+              beamSegmentPosition === 'none' && isInDurationBeam && 'w-[var(--score-duration-beam-isolated-width)] rounded-[1px]',
+              beamSegmentPosition === 'none' && !isInDurationBeam && 'w-[var(--score-duration-line-width)] rounded-full'
             );
           }}
         />
       ) : durationSlotLineCount > 0 ? (
         <div className={getDurationSpacerClassName(durationSlotLineCount)} />
       ) : null}
-      <div className="h-3.5 flex-shrink-0" />
+      <div className="h-[var(--score-dot-row-height)] flex-shrink-0" />
       {showLyrics && <div className={LYRIC_ROW_CLASS} />}
       {showExpressionRow && <div className={EXPRESSION_ROW_CLASS} />}
     </div>
@@ -567,6 +625,7 @@ interface MeasureProps {
   tieStartPosition: { measureIndex: number; noteIndex: number } | null;
   isBeamMode: boolean;
   isTieMode: boolean;
+  isInsertMode: boolean;
   isExporting: boolean;
   showTieRow: boolean;
   lyricsDisabled: boolean;
@@ -609,6 +668,7 @@ const MeasureComponent = memo(function MeasureComponent({
   tieStartPosition,
   isBeamMode,
   isTieMode,
+  isInsertMode,
   isExporting,
   showTieRow,
   lyricsDisabled,
@@ -629,7 +689,7 @@ const MeasureComponent = memo(function MeasureComponent({
   onLyricCompositionEnd,
 }: MeasureProps) {
   return (
-    <div className="flex w-full flex-wrap items-start px-1 py-1">
+    <div className="flex w-full flex-wrap items-start px-[var(--score-measure-px)] py-[var(--score-measure-py)]">
       {measure.elements.map((element, noteIndex) => {
         const positionKey = createPositionKey(measureIndex, noteIndex);
 
@@ -667,6 +727,7 @@ const MeasureComponent = memo(function MeasureComponent({
               tieStartPosition.noteIndex === noteIndex
             }
             isExporting={isExporting}
+            isInsertTarget={isInsertMode && selectedNoteIndex === noteIndex}
             isTiePreview={
               !!(
                 isTieMode &&
@@ -707,7 +768,7 @@ const MeasureComponent = memo(function MeasureComponent({
   );
 });
 
-export function ScoreCanvas({ exportRef, readOnly = false }: ScoreCanvasProps) {
+export function ScoreCanvas({ exportRef, readOnly = false, displayScale = 100 }: ScoreCanvasProps) {
   const {
     document: scoreDoc,
     selectedMeasureIndex,
@@ -715,6 +776,7 @@ export function ScoreCanvas({ exportRef, readOnly = false }: ScoreCanvasProps) {
     selectElement,
     addMeasure,
     clearSelection,
+    isInsertMode,
     isBeamMode,
     beamStartPosition,
     startBeam,
@@ -1074,38 +1136,64 @@ export function ScoreCanvas({ exportRef, readOnly = false }: ScoreCanvasProps) {
     [cancelBeamMode, cancelTieMode, clearSelection, isBeamMode, isTieMode]
   );
 
+  const producer = scoreDoc.producer?.trim() || DEFAULT_PRODUCER;
+  const lyricist = scoreDoc.lyricist?.trim();
+  const composer = scoreDoc.composer?.trim();
+  const additionalInfo = scoreDoc.additionalInfo?.trim();
+  const scoreScaleStyle = useMemo(() => createScoreScaleStyle(displayScale), [displayScale]);
+
   return (
     <div className="h-full w-full overflow-y-auto bg-white">
-      <div ref={exportRef} className="bg-white">
-        {isExporting && (
-          <div className="flex justify-end px-4 pt-2 text-[10px] font-medium leading-none tracking-normal text-slate-400">
-            www.ocarinana.com
-          </div>
-        )}
-        <div className="border-b border-slate-200 bg-slate-50/50 py-2 text-center">
-          <h1 className="mb-0.5 text-lg font-bold text-slate-800">{scoreDoc.title}</h1>
-          <div className="flex items-center justify-center gap-3 text-[11px] text-slate-500">
-            <span>
-              调号: <span className="font-medium text-slate-700">{scoreDoc.settings.keySignature}</span>
-            </span>
-            <span>
-              拍号: <span className="font-medium text-slate-700">{scoreDoc.settings.timeSignature}</span>
-            </span>
-            {scoreDoc.settings.showTempo !== false && (
-              <span>
-                速度: <span className="font-medium text-slate-700">♩ {scoreDoc.settings.tempo}</span>
-              </span>
+      <div ref={exportRef} className="bg-white" style={scoreScaleStyle}>
+        <div className="border-b border-slate-200 bg-slate-50/50 px-5 py-4">
+          <div className="min-w-0 text-center">
+            <h1 className="mx-auto mb-1 max-w-[70%] break-words px-2 pb-0.5 text-lg font-bold leading-8 tracking-normal text-slate-800">
+              {scoreDoc.title}
+            </h1>
+            {additionalInfo && (
+              <div className="mx-auto max-w-[70%] break-words px-2 pb-0.5 text-[11px] font-medium leading-6 text-slate-500">
+                {additionalInfo}
+              </div>
             )}
+          </div>
+
+          <div className="mt-3 grid grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)] gap-4">
+            <div className="flex flex-wrap items-start gap-x-3 gap-y-1 text-left text-[11px] leading-5 text-slate-500">
+              <span>
+                调号: <span className="font-medium text-slate-700">1={scoreDoc.settings.keySignature}</span>
+              </span>
+              <span>
+                拍号: <span className="font-medium text-slate-700">{scoreDoc.settings.timeSignature}</span>
+              </span>
+              {scoreDoc.settings.showTempo !== false && (
+                <span>
+                  速度: <span className="font-medium text-slate-700">♩ {scoreDoc.settings.tempo}</span>
+                </span>
+              )}
+              <span className="w-full font-medium text-slate-700">
+                十二孔陶笛{scoreDoc.settings.keySignature}调指法
+              </span>
+            </div>
+
+            <div className="text-right text-[11px] leading-5 text-slate-500">
+              <div>
+                制谱: <span className="font-medium text-slate-700">{producer}</span>
+              </div>
+              {lyricist && (
+                <div>
+                  作词: <span className="font-medium text-slate-700">{lyricist}</span>
+                </div>
+              )}
+              {composer && (
+                <div>
+                  作曲: <span className="font-medium text-slate-700">{composer}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="w-full px-4 pb-3 pt-2" onClick={handleBackgroundClick}>
-          <div className="mb-2 flex w-full items-center gap-3 border-b border-slate-200 pb-1.5">
-            <div className="text-xs font-semibold text-slate-800">
-              {scoreDoc.settings.keySignature} {scoreDoc.settings.timeSignature}
-            </div>
-          </div>
-
           <div className="w-full space-y-1.5">
             {scoreDoc.measures.map((measure, measureIndex) => {
               const isSelected = !readOnly && !isExporting && selectedMeasureIndex === measureIndex;
@@ -1135,6 +1223,7 @@ export function ScoreCanvas({ exportRef, readOnly = false }: ScoreCanvasProps) {
                     tieStartPosition={isExporting || readOnly ? null : tieStartPosition}
                     isBeamMode={!readOnly && !isExporting && isBeamMode}
                     isTieMode={!readOnly && !isExporting && isTieMode}
+                    isInsertMode={!readOnly && !isExporting && isInsertMode}
                     isExporting={isExporting}
                     showTieRow={showTieRow}
                     lyricsDisabled={readOnly || isBeamMode || isTieMode}

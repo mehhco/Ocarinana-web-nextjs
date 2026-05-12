@@ -7,6 +7,7 @@ import { ElementPanel } from './ElementPanel';
 import { ScoreCanvas } from './ScoreCanvas';
 import { exportAsImage } from '../lib/exportUtils';
 import { useAutoSave } from '../hooks/useAutoSave';
+import { EDITOR_SCORE_DISPLAY_SCALE_STORAGE_KEY, useScoreDisplayScale } from '../hooks/useScoreDisplayScale';
 import { showError, showSuccess, showToast } from '@/lib/toast';
 import type { ScoreDocument } from '@/lib/editor/types';
 
@@ -24,6 +25,7 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
   const deleteSelectedElement = useScoreStore((state) => state.deleteSelectedElement);
   const scoreExportRef = useRef<HTMLDivElement>(null);
   const { isDirty, isSaving, saveNow } = useAutoSave(scoreId);
+  const [displayScale, setDisplayScale] = useScoreDisplayScale(EDITOR_SCORE_DISPLAY_SCALE_STORAGE_KEY);
 
   useEffect(() => {
     initialize(initialDocument);
@@ -123,8 +125,10 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
         isSaving={isSaving}
         cloudSaveAvailable={Boolean(scoreId)}
         backHref={backHref}
+        displayScale={displayScale}
         onExportImage={handleExportImage}
         onSave={handleManualSave}
+        onDisplayScaleChange={setDisplayScale}
       />
       <div className="flex flex-1 justify-center overflow-hidden px-3 pb-3 pt-1.5">
         <div className="flex h-full min-h-0 w-[80vw] min-w-[1000px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-md">
@@ -132,7 +136,7 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
             <ElementPanel />
           </div>
           <div className="h-full min-h-0 w-2/3 overflow-hidden bg-white">
-            <ScoreCanvas exportRef={scoreExportRef} />
+            <ScoreCanvas exportRef={scoreExportRef} displayScale={displayScale} />
           </div>
         </div>
       </div>

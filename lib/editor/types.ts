@@ -94,6 +94,10 @@ export interface ScoreDocument {
   scoreId: string;
   ownerUserId?: string;
   title: string;
+  producer: string;
+  lyricist?: string;
+  composer?: string;
+  additionalInfo?: string;
   measures: Measure[];
   beams?: Beam[];
   ties?: Tie[];

@@ -182,6 +182,7 @@ export const KEYBOARD_SHORTCUTS = {
 // ============ 默认文档 ============
 
 export const DEFAULT_TITLE = '未命名简谱';
+export const DEFAULT_PRODUCER = 'www.ocarinana.com';
 
 export const DEFAULT_SETTINGS = {
   keySignature: 'C' as const,

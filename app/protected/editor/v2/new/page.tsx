@@ -16,6 +16,10 @@ export default async function NewScoreV2Page() {
   const document = {
     version: '2.0',
     title: '未命名简谱',
+    producer: 'www.ocarinana.com',
+    lyricist: '',
+    composer: '',
+    additionalInfo: '',
     measures: [{ id: 'measure-1', elements: [] }],
     ties: [],
     beams: [],

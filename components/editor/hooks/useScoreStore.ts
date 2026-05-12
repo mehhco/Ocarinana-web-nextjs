@@ -31,7 +31,7 @@ import type {
   HistoryState,
   ScoreElement
 } from '@/lib/editor/types';
-import { DEFAULT_SETTINGS, DEFAULT_TITLE, HISTORY_CONFIG } from '../lib/constants';
+import { DEFAULT_PRODUCER, DEFAULT_SETTINGS, DEFAULT_TITLE, HISTORY_CONFIG } from '../lib/constants';
 
 // ============ 状态接口 ============
 interface ScoreStoreState {
@@ -46,6 +46,7 @@ interface ScoreStoreState {
   isDirty: boolean;
   isExporting: boolean;
   isSaving: boolean;
+  isInsertMode: boolean;
   
   // 连音线工具状态
   isTieMode: boolean;
@@ -68,6 +69,7 @@ interface ScoreStoreActions {
   
   // 文档元数据
   updateTitle: (title: string) => void;
+  updateScoreInfo: (info: Partial<Pick<ScoreDocument, 'producer' | 'lyricist' | 'composer' | 'additionalInfo'>>) => void;
   updateSettings: (settings: Partial<ScoreSettings>) => void;
   
   // 音符操作
@@ -87,6 +89,7 @@ interface ScoreStoreActions {
   deleteMeasure: (index: number) => void;
   
   // 选择操作
+  toggleInsertMode: () => void;
   selectElement: (measureIndex: number, noteIndex: number) => void;
   selectNextElement: () => void;
   selectPrevElement: () => void;
@@ -149,6 +152,10 @@ function createInitialDocument(override?: Partial<ScoreDocument>): ScoreDocument
     scoreId: override?.scoreId || 'draft-new',
     ownerUserId: override?.ownerUserId,
     title: override?.title || DEFAULT_TITLE,
+    producer: override?.producer || DEFAULT_PRODUCER,
+    lyricist: override?.lyricist || '',
+    composer: override?.composer || '',
+    additionalInfo: override?.additionalInfo || '',
     measures: override?.measures?.map(m => ({
       id: m.id || generateStableId(),
       elements: (m.elements || []).map(e => ({
@@ -342,6 +349,90 @@ function reindexBeamsAfterElementDelete(
   });
 }
 
+function shiftNoteIndexAfterInsert(noteIndex: number, insertIndex: number, insertCount: number): number {
+  return noteIndex >= insertIndex ? noteIndex + insertCount : noteIndex;
+}
+
+function reindexPositionMarksAfterElementInsert<T extends { measureIndex: number; noteIndex: number }>(
+  marks: T[] | undefined,
+  measureIndex: number,
+  insertIndex: number,
+  insertCount: number
+): T[] {
+  return (marks || []).map((mark) => {
+    if (mark.measureIndex !== measureIndex) {
+      return mark;
+    }
+
+    return {
+      ...mark,
+      noteIndex: shiftNoteIndexAfterInsert(mark.noteIndex, insertIndex, insertCount),
+    };
+  });
+}
+
+function reindexTiesAfterElementInsert(
+  ties: Tie[] | undefined,
+  measureIndex: number,
+  insertIndex: number,
+  insertCount: number
+): Tie[] {
+  return (ties || []).flatMap((tie) => {
+    const insertionSplitsTie =
+      tie.startMeasureIndex === measureIndex &&
+      tie.endMeasureIndex === measureIndex &&
+      tie.startNoteIndex < insertIndex &&
+      insertIndex <= tie.endNoteIndex;
+
+    if (insertionSplitsTie) {
+      return [];
+    }
+
+    return [{
+      ...tie,
+      startNoteIndex:
+        tie.startMeasureIndex === measureIndex
+          ? shiftNoteIndexAfterInsert(tie.startNoteIndex, insertIndex, insertCount)
+          : tie.startNoteIndex,
+      endNoteIndex:
+        tie.endMeasureIndex === measureIndex
+          ? shiftNoteIndexAfterInsert(tie.endNoteIndex, insertIndex, insertCount)
+          : tie.endNoteIndex,
+    }];
+  });
+}
+
+function reindexBeamsAfterElementInsert(
+  beams: Beam[] | undefined,
+  measureIndex: number,
+  insertIndex: number,
+  insertCount: number
+): Beam[] {
+  return (beams || []).flatMap((beam) => {
+    const insertionSplitsBeam =
+      beam.startMeasureIndex === measureIndex &&
+      beam.endMeasureIndex === measureIndex &&
+      beam.startNoteIndex < insertIndex &&
+      insertIndex <= beam.endNoteIndex;
+
+    if (insertionSplitsBeam) {
+      return [];
+    }
+
+    return [{
+      ...beam,
+      startNoteIndex:
+        beam.startMeasureIndex === measureIndex
+          ? shiftNoteIndexAfterInsert(beam.startNoteIndex, insertIndex, insertCount)
+          : beam.startNoteIndex,
+      endNoteIndex:
+        beam.endMeasureIndex === measureIndex
+          ? shiftNoteIndexAfterInsert(beam.endNoteIndex, insertIndex, insertCount)
+          : beam.endNoteIndex,
+    }];
+  });
+}
+
 function shiftMeasureIndexAfterDelete(measureIndex: number, deletedMeasureIndex: number): number | null {
   if (measureIndex === deletedMeasureIndex) {
     return null;
@@ -395,6 +486,99 @@ function reindexBeamsAfterMeasureDelete(beams: Beam[] | undefined, deletedMeasur
   });
 }
 
+function createNoteElement(
+  noteValue: NoteValue,
+  duration: Duration,
+  options: { hasHighDot?: boolean; hasLowDot?: boolean } = {}
+): Note {
+  return {
+    id: nanoid(),
+    type: 'note',
+    value: noteValue,
+    duration,
+    hasHighDot: options.hasHighDot || false,
+    hasLowDot: options.hasLowDot || false,
+    hasAugmentationDot: false,
+  };
+}
+
+function createRestElement(duration: Duration, restGroup?: Rest['restGroup']): Rest {
+  return {
+    id: nanoid(),
+    type: 'rest',
+    value: '0',
+    duration,
+    ...(restGroup ? { restGroup } : {}),
+  };
+}
+
+function createRestElements(duration: Duration): Rest[] {
+  if (duration === '1') {
+    return Array.from({ length: 4 }, () => createRestElement('1/4', 'full'));
+  }
+
+  if (duration === '1/2') {
+    return Array.from({ length: 2 }, () => createRestElement('1/4', 'half'));
+  }
+
+  return [createRestElement(duration)];
+}
+
+function getInsertTarget(
+  document: ScoreDocument,
+  selectedMeasureIndex: number | null,
+  selectedNoteIndex: number | null
+): { measureIndex: number; noteIndex: number } {
+  if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
+    const selectedMeasure = document.measures[selectedMeasureIndex];
+
+    if (selectedMeasure) {
+      return {
+        measureIndex: selectedMeasureIndex,
+        noteIndex: Math.min(selectedNoteIndex + 1, selectedMeasure.elements.length),
+      };
+    }
+  }
+
+  const lastMeasureIndex = Math.max(0, document.measures.length - 1);
+  return {
+    measureIndex: lastMeasureIndex,
+    noteIndex: document.measures[lastMeasureIndex]?.elements.length ?? 0,
+  };
+}
+
+function reindexDocumentAfterElementInsert(
+  document: ScoreDocument,
+  measureIndex: number,
+  insertIndex: number,
+  insertCount: number
+) {
+  document.lyrics = reindexPositionMarksAfterElementInsert(
+    document.lyrics,
+    measureIndex,
+    insertIndex,
+    insertCount
+  );
+  document.expressions = reindexPositionMarksAfterElementInsert(
+    document.expressions,
+    measureIndex,
+    insertIndex,
+    insertCount
+  );
+  document.ties = reindexTiesAfterElementInsert(
+    document.ties,
+    measureIndex,
+    insertIndex,
+    insertCount
+  );
+  document.beams = reindexBeamsAfterElementInsert(
+    document.beams,
+    measureIndex,
+    insertIndex,
+    insertCount
+  );
+}
+
 // ============ Store 创建 ============
 
 export const useScoreStore = create<ScoreStore>()(
@@ -406,6 +590,7 @@ export const useScoreStore = create<ScoreStore>()(
   isDirty: false,
   isExporting: false,
   isSaving: false,
+  isInsertMode: false,
   isTieMode: false,
   tieStartPosition: null,
   isBeamMode: false,
@@ -433,6 +618,7 @@ export const useScoreStore = create<ScoreStore>()(
       state.selectedMeasureIndex = null;
       state.selectedNoteIndex = null;
       state.isDirty = false;
+      state.isInsertMode = false;
       state.isTieMode = false;
       state.tieStartPosition = null;
       state.isBeamMode = false;
@@ -466,6 +652,14 @@ export const useScoreStore = create<ScoreStore>()(
     });
   },
 
+  updateScoreInfo: (info) => {
+    set((state) => {
+      Object.assign(state.document, info);
+      state.document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+    });
+  },
+
   updateSettings: (settings) => {
     set((state) => {
       state.document.settings = { ...state.document.settings, ...settings };
@@ -478,22 +672,30 @@ export const useScoreStore = create<ScoreStore>()(
   // ============ 音符操作 ============
   addNote: (noteValue, duration = '1/4', options = {}) => {
     set((state) => {
-      const { document, selectedMeasureIndex, selectedNoteIndex } = state;
-      
-      const newNote: Note = {
-        id: nanoid(),
-        type: 'note',
-        value: noteValue,
-        duration,
-        hasHighDot: options.hasHighDot || false,
-        hasLowDot: options.hasLowDot || false,
-        hasAugmentationDot: false,
-      };
-      
+      const { document, selectedMeasureIndex, selectedNoteIndex, isInsertMode } = state;
+      const newNote = createNoteElement(noteValue, duration, options);
+
+      if (isInsertMode) {
+        const target = getInsertTarget(document, selectedMeasureIndex, selectedNoteIndex);
+        const measure = document.measures[target.measureIndex];
+
+        if (!measure) return;
+
+        measure.elements.splice(target.noteIndex, 0, newNote);
+        reindexDocumentAfterElementInsert(document, target.measureIndex, target.noteIndex, 1);
+
+        state.selectedMeasureIndex = target.measureIndex;
+        state.selectedNoteIndex = target.noteIndex;
+        document.updatedAt = new Date().toISOString();
+        state.isDirty = true;
+        saveToHistory(state);
+        return;
+      }
+
       // 如果有选中的元素，替换它
       if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
         const measure = document.measures[selectedMeasureIndex];
-        const element = measure.elements[selectedNoteIndex];
+        const element = measure?.elements[selectedNoteIndex];
         
         if (element) {
           if (element.type === 'note') {
@@ -527,51 +729,43 @@ export const useScoreStore = create<ScoreStore>()(
 
   addRest: (duration) => {
     set((state) => {
-      const { document, selectedMeasureIndex, selectedNoteIndex } = state;
-      
+      const { document, selectedMeasureIndex, selectedNoteIndex, isInsertMode } = state;
+      const restElements = createRestElements(duration);
+
+      if (isInsertMode) {
+        const target = getInsertTarget(document, selectedMeasureIndex, selectedNoteIndex);
+        const measure = document.measures[target.measureIndex];
+
+        if (!measure) return;
+
+        measure.elements.splice(target.noteIndex, 0, ...restElements);
+        reindexDocumentAfterElementInsert(document, target.measureIndex, target.noteIndex, restElements.length);
+
+        state.selectedMeasureIndex = target.measureIndex;
+        state.selectedNoteIndex = target.noteIndex + restElements.length - 1;
+        document.updatedAt = new Date().toISOString();
+        state.isDirty = true;
+        saveToHistory(state);
+        return;
+      }
+
       // 处理全休止符和二分休止符的特殊情况
-      if (duration === '1') {
-        // 全休止符：添加 4 个四分休止符
+      if (duration === '1' || duration === '1/2') {
         const lastMeasure = document.measures[document.measures.length - 1];
-        for (let i = 0; i < 4; i++) {
-          lastMeasure.elements.push({
-            id: nanoid(),
-            type: 'rest',
-            value: '0',
-            duration: '1/4',
-            restGroup: 'full',
-          });
-        }
-      } else if (duration === '1/2') {
-        // 二分休止符：添加 2 个四分休止符
-        const lastMeasure = document.measures[document.measures.length - 1];
-        for (let i = 0; i < 2; i++) {
-          lastMeasure.elements.push({
-            id: nanoid(),
-            type: 'rest',
-            value: '0',
-            duration: '1/4',
-            restGroup: 'half',
-          });
-        }
+        lastMeasure.elements.push(...restElements);
+      } else {
+        // 普通休止符
+        const newRest = restElements[0];
+
+        if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
+          const measure = document.measures[selectedMeasureIndex];
+          measure.elements[selectedNoteIndex] = newRest;
         } else {
-          // 普通休止符
-          const newRest: Rest = {
-            id: nanoid(),
-            type: 'rest',
-            value: '0',
-            duration,
-          };
-          
-          if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
-            const measure = document.measures[selectedMeasureIndex];
-            measure.elements[selectedNoteIndex] = newRest;
-          } else {
-            // 不再限制小节内音符数量，依靠 flex-wrap 自动换行显示
-            const lastMeasure = document.measures[document.measures.length - 1];
-            lastMeasure.elements.push(newRest);
-          }
+          // 不再限制小节内音符数量，依靠 flex-wrap 自动换行显示
+          const lastMeasure = document.measures[document.measures.length - 1];
+          lastMeasure.elements.push(newRest);
         }
+      }
       
       document.updatedAt = new Date().toISOString();
       state.isDirty = true;
@@ -728,6 +922,7 @@ export const useScoreStore = create<ScoreStore>()(
       };
       
       measure.elements.splice(insertIndex, 0, extension);
+      reindexDocumentAfterElementInsert(document, targetMeasureIndex, insertIndex, 1);
       
       // 插入后清空选择，避免下一次添加音符时替换掉延长线
       state.selectedMeasureIndex = null;
@@ -767,6 +962,7 @@ export const useScoreStore = create<ScoreStore>()(
       };
       
       measure.elements.splice(insertIndex, 0, barline);
+      reindexDocumentAfterElementInsert(document, targetMeasureIndex, insertIndex, 1);
       
       // 插入后清空选择，避免下一次添加音符时替换掉小节/反复线
       state.selectedMeasureIndex = null;
@@ -904,6 +1100,18 @@ export const useScoreStore = create<ScoreStore>()(
   },
 
   // ============ 选择操作 ============
+  toggleInsertMode: () => {
+    set((state) => {
+      state.isInsertMode = !state.isInsertMode;
+      if (state.isInsertMode) {
+        state.isTieMode = false;
+        state.tieStartPosition = null;
+        state.isBeamMode = false;
+        state.beamStartPosition = null;
+      }
+    });
+  },
+
   selectElement: (measureIndex, noteIndex) => {
     set((state) => {
       state.selectedMeasureIndex = measureIndex;
@@ -966,6 +1174,9 @@ export const useScoreStore = create<ScoreStore>()(
   toggleTieMode: () => {
     set((state) => {
       state.isTieMode = !state.isTieMode;
+      if (state.isTieMode) {
+        state.isInsertMode = false;
+      }
       if (!state.isTieMode) {
         state.tieStartPosition = null;
       }
@@ -1047,6 +1258,9 @@ export const useScoreStore = create<ScoreStore>()(
   toggleBeamMode: () => {
     set((state) => {
       state.isBeamMode = !state.isBeamMode;
+      if (state.isBeamMode) {
+        state.isInsertMode = false;
+      }
       if (!state.isBeamMode) {
         state.beamStartPosition = null;
       }

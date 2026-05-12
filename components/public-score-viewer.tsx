@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ImageIcon } from "@/components/ui/icons";
 import { ScoreCanvas } from "@/components/editor/core/ScoreCanvas";
+import { ScoreScaleControl } from "@/components/editor/core/ScoreScaleControl";
 import { useScoreStore } from "@/components/editor/hooks/useScoreStore";
+import { useScoreDisplayScale } from "@/components/editor/hooks/useScoreDisplayScale";
 import { exportAsImage } from "@/components/editor/lib/exportUtils";
 import { showError, showSuccess } from "@/lib/toast";
 import type { ScoreDocument } from "@/lib/editor/types";
@@ -21,6 +23,7 @@ export function PublicScoreViewer({ document, isAuthenticated }: PublicScoreView
   const isExporting = useScoreStore((state) => state.isExporting);
   const exportRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
+  const [displayScale, setDisplayScale] = useScoreDisplayScale();
 
   useEffect(() => {
     initialize(document);
@@ -64,14 +67,15 @@ export function PublicScoreViewer({ document, isAuthenticated }: PublicScoreView
 
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center justify-end border-b border-slate-200 bg-slate-50 px-3 py-2">
+      <div className="flex flex-wrap items-center justify-end gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2">
+        <ScoreScaleControl value={displayScale} onChange={setDisplayScale} />
         <Button size="sm" variant="outline" onClick={handleExport} disabled={isExporting}>
           <ImageIcon className="h-4 w-4" />
           {isExporting ? "导出中" : "导出图片"}
         </Button>
       </div>
       <div className="h-[70vh] min-h-[520px] bg-white">
-        <ScoreCanvas exportRef={exportRef} readOnly />
+        <ScoreCanvas exportRef={exportRef} readOnly displayScale={displayScale} />
       </div>
     </div>
   );

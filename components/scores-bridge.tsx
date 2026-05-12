@@ -8,6 +8,10 @@ type ScoreDocument = {
   scoreId: string;
   ownerUserId?: string;
   title: string;
+  producer?: string;
+  lyricist?: string;
+  composer?: string;
+  additionalInfo?: string;
   measures: unknown[];
   ties: unknown[];
   lyrics: unknown[];

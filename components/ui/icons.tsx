@@ -226,8 +226,8 @@ export function PlusIcon(props: IconProps) {
 export function Redo2Icon(props: IconProps) {
   return (
     <IconBase {...props}>
-      <path d="M9 14 4 9l5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      <path d="M20 20a8 8 0 0 0-8-8H4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="m15 8 4 4-4 4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M5 17a6 6 0 0 1 6-6h8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
     </IconBase>
   );
 }
@@ -284,8 +284,8 @@ export function Trash2Icon(props: IconProps) {
 export function Undo2Icon(props: IconProps) {
   return (
     <IconBase {...props}>
-      <path d="m15 14 5-5-5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      <path d="M4 20a8 8 0 0 1 8-8h8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="m9 8-4 4 4 4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M19 17a6 6 0 0 0-6-6H5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
     </IconBase>
   );
 }
