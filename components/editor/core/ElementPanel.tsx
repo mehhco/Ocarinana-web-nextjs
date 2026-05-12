@@ -17,6 +17,20 @@ interface HelpContent {
 
 type PanelDuration = Extract<Duration, '1/4' | '1/8' | '1/16' | '1/32'>;
 
+function SegmentedHelpText({ text, className }: { text: string; className?: string }) {
+  const segments = text.match(/[^，。；：、,.!?！？]+[，。；：、,.!?！？]?/g) ?? [text];
+
+  return (
+    <span className={className}>
+      {segments.map((segment, index) => (
+        <span key={`${segment}-${index}`} className="inline-block whitespace-nowrap align-baseline">
+          {segment}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 const NoteButton = memo(function NoteButton({
   display,
   onClick,
@@ -54,15 +68,19 @@ function HelpTooltip({ help, children }: { help?: HelpContent; children: ReactNo
       <TooltipContent
         side="right"
         sideOffset={8}
-        className="max-w-[270px] rounded-md border border-slate-200 bg-white p-3 text-slate-700 shadow-lg"
+        className="w-[380px] max-w-[calc(100vw-2rem)] rounded-md border border-slate-200 bg-white p-3 text-slate-700 shadow-lg"
       >
         <div className="space-y-2">
-          <div>
-            <div className="text-xs font-semibold text-slate-900">{help.title}</div>
-            <div className="mt-1 text-[11px] leading-relaxed text-slate-600">{help.meaning}</div>
-          </div>
-          <div className="rounded-md bg-slate-50 px-2 py-1.5 text-[11px] leading-relaxed text-slate-600">
-            {help.usage}
+          <div className="text-xs font-semibold text-slate-900">{help.title}</div>
+          <div className="space-y-1.5 text-[11px] leading-relaxed text-slate-600">
+            <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-2">
+              <span className="font-medium text-slate-400">说明</span>
+              <SegmentedHelpText text={help.meaning} />
+            </div>
+            <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-2 rounded-md bg-slate-50 py-1.5">
+              <span className="pl-2 font-medium text-slate-400">用法</span>
+              <SegmentedHelpText text={help.usage} className="pr-2" />
+            </div>
           </div>
           {help.preview && (
             <div className="flex min-h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-2 py-1">
