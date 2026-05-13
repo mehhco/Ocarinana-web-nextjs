@@ -6,6 +6,7 @@ const PUBLIC_PATH_PREFIXES = [
   "/auth",
   "/editor",
   "/legal",
+  "/music-classroom",
   "/scores",
   "/shop",
 ];

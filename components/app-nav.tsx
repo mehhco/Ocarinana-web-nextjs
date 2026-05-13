@@ -14,6 +14,7 @@ export async function AppNav({ currentPath = "/" }: AppNavProps) {
 
   const isNotesPage = currentPath.includes("/notes");
   const isShopPage = currentPath.includes("/shop");
+  const isClassroomPage = currentPath === "/music-classroom";
   const isScoresPage = currentPath === "/scores" || currentPath.startsWith("/scores/");
   const shopEnabled = await isShopEnabled();
 
@@ -37,6 +38,16 @@ export async function AppNav({ currentPath = "/" }: AppNavProps) {
               }`}
             >
               乐谱广场
+            </Link>
+            <Link
+              href="/music-classroom"
+              className={`hover:underline transition-colors ${
+                isClassroomPage
+                  ? "text-emerald-600 font-semibold"
+                  : "text-foreground hover:text-emerald-600"
+              }`}
+            >
+              音乐课堂
             </Link>
             {user && (
               <Link

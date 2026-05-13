@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { isShopEnabled } from '@/lib/supabase/config';
 
 const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://ocarinana.com').replace(/\/$/, '');
-const siteLastModified = new Date('2026-04-29');
+const siteLastModified = new Date('2026-05-13');
 const legalLastModified = new Date('2025-10-12');
 
 /**
@@ -16,6 +16,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: siteLastModified,
       changeFrequency: 'weekly',
       priority: 1.0,
+    },
+    {
+      url: `${baseUrl}/music-classroom`,
+      lastModified: siteLastModified,
+      changeFrequency: 'weekly',
+      priority: 0.85,
     },
     {
       url: `${baseUrl}/legal/privacy`,
