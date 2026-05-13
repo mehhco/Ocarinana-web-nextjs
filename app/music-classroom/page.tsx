@@ -12,14 +12,13 @@ const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://ocarinana.com").rep
 export const metadata: Metadata = {
   title: "音乐课堂 - 陶笛、简谱与基础乐理系统入门",
   description:
-    "Ocarinana 音乐课堂提供更系统的基础乐理、简谱符号、陶笛演奏技巧、陶笛类型和编辑器使用教程，帮助陶笛学习者从读谱到制谱建立完整路径。",
+    "Ocarinana 音乐课堂提供更系统的基础乐理、简谱符号、陶笛演奏技巧和编辑器使用教程，帮助陶笛学习者从读谱到制谱建立完整路径。",
   keywords: [
     "音乐课堂",
     "基础乐理",
     "简谱知识",
     "简谱符号",
     "陶笛演奏技巧",
-    "陶笛类型",
     "陶笛教程",
     "陶笛气息",
     "陶笛指法",
@@ -27,7 +26,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: "音乐课堂 - Ocarinana",
-    description: "系统学习基础乐理、简谱符号、陶笛演奏、陶笛类型和 Ocarinana 编辑器使用。",
+    description: "系统学习基础乐理、简谱符号、陶笛演奏和 Ocarinana 编辑器使用。",
     type: "article",
     url: `${baseUrl}/music-classroom`,
   },
@@ -40,7 +39,6 @@ const lessons = [
   { id: "music-theory", title: "基础乐理知识", short: "音高、节奏、调号、乐句" },
   { id: "jianpu", title: "基础简谱知识", short: "数字、时值、符号、反复" },
   { id: "playing", title: "陶笛演奏技巧", short: "气息、吐音、音准、换指" },
-  { id: "ocarina-types", title: "陶笛的类型", short: "孔数、调性、腔体、材质" },
   { id: "editor", title: "编辑器使用", short: "建谱、输入、排版、导出" },
 ];
 
@@ -66,19 +64,6 @@ const jianpuSymbolRows = [
   { symbol: "附点", name: "延长一半", meaning: "把原时值增加一半，例如附点四分音符等于四分音符加八分音符。" },
   { symbol: "连音线", name: "连贯演奏", meaning: "提示若干音之间少断开，陶笛上通常用更平滑的气息和换指处理。" },
   { symbol: "反复记号", name: "重复段落", meaning: "减少重复书写，演奏时按标记返回指定位置。" },
-];
-
-const breathingRows = [
-  { range: "低音区", breath: "气息更柔，口腔打开，避免把音吹高或吹破。", check: "音头不塌、声音不虚。" },
-  { range: "中音区", breath: "使用最自然的稳定气流，是练长音和音阶的核心区域。", check: "音量均匀，音准不飘。" },
-  { range: "高音区", breath: "气流更集中，身体支撑增加，但喉咙和嘴唇不要僵硬。", check: "高音不尖、不挤、不偏高过多。" },
-];
-
-const ocarinaTypeRows = [
-  { type: "6 孔陶笛", range: "音域较窄", fit: "便携、入门玩奏、简单旋律", caution: "复杂曲目和半音处理空间有限。" },
-  { type: "12 孔陶笛", range: "常见单管完整音域", fit: "系统学习、独奏、常见教学谱", caution: "低音副孔和高音区需要更稳定的气息。" },
-  { type: "复管陶笛", range: "双管/三管扩展音域", fit: "进阶曲目、跨八度旋律", caution: "换管、气息和读谱复杂度明显增加。" },
-  { type: "不同调性", range: "C / F / G 等", fit: "适配不同曲目音域和音色", caution: "同一指法在不同调笛上的实际音高不同。" },
 ];
 
 const editorFlow = [
@@ -113,7 +98,7 @@ const sourceLinks = [
   {
     label: "STL Ocarina Resources",
     href: "https://www.stlocarina.com/",
-    note: "用于参考不同孔数、腔体和初学陶笛类型的描述方式。",
+    note: "用于参考陶笛入门学习和演奏资源的组织方式。",
   },
 ];
 
@@ -168,7 +153,7 @@ export default function MusicClassroomPage() {
 
       <ArticleSchema
         headline="音乐课堂 - 陶笛、简谱与基础乐理系统入门"
-        description="系统学习基础乐理、简谱符号、陶笛演奏技巧、陶笛类型和 Ocarinana 编辑器使用。"
+        description="系统学习基础乐理、简谱符号、陶笛演奏技巧和 Ocarinana 编辑器使用。"
         url={`${baseUrl}/music-classroom`}
         image="/webfile/static/note.webp"
         datePublished="2026-05-13"
@@ -205,7 +190,7 @@ export default function MusicClassroomPage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild className="h-12 bg-emerald-700 px-6 hover:bg-emerald-800">
-                <Link href="/protected/editor/v2/new">
+                <Link href="/editor">
                   打开编辑器
                   <ArrowUpRightIcon className="h-4 w-4" />
                 </Link>
@@ -377,32 +362,12 @@ export default function MusicClassroomPage() {
             陶笛没有簧片和键盘机构，音高会明显受到气息压力影响。初学者常见问题不是“不会按孔”，而是低音吹得过猛、高音挤压、换指时气息断裂。
           </SectionHeader>
 
-          <div className="mt-8 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="grid gap-4">
-              <KnowledgeFigure
-                src="/webfile/static/note_knowledge/knowledge_04.png"
-                alt="陶笛站姿、手型和口型示意图"
-                caption="手指负责密封音孔，身体负责稳定支撑，嘴型负责集中气流。"
-              />
-              <Image
-                src="/webfile/static/Cfinger.png"
-                alt="陶笛 C 调指法示意"
-                width={360}
-                height={360}
-                className="mx-auto h-auto w-full max-w-[220px] rounded-md border border-zinc-200 bg-white p-4"
-                loading="lazy"
-              />
-            </div>
-            <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
-              <div className="bg-zinc-950 px-4 py-3 text-sm font-semibold text-white">气息与音区</div>
-              {breathingRows.map((row) => (
-                <div key={row.range} className="grid gap-2 border-t border-zinc-200 px-4 py-4 text-sm md:grid-cols-[5rem_1fr_9rem]">
-                  <div className="font-semibold text-zinc-950">{row.range}</div>
-                  <div className="leading-6 text-zinc-700">{row.breath}</div>
-                  <div className="text-zinc-600">{row.check}</div>
-                </div>
-              ))}
-            </div>
+          <div className="mt-8">
+            <KnowledgeFigure
+              src="/webfile/static/note_knowledge/finger_guide.png"
+              alt="陶笛指法与持笛手指覆盖示意图"
+              caption="手指要用指腹完整覆盖音孔，保持手腕自然放松，换指时尽量减少多余动作。"
+            />
           </div>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-3">
@@ -427,71 +392,25 @@ export default function MusicClassroomPage() {
           </div>
 
           <div className="mt-8 grid gap-6 md:grid-cols-2">
-            <KnowledgeFigure
-              src="/webfile/static/note_knowledge/knowledge_05.png"
-              alt="陶笛气息压力与音高变化曲线示意图"
-              caption="从低音到高音，气息通常从柔和、稳定逐步转向更集中，但不能挤压。"
-            />
-            <KnowledgeFigure
-              src="/webfile/static/note_knowledge/knowledge_06.png"
-              alt="陶笛每日 15 分钟练习菜单示意图"
-              caption="用长音、音阶和短句三段练习，把音准、换指和乐句表达分开训练。"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section id="ocarina-types" className="scroll-mt-24 border-b border-zinc-200 bg-white">
-        <div className="mx-auto w-full max-w-6xl px-5 py-14 md:py-16">
-          <SectionHeader eyebrow="Lesson 04" title="陶笛的类型：选笛要看音域、调性和学习目标">
-            陶笛分类不只看外形。孔数决定可用音域和半音处理，调性决定实际音高和音色重心，单管/复管决定曲目上限和学习难度，材质影响重量、触感和维护方式。
-          </SectionHeader>
-
-          <div className="mt-8 overflow-hidden rounded-md border border-zinc-200 bg-[#fffdf7]">
-            <div className="grid grid-cols-[1fr_1fr_1.5fr_1.5fr] bg-zinc-950 px-4 py-3 text-xs font-semibold text-white">
-              <span>类型</span>
-              <span>音域特征</span>
-              <span>适合场景</span>
-              <span>注意事项</span>
+            <div className="rounded-md border border-zinc-200 bg-white p-5">
+              <h3 className="font-semibold text-zinc-950">气息训练重点</h3>
+              <p className="mt-3 text-sm leading-7 text-zinc-700">
+                从低音到高音，气息通常从柔和、稳定逐步转向更集中。练习时不要用喉咙挤压高音，而是用更稳定的身体支撑和更集中的气流完成音区转换。
+              </p>
             </div>
-            {ocarinaTypeRows.map((row) => (
-              <div key={row.type} className="grid grid-cols-[1fr_1fr_1.5fr_1.5fr] border-t border-zinc-200 px-4 py-4 text-sm text-zinc-700">
-                <span className="font-semibold text-zinc-950">{row.type}</span>
-                <span>{row.range}</span>
-                <span className="leading-6">{row.fit}</span>
-                <span className="leading-6">{row.caution}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            <KnowledgeFigure
-              src="/webfile/static/note_knowledge/knowledge_07.png"
-              alt="6 孔、12 孔和复管陶笛类型对比图"
-              caption="孔数和腔体结构会影响音域、半音处理能力和学习难度。"
-            />
-            <KnowledgeFigure
-              src="/webfile/static/note_knowledge/knowledge_08.png"
-              alt="C 调、F 调和 G 调陶笛音域对比图"
-              caption="选择调性时先看曲目音域是否合适，再考虑音色、伴奏和教学资料。"
-            />
-            <KnowledgeFigure
-              src="/webfile/static/note_knowledge/knowledge_09.png"
-              alt="陶笛材质与腔体结构对比图"
-              caption="选笛优先级建议是音准稳定性、孔位舒适度、材质偏好，然后才是外观。"
-            />
-          </div>
-
-          <div className="mt-8 rounded-md bg-emerald-50 p-5 text-sm leading-7 text-emerald-950 ring-1 ring-emerald-900/10">
-            <span className="font-semibold">选择建议：</span>
-            第一支用于系统学习的陶笛，优先考虑音准可靠的 12 孔中音 C 调。已经有明确曲目需求时，再根据旋律最高音、最低音和伴奏调性决定是否选择 F 调、G 调或复管。
+            <div className="rounded-md border border-zinc-200 bg-white p-5">
+              <h3 className="font-semibold text-zinc-950">日常练习结构</h3>
+              <p className="mt-3 text-sm leading-7 text-zinc-700">
+                建议把练习拆成三段：长音稳定音准，音阶训练换指，短句检查节奏和乐句。每次练习保留一小段录音，更容易发现气息和音准问题。
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       <section id="editor" className="scroll-mt-24 border-b border-zinc-200 bg-[#fbfaf6]">
         <div className="mx-auto w-full max-w-6xl px-5 py-14 md:py-16">
-          <SectionHeader eyebrow="Lesson 05" title="编辑器使用：把音乐判断转化成清晰谱面">
+          <SectionHeader eyebrow="Lesson 04" title="编辑器使用：把音乐判断转化成清晰谱面">
             编辑器不是最后一步的排版工具，而是整理音乐信息的工作台。高质量陶笛谱通常先确认调号和音域，再录入音符和节奏，最后检查指法图、歌词、换行和导出清晰度。
           </SectionHeader>
 
@@ -511,10 +430,10 @@ export default function MusicClassroomPage() {
             </div>
             <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
               <Image
-                src="/webfile/static/note.webp"
+                src="/webfile/static/note_knowledge/sample.png"
                 alt="Ocarinana 陶笛谱示例输出"
-                width={2266}
-                height={742}
+                width={1456}
+                height={1074}
                 className="h-auto w-full bg-[#fffdf7] p-3"
                 loading="lazy"
               />
@@ -550,7 +469,7 @@ export default function MusicClassroomPage() {
               </p>
             </div>
             <Button asChild className="h-12 shrink-0 bg-emerald-700 px-6 hover:bg-emerald-800">
-              <Link href="/protected/editor/v2/new">
+              <Link href="/editor">
                 新建乐谱
                 <ArrowUpRightIcon className="h-4 w-4" />
               </Link>
