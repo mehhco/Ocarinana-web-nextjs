@@ -18,6 +18,8 @@ export type BarlineType = 'single' | 'double' | 'final' | 'repeat-start' | 'repe
 
 export type DynamicMark = 'p' | 'mp' | 'mf' | 'f';
 
+export type OrnamentMark = 'upper-mordent' | 'lower-mordent';
+
 export interface Note {
   id: string;
   type: 'note';
@@ -76,13 +78,31 @@ export interface Lyric {
   text: string;
 }
 
-export interface ExpressionMark {
+export interface DynamicExpressionMark {
   id: string;
   measureIndex: number;
   noteIndex: number;
   type: 'dynamic';
   value: DynamicMark;
 }
+
+export interface BreathExpressionMark {
+  id: string;
+  measureIndex: number;
+  noteIndex: number;
+  type: 'breath';
+  value: 'breath';
+}
+
+export interface OrnamentExpressionMark {
+  id: string;
+  measureIndex: number;
+  noteIndex: number;
+  type: 'ornament';
+  value: OrnamentMark;
+}
+
+export type ExpressionMark = DynamicExpressionMark | BreathExpressionMark | OrnamentExpressionMark;
 
 export interface Measure {
   id: string;

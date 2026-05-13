@@ -25,6 +25,7 @@ import type {
   Lyric,
   BarlineType,
   DynamicMark,
+  OrnamentMark,
   Duration,
   NoteValue,
   History,
@@ -115,6 +116,8 @@ interface ScoreStoreActions {
   clearAllLyrics: () => void;
 
   toggleExpression: (value: DynamicMark) => void;
+  toggleBreathMark: () => void;
+  toggleOrnamentMark: (value: OrnamentMark) => void;
   deleteExpression: (expressionId: string) => void;
   
   // 历史记录
@@ -1471,6 +1474,91 @@ export const useScoreStore = create<ScoreStore>()(
             measureIndex: selectedMeasureIndex,
             noteIndex: selectedNoteIndex,
             type: 'dynamic',
+            value,
+          },
+        ];
+      }
+
+      document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
+  toggleBreathMark: () => {
+    set((state) => {
+      const { document, selectedMeasureIndex, selectedNoteIndex } = state;
+
+      if (selectedMeasureIndex === null || selectedNoteIndex === null) return;
+
+      const element = document.measures[selectedMeasureIndex]?.elements[selectedNoteIndex];
+
+      if (!element || element.type !== 'note') return;
+
+      const expressions = document.expressions || [];
+      const existing = expressions.find(
+        expression =>
+          expression.measureIndex === selectedMeasureIndex &&
+          expression.noteIndex === selectedNoteIndex &&
+          expression.type === 'breath'
+      );
+
+      if (existing) {
+        document.expressions = expressions.filter(expression => expression.id !== existing.id);
+      } else {
+        document.expressions = [
+          ...expressions,
+          {
+            id: nanoid(),
+            measureIndex: selectedMeasureIndex,
+            noteIndex: selectedNoteIndex,
+            type: 'breath',
+            value: 'breath',
+          },
+        ];
+      }
+
+      document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
+  toggleOrnamentMark: (value) => {
+    set((state) => {
+      const { document, selectedMeasureIndex, selectedNoteIndex } = state;
+
+      if (selectedMeasureIndex === null || selectedNoteIndex === null) return;
+
+      const element = document.measures[selectedMeasureIndex]?.elements[selectedNoteIndex];
+
+      if (!element || element.type !== 'note') return;
+
+      const expressions = document.expressions || [];
+      const existing = expressions.find(
+        expression =>
+          expression.measureIndex === selectedMeasureIndex &&
+          expression.noteIndex === selectedNoteIndex &&
+          expression.type === 'ornament'
+      );
+
+      if (existing?.value === value) {
+        document.expressions = expressions.filter(expression => expression.id !== existing.id);
+      } else {
+        document.expressions = [
+          ...expressions.filter(
+            expression =>
+              !(
+                expression.measureIndex === selectedMeasureIndex &&
+                expression.noteIndex === selectedNoteIndex &&
+                expression.type === 'ornament'
+              )
+          ),
+          {
+            id: nanoid(),
+            measureIndex: selectedMeasureIndex,
+            noteIndex: selectedNoteIndex,
+            type: 'ornament',
             value,
           },
         ];

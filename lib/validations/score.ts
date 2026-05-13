@@ -7,6 +7,7 @@ const timeSignatureSchema = z.enum(["2/4", "3/4", "4/4", "6/8", "9/8", "12/8"]);
 const skinSchema = z.enum(["white", "light-beige", "light-blue"]);
 const barlineTypeSchema = z.enum(["single", "double", "final", "repeat-start", "repeat-end"]);
 const dynamicMarkSchema = z.enum(["p", "mp", "mf", "f"]);
+const ornamentMarkSchema = z.enum(["upper-mordent", "lower-mordent"]);
 
 export const scoreSettingsSchema = z.object({
   keySignature: keySignatureSchema.default("C"),
@@ -89,13 +90,32 @@ const lyricSchema = z.object({
   text: z.string(),
 });
 
-const expressionSchema = z.object({
+const expressionBaseSchema = z.object({
   id: z.string().min(1),
   measureIndex: z.number().int().nonnegative(),
   noteIndex: z.number().int().nonnegative(),
+});
+
+const dynamicExpressionSchema = expressionBaseSchema.extend({
   type: z.literal("dynamic"),
   value: dynamicMarkSchema,
 });
+
+const breathExpressionSchema = expressionBaseSchema.extend({
+  type: z.literal("breath"),
+  value: z.literal("breath"),
+});
+
+const ornamentExpressionSchema = expressionBaseSchema.extend({
+  type: z.literal("ornament"),
+  value: ornamentMarkSchema,
+});
+
+const expressionSchema = z.discriminatedUnion("type", [
+  dynamicExpressionSchema,
+  breathExpressionSchema,
+  ornamentExpressionSchema,
+]);
 
 export const scoreDocumentSchema = z.object({
   version: z.string().default("1.0"),

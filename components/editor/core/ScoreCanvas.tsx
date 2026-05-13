@@ -70,6 +70,8 @@ function createScoreScaleStyle(displayScale: number): CSSProperties {
     '--score-lyric-row-height': rem(1.5),
     '--score-lyric-text-width': rem(4),
     '--score-lyric-text-font': rem(0.875),
+    '--score-ornament-row-height': rem(0.875),
+    '--score-ornament-font': rem(0.875),
     '--score-expression-row-height': rem(1),
     '--score-expression-font': rem(0.875),
     '--score-final-barline-height': rem(1.5),
@@ -244,6 +246,57 @@ function TieSegment({
   );
 }
 
+function MordentMark({ direction }: { direction: 'upper' | 'lower' }) {
+  return (
+    <svg aria-hidden="true" className="h-[var(--score-ornament-font)] w-6" viewBox="0 0 42 18">
+      <path
+        d="M2 10 C5 3 8 3 11 10 C14 17 17 17 20 10 C23 3 26 3 29 10 C32 17 35 17 40 8"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.5"
+      />
+      {direction === 'lower' && (
+        <path d="M21 2.5 L21 15.5" stroke="currentColor" strokeLinecap="round" strokeWidth="1.9" />
+      )}
+    </svg>
+  );
+}
+
+function BreathMark() {
+  return (
+    <svg aria-hidden="true" className="h-[var(--score-ornament-font)] w-4" viewBox="0 0 20 16">
+      <path
+        d="M6 2.5 L10 13.5 L14 2.5"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.3"
+      />
+    </svg>
+  );
+}
+
+function OrnamentRow({ expressions }: { expressions: ExpressionMark[] }) {
+  const breathExpression = expressions.find((expression) => expression.type === 'breath');
+  const ornamentExpression = expressions.find((expression) => expression.type === 'ornament');
+
+  if (!breathExpression && !ornamentExpression) {
+    return null;
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-1 text-slate-800">
+      {ornamentExpression && (
+        <MordentMark direction={ornamentExpression.value === 'lower-mordent' ? 'lower' : 'upper'} />
+      )}
+      {breathExpression && <BreathMark />}
+    </div>
+  );
+}
+
 function renderBarlineSymbol(element: ScoreElement) {
   if (element.type !== 'barline') return null;
 
@@ -286,6 +339,7 @@ function buildNotePositions(measures: Measure[]): NotePosition[] {
 
 const LYRIC_ROW_CLASS = 'mt-0.5 flex h-[var(--score-lyric-row-height)] flex-shrink-0 items-center justify-center';
 const TIE_SLOT_CLASS = 'relative h-[var(--score-tie-height)] w-full flex-shrink-0 overflow-hidden';
+const ORNAMENT_ROW_CLASS = 'flex h-[var(--score-ornament-row-height)] flex-shrink-0 items-center justify-center';
 const EXPRESSION_ROW_CLASS = 'flex h-[var(--score-expression-row-height)] flex-shrink-0 items-center justify-center';
 
 function getDurationSlotClassName(slotLineCount: number): string {
@@ -377,7 +431,8 @@ interface NoteElementProps {
   isInsertTarget: boolean;
   isExporting: boolean;
   showTieRow: boolean;
-  expression?: ExpressionMark;
+  expressions: ExpressionMark[];
+  showOrnamentRow: boolean;
   showExpressionRow: boolean;
   lyricField?: LyricFieldProps;
   onClick: () => void;
@@ -402,7 +457,8 @@ const NoteElementComponent = memo(function NoteElementComponent({
   isInsertTarget,
   isExporting,
   showTieRow,
-  expression,
+  expressions,
+  showOrnamentRow,
   showExpressionRow,
   lyricField,
   onClick,
@@ -415,6 +471,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
       : null;
     const tieSegmentPosition = getTieSegmentPosition(ties, measureIndex, noteIndex);
     const isInDurationBeam = isPositionInDurationBeam(beams, measureIndex, noteIndex);
+    const dynamicExpression = expressions.find((expression) => expression.type === 'dynamic');
 
     return (
       <div
@@ -444,6 +501,12 @@ const NoteElementComponent = memo(function NoteElementComponent({
             />
           )}
         </div>
+
+        {showOrnamentRow && (
+          <div className={ORNAMENT_ROW_CLASS}>
+            <OrnamentRow expressions={expressions} />
+          </div>
+        )}
 
         {showTieRow && (
           <TieSegment position={tieSegmentPosition} />
@@ -502,8 +565,18 @@ const NoteElementComponent = memo(function NoteElementComponent({
           )}
         </div>
 
-        {showLyrics && !hasDurationLines && durationSlotLineCount > 0 && (
+        {(showLyrics || showExpressionRow) && !hasDurationLines && durationSlotLineCount > 0 && (
           <div className={getDurationSpacerClassName(durationSlotLineCount)} />
+        )}
+
+        {showExpressionRow && (
+          <div className={EXPRESSION_ROW_CLASS}>
+            {dynamicExpression && (
+              <span className="font-serif text-[length:var(--score-expression-font)] font-semibold italic leading-none text-slate-700">
+                {dynamicExpression.value}
+              </span>
+            )}
+          </div>
         )}
 
         {showLyrics && lyricField && (
@@ -527,16 +600,6 @@ const NoteElementComponent = memo(function NoteElementComponent({
                 onCompositionStart={lyricField.onCompositionStart}
                 onCompositionEnd={lyricField.onCompositionEnd}
               />
-            )}
-          </div>
-        )}
-
-        {showExpressionRow && (
-          <div className={EXPRESSION_ROW_CLASS}>
-            {expression && (
-              <span className="font-serif text-[length:var(--score-expression-font)] font-semibold italic leading-none text-slate-700">
-                {expression.value}
-              </span>
             )}
           </div>
         )}
@@ -572,6 +635,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
       onClick={onClick}
     >
       <div className={cn('w-[var(--score-fingering-width)] flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-[var(--score-fingering-height)]' : 'h-0')} />
+      {showOrnamentRow && <div className={ORNAMENT_ROW_CLASS} />}
       {showTieRow && <TieSegment position={tieSegmentPosition} />}
       <div className="h-[var(--score-dot-row-height)] flex-shrink-0" />
       <div className="flex h-[var(--score-main-row-height)] flex-shrink-0 items-center justify-center">
@@ -605,8 +669,8 @@ const NoteElementComponent = memo(function NoteElementComponent({
         <div className={getDurationSpacerClassName(durationSlotLineCount)} />
       ) : null}
       <div className="h-[var(--score-dot-row-height)] flex-shrink-0" />
-      {showLyrics && <div className={LYRIC_ROW_CLASS} />}
       {showExpressionRow && <div className={EXPRESSION_ROW_CLASS} />}
+      {showLyrics && <div className={LYRIC_ROW_CLASS} />}
     </div>
   );
 });
@@ -630,7 +694,8 @@ interface MeasureProps {
   showTieRow: boolean;
   lyricsDisabled: boolean;
   lyricsByKey: Map<string, string>;
-  expressionsByKey: Map<string, ExpressionMark>;
+  expressionsByKey: Map<string, ExpressionMark[]>;
+  showOrnamentRow: boolean;
   showExpressionRow: boolean;
   readOnly: boolean;
   lyricDrafts: Record<string, string>;
@@ -674,6 +739,7 @@ const MeasureComponent = memo(function MeasureComponent({
   lyricsDisabled,
   lyricsByKey,
   expressionsByKey,
+  showOrnamentRow,
   showExpressionRow,
   readOnly,
   lyricDrafts,
@@ -740,7 +806,8 @@ const MeasureComponent = memo(function MeasureComponent({
               )
             }
             showTieRow={showTieRow}
-            expression={expressionsByKey.get(positionKey)}
+            expressions={expressionsByKey.get(positionKey) ?? []}
+            showOrnamentRow={showOrnamentRow}
             showExpressionRow={showExpressionRow}
             lyricField={
               element.type === 'note' && showLyrics
@@ -814,10 +881,13 @@ export function ScoreCanvas({ exportRef, readOnly = false, displayScale = 100 }:
     return map;
   }, [scoreDoc.lyrics]);
   const expressionsByKey = useMemo(() => {
-    const map = new Map<string, ExpressionMark>();
+    const map = new Map<string, ExpressionMark[]>();
 
     (scoreDoc.expressions || []).forEach((expression) => {
-      map.set(createPositionKey(expression.measureIndex, expression.noteIndex), expression);
+      const positionKey = createPositionKey(expression.measureIndex, expression.noteIndex);
+      const expressions = map.get(positionKey) ?? [];
+      expressions.push(expression);
+      map.set(positionKey, expressions);
     });
 
     return map;
@@ -832,7 +902,10 @@ export function ScoreCanvas({ exportRef, readOnly = false, displayScale = 100 }:
 
     return indexes;
   }, [scoreDoc.ties]);
-  const showExpressionRow = expressionsByKey.size > 0;
+  const showOrnamentRow = (scoreDoc.expressions || []).some(
+    (expression) => expression.type === 'breath' || expression.type === 'ornament'
+  );
+  const showExpressionRow = (scoreDoc.expressions || []).some((expression) => expression.type === 'dynamic');
   const activeLyricKey =
     !readOnly && !isExporting && selectedMeasureIndex !== null && selectedNoteIndex !== null
       ? createPositionKey(selectedMeasureIndex, selectedNoteIndex)
@@ -1229,6 +1302,7 @@ export function ScoreCanvas({ exportRef, readOnly = false, displayScale = 100 }:
                     lyricsDisabled={readOnly || isBeamMode || isTieMode}
                     lyricsByKey={lyricsByKey}
                     expressionsByKey={expressionsByKey}
+                    showOrnamentRow={showOrnamentRow}
                     showExpressionRow={showExpressionRow}
                     readOnly={readOnly}
                     lyricDrafts={lyricDrafts}

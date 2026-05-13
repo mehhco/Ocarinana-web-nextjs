@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, memo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useScoreStore } from '../hooks/useScoreStore';
 import { Toolbar } from './Toolbar';
 import { ElementPanel } from './ElementPanel';
@@ -18,6 +19,7 @@ interface ScoreEditorProps {
 }
 
 export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId, backHref }: ScoreEditorProps) {
+  const router = useRouter();
   const initialize = useScoreStore((state) => state.initialize);
   const documentTitle = useScoreStore((state) => state.document.title);
   const setExporting = useScoreStore((state) => state.setExporting);
@@ -104,7 +106,7 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
 
   const handleManualSave = useCallback(async () => {
     if (!scoreId) {
-      showToast('登录后可保存到云端，当前可先导出图片');
+      router.push('/auth/login');
       return;
     }
 
@@ -116,7 +118,7 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
     }
 
     showError(result.error || '保存失败');
-  }, [saveNow, scoreId]);
+  }, [router, saveNow, scoreId]);
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-slate-50">

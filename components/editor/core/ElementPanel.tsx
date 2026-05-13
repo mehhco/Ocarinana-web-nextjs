@@ -5,7 +5,7 @@ import { EyeIcon, EyeOffIcon, Mic2Icon, MusicIcon, Trash2Icon } from '@/componen
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
-import type { BarlineType, Duration, DynamicMark, NoteValue } from '@/lib/editor/types';
+import type { BarlineType, Duration, DynamicMark, NoteValue, OrnamentMark } from '@/lib/editor/types';
 
 interface HelpContent {
   title: string;
@@ -194,6 +194,45 @@ function BeamPreview() {
   );
 }
 
+function MordentPreview({ direction }: { direction: 'upper' | 'lower' }) {
+  return (
+    <div className="flex flex-col items-center gap-1 text-slate-900">
+      <svg aria-hidden="true" className="h-4 w-9" viewBox="0 0 42 18">
+        <path
+          d="M2 10 C5 3 8 3 11 10 C14 17 17 17 20 10 C23 3 26 3 29 10 C32 17 35 17 40 8"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2.3"
+        />
+        {direction === 'lower' && (
+          <path d="M21 2.5 L21 15.5" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+        )}
+      </svg>
+      <span className="text-sm font-bold leading-none">5</span>
+    </div>
+  );
+}
+
+function BreathPreview() {
+  return (
+    <div className="flex flex-col items-center gap-1 text-slate-900">
+      <svg aria-hidden="true" className="h-4 w-5" viewBox="0 0 20 16">
+        <path
+          d="M6 2.5 L10 13.5 L14 2.5"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2.2"
+        />
+      </svg>
+      <span className="text-sm font-bold leading-none">5</span>
+    </div>
+  );
+}
+
 const HIGH_NOTES: { value: NoteValue; display: string }[] = [
   { value: '1', display: '↑1' },
   { value: '2', display: '↑2' },
@@ -236,10 +275,10 @@ const LOW_NOTES: { value: NoteValue; display: string }[] = [
 ];
 
 const DURATION_OPTIONS: { value: PanelDuration; label: string }[] = [
-  { value: '1/4', label: '1/4' },
-  { value: '1/8', label: '1/8' },
-  { value: '1/16', label: '1/16' },
-  { value: '1/32', label: '1/32' },
+  { value: '1/4', label: '（1/4）四分音符' },
+  { value: '1/8', label: '（1/8）八分音符' },
+  { value: '1/16', label: '（1/16）十六分音符' },
+  { value: '1/32', label: '（1/32）三十二分音符' },
 ];
 
 const REST_OPTIONS: { value: Duration; label: string }[] = [
@@ -260,6 +299,11 @@ const BARLINE_OPTIONS: { value: BarlineType; label: string }[] = [
 ];
 
 const DYNAMIC_OPTIONS: DynamicMark[] = ['p', 'mp', 'mf', 'f'];
+
+const ORNAMENT_OPTIONS: { value: OrnamentMark; label: string; direction: 'upper' | 'lower' }[] = [
+  { value: 'upper-mordent', label: '上波音', direction: 'upper' },
+  { value: 'lower-mordent', label: '下波音', direction: 'lower' },
+];
 
 const DURATION_HELP: Record<PanelDuration, HelpContent> = {
   '1/4': {
@@ -449,6 +493,31 @@ const DYNAMIC_HELP: Record<DynamicMark, HelpContent> = {
   },
 };
 
+const BREATH_HELP: HelpContent = {
+  title: '换气记号',
+  meaning: '提示歌唱或管乐在此处快速换气，其他乐器可理解为极短停顿。',
+  usage: '先选中音符，再点换气；再次点击可取消。记号显示在音符上方。',
+  preview: <BreathPreview />,
+  summary: '在选中音符上方添加换气提示。',
+};
+
+const ORNAMENT_HELP: Record<OrnamentMark, HelpContent> = {
+  'upper-mordent': {
+    title: '上波音',
+    meaning: '主音快速到上方相邻音，再回到主音的装饰音。',
+    usage: '先选中音符，再点上波音；同一音符只保留一个波音方向。',
+    preview: <MordentPreview direction="upper" />,
+    summary: '添加向上相邻音的快速装饰。',
+  },
+  'lower-mordent': {
+    title: '下波音',
+    meaning: '主音快速到下方相邻音，再回到主音的装饰音。',
+    usage: '先选中音符，再点下波音；同一音符只保留一个波音方向。',
+    preview: <MordentPreview direction="lower" />,
+    summary: '添加向下相邻音的快速装饰。',
+  },
+};
+
 const UTILITY_HELP = {
   fingering: {
     title: '指法图显示',
@@ -535,6 +604,8 @@ export const ElementPanel = memo(function ElementPanel() {
   const clearAllLyrics = useScoreStore((state) => state.clearAllLyrics);
   const clearSelection = useScoreStore((state) => state.clearSelection);
   const toggleExpression = useScoreStore((state) => state.toggleExpression);
+  const toggleBreathMark = useScoreStore((state) => state.toggleBreathMark);
+  const toggleOrnamentMark = useScoreStore((state) => state.toggleOrnamentMark);
   const isTieMode = useScoreStore((state) => state.isTieMode);
   const isInsertMode = useScoreStore((state) => state.isInsertMode);
   const isBeamMode = useScoreStore((state) => state.isBeamMode);
@@ -560,15 +631,17 @@ export const ElementPanel = memo(function ElementPanel() {
       ? selectedElement.duration
       : null;
   const hasAugmentationDot = selectedElement?.type === 'note' ? !!selectedElement.hasAugmentationDot : false;
-  const selectedExpression =
+  const selectedExpressions =
     selectedMeasureIndex !== null && selectedNoteIndex !== null
-      ? document.expressions?.find(
+      ? document.expressions?.filter(
           (expression) =>
             expression.measureIndex === selectedMeasureIndex &&
-            expression.noteIndex === selectedNoteIndex &&
-            expression.type === 'dynamic'
-        )?.value ?? null
-      : null;
+            expression.noteIndex === selectedNoteIndex
+        ) ?? []
+      : [];
+  const selectedExpression = selectedExpressions.find((expression) => expression.type === 'dynamic')?.value ?? null;
+  const hasBreathMark = selectedExpressions.some((expression) => expression.type === 'breath');
+  const selectedOrnamentMark = selectedExpressions.find((expression) => expression.type === 'ornament')?.value ?? null;
 
   const canConfirmBeam = (() => {
     if (
@@ -848,6 +921,7 @@ export const ElementPanel = memo(function ElementPanel() {
                   active={selectedDuration === option.value}
                   help={DURATION_HELP[option.value]}
                   showInlineHelp={showHelp}
+                  className="whitespace-nowrap px-1 text-[10px]"
                 >
                   {option.label}
                 </ActionButton>
@@ -934,19 +1008,44 @@ export const ElementPanel = memo(function ElementPanel() {
               <span className="text-xs font-semibold tracking-wider text-slate-500">演奏表达</span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
-            <div className="grid grid-cols-4 gap-1.5">
-              {DYNAMIC_OPTIONS.map((value) => (
+            <div className="space-y-1.5">
+              <div className="grid grid-cols-4 gap-1.5">
+                {DYNAMIC_OPTIONS.map((value) => (
+                  <ActionButton
+                    key={value}
+                    onClick={() => toggleExpression(value)}
+                    active={selectedExpression === value}
+                    disabled={selectedElement?.type !== 'note'}
+                    help={DYNAMIC_HELP[value]}
+                    showInlineHelp={showHelp}
+                  >
+                    <span className="font-serif text-sm italic">{value}</span>
+                  </ActionButton>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
                 <ActionButton
-                  key={value}
-                  onClick={() => toggleExpression(value)}
-                  active={selectedExpression === value}
+                  onClick={toggleBreathMark}
+                  active={hasBreathMark}
                   disabled={selectedElement?.type !== 'note'}
-                  help={DYNAMIC_HELP[value]}
+                  help={BREATH_HELP}
                   showInlineHelp={showHelp}
                 >
-                  <span className="font-serif text-sm italic">{value}</span>
+                  换气
                 </ActionButton>
-              ))}
+                {ORNAMENT_OPTIONS.map((option) => (
+                  <ActionButton
+                    key={option.value}
+                    onClick={() => toggleOrnamentMark(option.value)}
+                    active={selectedOrnamentMark === option.value}
+                    disabled={selectedElement?.type !== 'note'}
+                    help={ORNAMENT_HELP[option.value]}
+                    showInlineHelp={showHelp}
+                  >
+                    {option.label}
+                  </ActionButton>
+                ))}
+              </div>
             </div>
           </div>
         </div>
