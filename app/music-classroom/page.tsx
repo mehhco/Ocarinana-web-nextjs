@@ -443,24 +443,6 @@ export default function MusicClassroomPage() {
             </div>
           </div>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            <KnowledgeFigure
-              src="/webfile/static/note_knowledge/knowledge_10.png"
-              alt="Ocarinana 新建乐谱设置面板示意图"
-              caption="新建乐谱时先确定曲名、调号、拍号和每行小节数，后续录入会更稳定。"
-            />
-            <KnowledgeFigure
-              src="/webfile/static/note_knowledge/knowledge_11.png"
-              alt="Ocarinana 音符与符号输入区域示意图"
-              caption="先按乐句录入旋律，再补充休止、附点、连线和歌词等细节。"
-            />
-            <KnowledgeFigure
-              src="/webfile/static/note_knowledge/knowledge_12.png"
-              alt="Ocarinana 导出前检查清单示意图"
-              caption="导出后再打开图片检查清晰度、行距、歌词位置和指法图，比只看编辑器预览更可靠。"
-            />
-          </div>
-
           <div className="mt-8 flex flex-col gap-5 rounded-md border border-zinc-200 bg-white p-5 md:flex-row md:items-center md:justify-between">
             <div>
               <h3 className="font-semibold text-zinc-950">学完一章，就录入 4 到 8 小节</h3>
