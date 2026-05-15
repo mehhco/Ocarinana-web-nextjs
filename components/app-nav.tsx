@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AuthButton } from "@/components/auth-button";
-import { isShopEnabled } from "@/lib/supabase/config";
 
 interface AppNavProps {
   currentPath?: string;
@@ -16,7 +15,6 @@ export async function AppNav({ currentPath = "/" }: AppNavProps) {
   const isShopPage = currentPath.includes("/shop");
   const isClassroomPage = currentPath === "/music-classroom";
   const isScoresPage = currentPath === "/scores" || currentPath.startsWith("/scores/");
-  const shopEnabled = await isShopEnabled();
 
   return (
     <nav className="w-full border-b border-b-foreground/10 h-16 flex items-center">
@@ -61,18 +59,16 @@ export async function AppNav({ currentPath = "/" }: AppNavProps) {
                 我的乐谱
               </Link>
             )}
-            {shopEnabled && (
-              <Link
-                href="/shop"
-                className={`hover:underline transition-colors ${
-                  isShopPage
-                    ? "text-emerald-600 font-semibold"
-                    : "text-foreground hover:text-emerald-600"
-                }`}
-              >
-                精选陶笛
-              </Link>
-            )}
+            <Link
+              href="/shop"
+              className={`hover:underline transition-colors ${
+                isShopPage
+                  ? "text-emerald-600 font-semibold"
+                  : "text-foreground hover:text-emerald-600"
+              }`}
+            >
+              陶笛推荐
+            </Link>
           </div>
         </div>
         <div className="flex items-center gap-3">

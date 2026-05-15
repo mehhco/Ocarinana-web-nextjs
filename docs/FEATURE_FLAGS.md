@@ -15,9 +15,9 @@
 
 ## 当前功能开关
 
-### shop_enabled - 精选陶笛功能
+### shop_enabled - 陶笛推荐商品展示
 
-控制"精选陶笛"功能的显示和访问。
+控制"陶笛推荐"页面内商品卡片和商品外链的显示。陶笛推荐页面本身始终开放。
 
 ## 使用方法
 
@@ -31,7 +31,7 @@ INSERT INTO public.app_config (key, value, description)
 VALUES (
   'shop_enabled',
   '{"enabled": true}'::jsonb,
-  '精选陶笛功能开关'
+  '陶笛推荐商品展示开关'
 )
 ON CONFLICT (key) 
 DO UPDATE SET 

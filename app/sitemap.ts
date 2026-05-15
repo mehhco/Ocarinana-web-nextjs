@@ -1,5 +1,4 @@
 import { MetadataRoute } from 'next';
-import { isShopEnabled } from '@/lib/supabase/config';
 
 const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://ocarinana.com').replace(/\/$/, '');
 const siteLastModified = new Date('2026-05-13');
@@ -24,6 +23,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.85,
     },
     {
+      url: `${baseUrl}/shop`,
+      lastModified: siteLastModified,
+      changeFrequency: 'weekly',
+      priority: 0.86,
+    },
+    {
       url: `${baseUrl}/legal/privacy`,
       lastModified: legalLastModified,
       changeFrequency: 'yearly',
@@ -43,22 +48,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  let shopEnabled = false;
-  try {
-    shopEnabled = await isShopEnabled();
-  } catch {
-    shopEnabled = false;
-  }
-
-  if (shopEnabled) {
-    staticPages.splice(1, 0, {
-      url: `${baseUrl}/shop`,
-      lastModified: siteLastModified,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    });
-  }
-  
   return staticPages;
 }
 

@@ -63,8 +63,8 @@ export async function getConfig(key: string): Promise<any | null> {
 }
 
 /**
- * 检查精选陶笛功能是否启用
- * @returns true 如果功能启用，否则 false
+ * 检查陶笛推荐页商品展示是否启用
+ * @returns true 如果商品展示启用，否则 false
  */
 export async function isShopEnabled(): Promise<boolean> {
   const config = await getConfig('shop_enabled');

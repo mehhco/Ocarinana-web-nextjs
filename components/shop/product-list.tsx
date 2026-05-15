@@ -29,14 +29,17 @@ export function ProductList({ products, isLoading }: ProductListProps) {
 
   if (products.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">暂无商品</p>
+      <div className="rounded-md border border-dashed border-zinc-300 bg-white px-5 py-10 text-center">
+        <p className="font-medium text-zinc-900">暂无真实商品</p>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          添加 Supabase products 数据后，这里会自动显示真实商品卡片。
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}

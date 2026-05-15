@@ -10,18 +10,21 @@ import type { Product } from "@/lib/supabase/products";
 
 interface ProductCardProps {
   product: Product;
+  highlight?: string;
+  audience?: string;
+  specs?: string[];
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, highlight, audience, specs }: ProductCardProps) {
   const hasDiscount = product.original_price && product.price && product.original_price > product.price;
   const discountPercent = hasDiscount && product.original_price && product.price
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : null;
 
   return (
-    <Card className="group flex flex-col h-full hover:shadow-lg transition-shadow duration-200">
+    <Card className="group flex h-full flex-col overflow-hidden rounded-md border-zinc-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
       <CardHeader className="p-0">
-        <div className="relative w-full aspect-square overflow-hidden rounded-t-xl bg-muted">
+        <div className="relative w-full aspect-square overflow-hidden bg-[#f6f0e4]">
           {product.image_url ? (
             <Image
               src={product.image_url}
@@ -39,6 +42,11 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="absolute top-2 left-2">
             <PlatformBadge platform={product.platform} />
           </div>
+          {highlight && (
+            <div className="absolute bottom-2 left-2 right-2 rounded bg-white/95 px-2 py-1 text-xs font-medium text-emerald-900 shadow-sm">
+              {highlight}
+            </div>
+          )}
           {hasDiscount && discountPercent && (
             <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
               -{discountPercent}%
@@ -50,10 +58,27 @@ export function ProductCard({ product }: ProductCardProps) {
         <h3 className="font-semibold text-base mb-2 line-clamp-2 min-h-[3rem]">
           {product.title}
         </h3>
+        {audience && (
+          <p className="mb-2 rounded-sm bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-900">
+            适合：{audience}
+          </p>
+        )}
         {product.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+          <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
             {product.description}
           </p>
+        )}
+        {specs && specs.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {specs.map((spec) => (
+              <span
+                key={spec}
+                className="rounded-sm border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs text-zinc-600"
+              >
+                {spec}
+              </span>
+            ))}
+          </div>
         )}
         <div className="mt-auto">
           <div className="flex items-center gap-2 mb-2">
