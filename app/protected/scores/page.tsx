@@ -41,7 +41,7 @@ export default async function ScoresPage() {
           </Link>
         </Button>
       </div>
-      <div className="fixed inset-x-0 bottom-0 top-16 w-screen">
+      <div className="fixed inset-x-0 bottom-0 top-0 w-screen">
         {/* 性能优化：编辑器在 Client Component 中动态加载 */}
         <EditorClientWrapper iframeId="score-iframe" />
       </div>

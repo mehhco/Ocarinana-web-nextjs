@@ -149,7 +149,7 @@ function SectionHeader({
 export default function MusicClassroomPage() {
   return (
     <main className="min-h-screen flex flex-col bg-[#fbfaf6]">
-      <AppNav currentPath="/music-classroom" />
+      <AppNav currentPath="/music-classroom" variant="classroom" />
 
       <ArticleSchema
         headline="音乐课堂 - 陶笛、简谱与基础乐理系统入门"
@@ -166,8 +166,8 @@ export default function MusicClassroomPage() {
         ]}
       />
 
-      <section className="relative overflow-hidden border-b border-emerald-950/10 bg-[#f8f1df]">
-        <div className="absolute inset-0 opacity-[0.1]">
+      <section className="relative isolate overflow-hidden border-b border-lime-950/10 bg-[#eef3dd] dark:border-white/10 dark:bg-[#111908]">
+        <div className="absolute inset-0 opacity-[0.08] dark:opacity-[0.05]">
           <Image
             src="/webfile/static/note.webp"
             alt=""
@@ -177,15 +177,27 @@ export default function MusicClassroomPage() {
             aria-hidden="true"
           />
         </div>
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(248,241,223,0.98)_0%,rgba(248,241,223,0.9)_52%,rgba(248,241,223,0.74)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_84%_18%,rgba(132,204,22,0.24),transparent_30%),radial-gradient(circle_at_18%_70%,rgba(16,185,129,0.16),transparent_28%),linear-gradient(135deg,rgba(238,243,221,0.98)_0%,rgba(230,241,210,0.94)_46%,rgba(218,234,201,0.88)_100%)] dark:bg-[radial-gradient(circle_at_84%_18%,rgba(163,230,53,0.16),transparent_32%),radial-gradient(circle_at_18%_72%,rgba(16,185,129,0.1),transparent_28%),linear-gradient(135deg,rgba(17,25,8,0.98)_0%,rgba(26,45,14,0.96)_50%,rgba(37,57,21,0.9)_100%)]" />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(176deg,transparent_0%,transparent_48%,rgba(255,255,255,0.98)_50%,rgba(255,255,255,1)_100%)] dark:bg-[linear-gradient(176deg,transparent_0%,transparent_48%,rgba(2,6,23,0.98)_50%,rgba(2,6,23,1)_100%)]"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute right-[-12rem] top-24 h-80 w-80 rounded-full border border-lime-700/15 dark:border-lime-200/10"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute left-[-8rem] bottom-16 h-56 w-56 rounded-full border border-emerald-700/10 dark:border-emerald-100/10"
+        />
 
-        <div className="relative mx-auto grid w-full max-w-6xl gap-10 px-5 py-14 md:grid-cols-[1.05fr_0.95fr] md:items-center md:py-20">
+        <div className="relative mx-auto grid w-full max-w-6xl gap-10 px-5 pb-24 pt-14 md:grid-cols-[1.05fr_0.95fr] md:items-center md:pb-28 md:pt-20">
           <div>
-            <p className="mb-4 text-sm font-semibold text-emerald-800">Ocarinana 系统学习路径</p>
-            <h1 className="text-4xl font-extrabold leading-tight tracking-normal text-zinc-950 md:text-6xl">
+            <p className="mb-4 text-sm font-semibold text-emerald-800 dark:text-emerald-200">Ocarinana 系统学习路径</p>
+            <h1 className="text-4xl font-extrabold leading-tight tracking-normal text-zinc-950 md:text-6xl dark:text-white">
               音乐课堂
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-zinc-700 md:text-lg">
+            <p className="mt-5 max-w-2xl text-base leading-8 text-zinc-700 md:text-lg dark:text-emerald-50/78">
               这不是零散的术语表，而是一条从“听得懂、数得准、吹得稳”到“能独立整理陶笛谱”的学习路线。页面内容以基础乐理、数字简谱、陶笛演奏和制谱流程为主，适合初学者、音乐教师和需要整理教学谱例的用户。
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -204,7 +216,7 @@ export default function MusicClassroomPage() {
           <div className="rounded-md border border-zinc-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between border-b border-zinc-200 pb-3 text-sm">
               <span className="font-semibold text-zinc-950">课程目录</span>
-              <span className="text-emerald-800">5 个模块</span>
+              <span className="text-emerald-800">{lessons.length} 个模块</span>
             </div>
             <div className="mt-4 grid gap-2">
               {lessons.map((lesson, index) => (
@@ -230,7 +242,7 @@ export default function MusicClassroomPage() {
       </section>
 
       <section className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto grid w-full max-w-6xl gap-4 px-5 py-8 md:grid-cols-5">
+        <div className="mx-auto grid w-full max-w-6xl gap-4 px-5 py-8 md:grid-cols-4">
           {lessons.map((lesson, index) => (
             <a key={lesson.id} href={`#${lesson.id}`} className="rounded-md border border-zinc-200 bg-[#fbfaf6] p-4 transition-colors hover:border-emerald-700">
               <div className="text-xs font-semibold text-emerald-800">Module {index + 1}</div>

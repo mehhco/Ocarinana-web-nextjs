@@ -3,25 +3,32 @@ import { Button } from "./ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "./logout-button";
 
-export async function AuthButton() {
-  const supabase = await createClient();
+interface AuthButtonProps {
+  userEmail?: string | null;
+}
 
-  // You can also use getUser() which will be slower.
-  const { data } = await supabase.auth.getClaims();
+export async function AuthButton({ userEmail }: AuthButtonProps = {}) {
+  let email = userEmail;
 
-  const user = data?.claims;
+  if (typeof userEmail === "undefined") {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getClaims();
+    email = typeof data?.claims?.email === "string" ? data.claims.email : null;
+  }
 
-  return user ? (
-    <div className="flex items-center gap-4">
-      你好，{user.email}！
+  return email ? (
+    <div className="flex min-w-0 items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+      <span className="hidden max-w-44 truncate md:inline">
+        你好，{email}
+      </span>
       <LogoutButton />
     </div>
   ) : (
-    <div className="flex gap-2">
-      <Button asChild size="sm" variant={"outline"}>
+    <div className="flex shrink-0 gap-2">
+      <Button asChild size="sm" variant="outline">
         <Link href="/auth/login">登录</Link>
       </Button>
-      <Button asChild size="sm" variant={"default"}>
+      <Button asChild size="sm">
         <Link href="/auth/sign-up">注册</Link>
       </Button>
     </div>

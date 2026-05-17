@@ -1,35 +1,35 @@
+import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { LazyThemeSwitcher } from "@/components/lazy-components";
 import { CtaStartButton } from "@/components/cta-start-button";
 import { AppNav } from "@/components/app-nav";
-import Image from "next/image";
-import { Metadata } from "next";
-import { 
-  WebSiteSchema, 
-  SoftwareApplicationSchema, 
+import {
+  WebSiteSchema,
+  SoftwareApplicationSchema,
   OrganizationSchema,
-  FAQPageSchema
+  FAQPageSchema,
 } from "@/components/seo/structured-data";
 import { ImagePreloader, CRITICAL_IMAGES } from "@/components/image-preloader";
 
 export const metadata: Metadata = {
   title: "Ocarinana - 陶笛谱生成器 | 在线数字简谱编辑工具",
-  description: "Ocarinana 是专业的在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配、歌词编辑、高清图片导出。适合音乐爱好者、陶笛学习者和音乐教师使用。",
+  description:
+    "Ocarinana 是专业的在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配、歌词编辑与高清图片导出。",
   keywords: [
     "陶笛谱生成器",
     "数字简谱编辑器",
     "在线乐谱制作",
     "陶笛指法图",
     "简谱编辑工具",
-    "音乐制作软件",
-    "陶笛学习工具",
-    "乐谱导出",
-    "数字简谱",
-    "陶笛谱",
+    "音乐制作",
+    "ocarina",
+    "sheet music",
   ],
   openGraph: {
-    title: "Ocarinana - 陶笛谱生成器 | 在线数字简谱编辑工具",
-    description: "专业的在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配、歌词编辑、高清图片导出",
+    title: "Ocarinana - 陶笛谱生成器",
+    description:
+      "在线制作数字简谱，自动生成陶笛指法图，并导出适合打印与分享的高清图片。",
     type: "website",
     url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   },
@@ -38,20 +38,60 @@ export const metadata: Metadata = {
   },
 };
 
+const faqs = [
+  {
+    question: "需要登录才能使用吗？",
+    answer: "浏览与试用不需要登录；登录后可以保存并管理你的云端乐谱。",
+  },
+  {
+    question: "支持哪些导出格式？",
+    answer: "当前支持高清 PNG 图片导出，适合打印、教学资料和社交分享。",
+  },
+  {
+    question: "数据会保存在哪里？",
+    answer: "游客可在本地试用导出；登录后可以将乐谱保存到云端并持续编辑。",
+  },
+  {
+    question: "现在是否收费？",
+    answer: "当前核心编辑和导出能力免费开放，后续高级能力会再单独说明。",
+  },
+];
+
+const features = [
+  {
+    title: "所见即所得",
+    desc: "在同一个工作区输入音符、歌词和装饰符，实时检查谱面排版。",
+  },
+  {
+    title: "指法图联动",
+    desc: "根据调号和音高自动匹配陶笛指法图，减少手动查表。",
+  },
+  {
+    title: "高清导出",
+    desc: "一键生成适合打印、课堂演示和分享传播的 PNG 成品图。",
+  },
+];
+
+const workflow = [
+  "选择调号与节拍模板",
+  "录入数字简谱和歌词",
+  "检查指法图与行距",
+  "导出高清图片",
+];
+
 export default function Home() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  
+
   return (
     <>
-      {/* SEO: 结构化数据 */}
       <WebSiteSchema
         url={baseUrl}
         name="Ocarinana - 陶笛谱生成器"
-        description="专业的在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配、歌词编辑、高清图片导出"
+        description="在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配、歌词编辑与高清图片导出。"
       />
       <SoftwareApplicationSchema
         name="Ocarinana"
-        description="在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配"
+        description="在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配。"
         url={baseUrl}
         applicationCategory="MusicApplication"
         operatingSystem="Web Browser"
@@ -64,230 +104,216 @@ export default function Home() {
         name="Ocarinana"
         url={baseUrl}
         logo={`${baseUrl}/opengraph-image.webp`}
-        description="专业的在线音乐工具平台"
-        sameAs={[
-          // 可以添加社交媒体链接
-          // "https://twitter.com/ocarinana",
-          // "https://facebook.com/ocarinana",
-        ]}
+        description="面向陶笛学习、教学和内容创作的在线音乐工具。"
+        sameAs={[]}
       />
-      <FAQPageSchema
-        faqs={[
-          { 
-            question: "需要登录才能使用吗？", 
-            answer: "浏览与了解功能不需要登录；点击立即开始时会根据状态跳转。" 
-          },
-          { 
-            question: "支持哪些导出格式？", 
-            answer: "当前支持高质量 PNG 图片导出，其他格式待支持。" 
-          },
-          { 
-            question: "数据会保存在云端吗？", 
-            answer: "导出图片默认保存在浏览器本地，登录后可选择云端同步（筹备中）。" 
-          },
-          { 
-            question: "是否收费？", 
-            answer: "当前免费，后续可能根据使用情况调整价格。" 
-          },
-        ]}
-      />
-      
-      {/* 顶部导航 */}
-      <main className="min-h-screen flex flex-col items-stretch">
-      {/* 性能优化：关键图片预加载 */}
-      <ImagePreloader images={CRITICAL_IMAGES} priority={true} />
+      <FAQPageSchema faqs={faqs} />
 
-      <AppNav currentPath="/" />
+      <main className="min-h-screen bg-white text-zinc-950 dark:bg-slate-950 dark:text-white">
+        <ImagePreloader images={CRITICAL_IMAGES} priority={true} />
+        <AppNav currentPath="/" variant="banner" />
 
-      {/* Hero */}
-      <section className="relative w-full overflow-hidden border-b bg-[#fbfaf6]">
-        <div className="absolute inset-0 opacity-[0.08]">
-          <Image
-            src="/webfile/static/note.webp"
-            alt=""
-            fill
-            className="object-cover object-center"
-            priority
-            aria-hidden="true"
-          />
-        </div>
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(251,250,246,0.98)_0%,rgba(251,250,246,0.9)_48%,rgba(251,250,246,0.68)_100%)]" />
-
-        <div className="relative mx-auto flex w-full max-w-6xl flex-col px-5 py-14 md:py-20">
-          <div className="max-w-3xl">
-            <p className="mb-4 text-sm font-semibold text-emerald-800">
-              在线陶笛谱生成器
-            </p>
-            <h1 className="text-4xl font-extrabold leading-tight tracking-normal text-zinc-950 md:text-6xl">
-              在线制作数字简谱，自动生成陶笛指法图
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-zinc-700 md:text-lg">
-              Ocarinana 面向陶笛学习者、音乐教师和内容创作者。输入简谱音符，实时预览 C/F/G 调指法图，完成后可导出适合打印与分享的高清图片。
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <CtaStartButton />
-              <Link
-                href="#features"
-                className="inline-flex h-12 items-center justify-center rounded-md border border-zinc-300 bg-white/70 px-6 text-sm font-medium text-zinc-800 transition-colors hover:border-emerald-700 hover:text-emerald-800"
-              >
-                查看功能
-              </Link>
-            </div>
-            <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-zinc-600">
-              <span>无需安装</span>
-              <span>支持指法图联动</span>
-              <span>PNG 高清导出</span>
-              <span>云端乐谱管理</span>
-            </div>
-          </div>
-
-          <div className="mt-12 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
-            <div className="grid border-b border-zinc-200 bg-zinc-50/80 px-4 py-3 text-xs font-medium text-zinc-500 md:grid-cols-[1fr_auto] md:items-center">
-              <span>示例输出：故乡的原风景片段 1=G 4/4</span>
-              <span className="mt-1 text-emerald-800 md:mt-0">成品谱面预览</span>
-            </div>
-            <div className="bg-[#fffdf7] p-3 md:p-5">
-              <Image
-                src="/webfile/static/note.webp"
-                alt="故乡的原风景片段陶笛谱示例输出"
-                width={2266}
-                height={742}
-                className="h-auto w-full rounded-md object-contain ring-1 ring-zinc-200"
-                priority
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="w-full border-b bg-white">
-        <div className="w-full max-w-6xl mx-auto px-5 py-14">
-          <div className="mb-8 max-w-2xl">
-            <h2 className="text-2xl font-bold text-zinc-950 md:text-3xl">
-              为陶笛谱制作而设计的核心流程
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-zinc-600">
-              从输入音符到生成指法图，再到导出图片，围绕实际练习、教学和分享场景组织功能。
-            </p>
-          </div>
-          <div className="grid gap-5 md:grid-cols-3">
-          {[
-            { title: "所见即所得", desc: "点击即可编排音符、休止与修饰符号。" },
-            { title: "陶笛指法联动", desc: "自动根据调号与音高显示指法图。" },
-            { title: "一键导出", desc: "高分辨率图片导出，适合打印与分享。" },
-          ].map((f) => (
-            <div key={f.title} className="rounded-md border border-zinc-200 bg-[#fbfaf6] p-6">
-              <h3 className="mb-2 font-semibold text-zinc-950">{f.title}</h3>
-              <p className="text-sm leading-6 text-zinc-600">{f.desc}</p>
-            </div>
-          ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Bento Grids */}
-      <section className="w-full border-b bg-[#fbfaf6]">
-        <div className="w-full max-w-6xl mx-auto px-5 py-16 grid md:grid-cols-3 gap-5 auto-rows-[200px]">
-          <div className="md:col-span-2 row-span-2 rounded-md border border-zinc-200 p-6 flex flex-col justify-between bg-white">
-            <div>
-              <h3 className="font-semibold mb-2 text-zinc-950">快速上手</h3>
-              <p className="text-sm leading-6 text-zinc-600">打开即用，内置常用节拍与调号模版。</p>
-            </div>
+        <section className="relative isolate w-full overflow-hidden border-b border-emerald-950/10 bg-[#e9f5ec] dark:border-white/10 dark:bg-[#061511]">
+          <div className="absolute inset-0 opacity-[0.08] dark:opacity-[0.05]">
             <Image
               src="/webfile/static/note.webp"
-              alt="陶笛指法图和简谱编辑预览"
-              width={1200}
-              height={400}
-              className="rounded-md object-contain w-full h-40 bg-[#fffdf7] p-3 ring-1 ring-zinc-200"
-              loading="lazy"
+              alt=""
+              fill
+              className="object-cover object-center"
+              priority
+              aria-hidden="true"
             />
           </div>
-          <div className="rounded-md border border-zinc-200 p-6 bg-white">
-            <h3 className="font-semibold mb-2 text-zinc-950">键盘友好</h3>
-            <p className="text-sm leading-6 text-zinc-600">支持键盘输入、快捷切换与撤销/恢复。</p>
-          </div>
-          <div className="rounded-md border border-zinc-200 p-6 bg-white">
-            <h3 className="font-semibold mb-2 text-zinc-950">本地保存</h3>
-            <p className="text-sm leading-6 text-zinc-600">自动保存到浏览器，随时继续创作。</p>
-          </div>
-        </div>
-      </section>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_84%_18%,rgba(16,185,129,0.26),transparent_30%),radial-gradient(circle_at_18%_70%,rgba(20,184,166,0.18),transparent_28%),linear-gradient(135deg,rgba(233,245,236,0.98)_0%,rgba(226,243,232,0.94)_46%,rgba(212,236,226,0.88)_100%)] dark:bg-[radial-gradient(circle_at_84%_18%,rgba(45,212,191,0.2),transparent_32%),radial-gradient(circle_at_18%_72%,rgba(16,185,129,0.13),transparent_28%),linear-gradient(135deg,rgba(6,21,17,0.98)_0%,rgba(7,35,28,0.96)_50%,rgba(9,48,39,0.9)_100%)]" />
+          <div
+            aria-hidden="true"
+            className="absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(176deg,transparent_0%,transparent_48%,rgba(255,255,255,0.98)_50%,rgba(255,255,255,1)_100%)] dark:bg-[linear-gradient(176deg,transparent_0%,transparent_48%,rgba(2,6,23,0.98)_50%,rgba(2,6,23,1)_100%)]"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute right-[-12rem] top-24 h-80 w-80 rounded-full border border-emerald-700/15 dark:border-emerald-200/10"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute left-[-8rem] bottom-16 h-56 w-56 rounded-full border border-teal-700/10 dark:border-teal-100/10"
+          />
 
-      {/* CTA */}
-      <section className="w-full border-b">
-        <div className="w-full max-w-6xl mx-auto px-5 py-16 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold">准备好开始创作你的第一首乐曲了吗？</h2>
-          <p className="mt-3 text-foreground/70">点击下方按钮立即使用 Ocarinana，或先了解常见问题。</p>
-          <div className="mt-6 flex items-center justify-center gap-4">
-            <CtaStartButton />
-            <Link href="#faq" className="text-sm underline underline-offset-4">FAQ</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      {/* <section className="w-full border-b">
-        <div className="w-full max-w-6xl mx-auto px-5 py-16 grid md:grid-cols-3 gap-6">
-          {[
-            { name: "免费版", price: "¥0", features: ["在线编辑", "图片导出", "本地保存"] },
-            { name: "专业版", price: "¥29/月", features: ["高分辨率导出", "更多模版", "优先支持"] },
-            { name: "团队版", price: "¥79/月", features: ["多人协作", "共享素材库", "团队管理"] },
-          ].map((p) => (
-            <div key={p.name} className="rounded-xl border p-6 bg-background flex flex-col">
-              <h3 className="font-semibold text-lg">{p.name}</h3>
-              <div className="text-3xl font-extrabold mt-2">{p.price}</div>
-              <ul className="mt-4 space-y-2 text-sm text-foreground/70">
-                {p.features.map((it) => (
-                  <li key={it}>• {it}</li>
-                ))}
-              </ul>
-              <div className="mt-6">
+          <div className="relative mx-auto grid w-full max-w-6xl gap-10 px-5 pb-24 pt-14 md:grid-cols-[minmax(0,0.9fr)_minmax(380px,1fr)] md:items-center md:pb-28 md:pt-20">
+            <div className="max-w-3xl">
+              <p className="mb-4 text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+                在线陶笛谱生成器
+              </p>
+              <h1 className="max-w-3xl text-4xl font-extrabold leading-tight tracking-normal md:text-6xl">
+                在线制作数字简谱，自动生成陶笛指法图
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-zinc-700 md:text-lg dark:text-emerald-50/78">
+                Ocarinana 面向陶笛学习者、音乐教师和内容创作者。输入简谱音符，实时预览
+                C/F/G 调指法图，完成后导出适合打印与分享的高清图片。
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <CtaStartButton />
+                <Link
+                  href="#features"
+                  className="inline-flex h-12 items-center justify-center rounded-md border border-emerald-900/15 bg-white/58 px-6 text-sm font-medium text-emerald-950 transition-colors hover:border-emerald-700 hover:bg-white/82 hover:text-emerald-800 dark:border-white/15 dark:bg-white/8 dark:text-emerald-50 dark:hover:border-emerald-200/50 dark:hover:bg-white/14"
+                >
+                  查看功能
+                </Link>
+              </div>
+              <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-zinc-600 dark:text-emerald-50/68">
+                <span>无需安装</span>
+                <span>支持指法图联动</span>
+                <span>PNG 高清导出</span>
+                <span>云端乐谱管理</span>
               </div>
             </div>
-          ))}
-        </div>
-      </section> */}
 
- 
-
-      {/* FAQ */}
-      <section id="faq" className="w-full">
-        <div className="w-full max-w-6xl mx-auto px-5 py-16 grid md:grid-cols-2 gap-8">
-          {[
-            { q: "需要登录才能使用吗？", a: "浏览与了解功能不需要登录；点击立即开始时会根据状态跳转。" },
-            { q: "支持哪些导出格式？", a: "当前支持高质量 PNG 图片导出，其他格式待支持。" },
-            { q: "数据会保存在云端吗？", a: "导出图片默认保存在浏览器本地，登录后可选择云端同步（筹备中）。" },
-            { q: "是否收费？", a: "当前免费，后续可能根据使用情况调整价格。" },
-          ].map((f) => (
-            <div key={f.q} className="rounded-lg border p-6 bg-background">
-              <div className="font-semibold mb-2">{f.q}</div>
-              <div className="text-sm text-foreground/70">{f.a}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 页脚 */}
-      <footer className="w-full border-t">
-        <div className="max-w-6xl mx-auto px-5 py-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-foreground/60">
-              © {new Date().getFullYear()} Ocarinana · 陶笛谱生成器
-            </p>
-            <div className="flex items-center gap-6 text-xs">
-              <Link href="/legal/privacy" className="text-foreground/60 hover:text-foreground transition-colors">
-                隐私政策
-              </Link>
-              <Link href="/legal/terms" className="text-foreground/60 hover:text-foreground transition-colors">
-                用户协议
-              </Link>
-              <LazyThemeSwitcher />
+            <div className="relative">
+              <div
+                aria-hidden="true"
+                className="absolute -inset-5 rounded-[2rem] bg-emerald-700/10 blur-2xl dark:bg-emerald-300/10"
+              />
+              <div className="relative overflow-hidden rounded-lg border border-white/72 bg-white/68 shadow-[0_24px_70px_rgba(15,23,42,0.18)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.07] dark:shadow-[0_24px_70px_rgba(0,0,0,0.45)]">
+                <div className="grid border-b border-emerald-950/10 bg-white/56 px-4 py-3 text-xs font-medium text-zinc-600 md:grid-cols-[1fr_auto] md:items-center dark:border-white/10 dark:bg-white/[0.06] dark:text-emerald-50/64">
+                  <span>示例输出：故乡的原风景片段 · 1=G 4/4</span>
+                  <span className="mt-1 text-emerald-800 md:mt-0 dark:text-emerald-200">
+                    成品谱面预览
+                  </span>
+                </div>
+                <div className="bg-[#fffdf7]/88 p-3 md:p-5 dark:bg-zinc-950/55">
+                  <Image
+                    src="/webfile/static/note.webp"
+                    alt="故乡的原风景片段陶笛谱示例输出"
+                    width={2266}
+                    height={742}
+                    className="h-auto w-full rounded-md object-contain ring-1 ring-zinc-200 dark:bg-white dark:ring-white/10"
+                    priority
+                  />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </footer>
+        </section>
+
+        <section id="features" className="w-full border-b border-zinc-200 bg-white dark:border-white/10 dark:bg-slate-950">
+          <div className="mx-auto w-full max-w-6xl px-5 py-14">
+            <div className="mb-8 max-w-2xl">
+              <h2 className="text-2xl font-bold md:text-3xl">
+                为陶笛谱制作设计的核心流程
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-slate-300">
+                从输入音符到生成指法图，再到导出图片，围绕练习、教学和分享场景组织能力。
+              </p>
+            </div>
+            <div className="grid gap-5 md:grid-cols-3">
+              {features.map((feature) => (
+                <div
+                  key={feature.title}
+                  className="rounded-md border border-zinc-200 bg-[#fbfaf6] p-6 dark:border-white/10 dark:bg-white/[0.04]"
+                >
+                  <h3 className="mb-2 font-semibold">{feature.title}</h3>
+                  <p className="text-sm leading-6 text-zinc-600 dark:text-slate-300">
+                    {feature.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="w-full border-b border-zinc-200 bg-[#fbfaf6] dark:border-white/10 dark:bg-slate-900">
+          <div className="mx-auto grid w-full max-w-6xl gap-5 px-5 py-16 md:grid-cols-3">
+            <div className="flex flex-col justify-between rounded-md border border-zinc-200 bg-white p-6 md:col-span-2 dark:border-white/10 dark:bg-slate-950">
+              <div>
+                <h3 className="mb-2 font-semibold">快速上手</h3>
+                <p className="text-sm leading-6 text-zinc-600 dark:text-slate-300">
+                  打开即可使用，内置常用节拍与调号模板，适合从短谱例开始验证排版。
+                </p>
+              </div>
+              <Image
+                src="/webfile/static/note.webp"
+                alt="陶笛指法图和简谱编辑预览"
+                width={1200}
+                height={400}
+                className="mt-6 h-40 w-full rounded-md bg-[#fffdf7] object-contain p-3 ring-1 ring-zinc-200 dark:bg-white dark:ring-white/10"
+                loading="lazy"
+              />
+            </div>
+            <div className="rounded-md border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-slate-950">
+              <h3 className="mb-4 font-semibold">制作步骤</h3>
+              <ol className="space-y-3 text-sm text-zinc-600 dark:text-slate-300">
+                {workflow.map((item, index) => (
+                  <li key={item} className="flex gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-semibold text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200">
+                      {index + 1}
+                    </span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </section>
+
+        <section className="w-full border-b border-zinc-200 bg-white dark:border-white/10 dark:bg-slate-950">
+          <div className="mx-auto w-full max-w-6xl px-5 py-16 text-center">
+            <h2 className="text-2xl font-bold md:text-3xl">
+              准备好开始创作你的第一首乐谱了吗？
+            </h2>
+            <p className="mt-3 text-zinc-600 dark:text-slate-300">
+              直接进入编辑器制作陶笛谱，也可以先查看常见问题。
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-4">
+              <CtaStartButton />
+              <Link
+                href="#faq"
+                className="text-sm text-emerald-800 underline underline-offset-4 dark:text-emerald-200"
+              >
+                FAQ
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section id="faq" className="w-full bg-white dark:bg-slate-950">
+          <div className="mx-auto grid w-full max-w-6xl gap-5 px-5 py-16 md:grid-cols-2">
+            {faqs.map((faq) => (
+              <div
+                key={faq.question}
+                className="rounded-md border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <div className="mb-2 font-semibold">{faq.question}</div>
+                <div className="text-sm leading-6 text-zinc-600 dark:text-slate-300">
+                  {faq.answer}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <footer className="w-full border-t border-zinc-200 bg-white dark:border-white/10 dark:bg-slate-950">
+          <div className="mx-auto max-w-6xl px-5 py-10">
+            <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+              <p className="text-xs text-zinc-500 dark:text-slate-400">
+                © {new Date().getFullYear()} Ocarinana · 陶笛谱生成器
+              </p>
+              <div className="flex items-center gap-6 text-xs">
+                <Link
+                  href="/legal/privacy"
+                  className="text-zinc-500 transition-colors hover:text-zinc-950 dark:text-slate-400 dark:hover:text-white"
+                >
+                  隐私政策
+                </Link>
+                <Link
+                  href="/legal/terms"
+                  className="text-zinc-500 transition-colors hover:text-zinc-950 dark:text-slate-400 dark:hover:text-white"
+                >
+                  用户协议
+                </Link>
+                <LazyThemeSwitcher />
+              </div>
+            </div>
+          </div>
+        </footer>
       </main>
     </>
   );

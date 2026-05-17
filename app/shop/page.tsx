@@ -541,10 +541,10 @@ export default async function ShopPage() {
 
   return (
     <main className="min-h-screen flex flex-col bg-[#fbfaf6]">
-      <AppNav currentPath="/shop" />
+      <AppNav currentPath="/shop" variant="shop" />
 
-      <section className="relative overflow-hidden border-b border-emerald-950/10 bg-[#f8f1df]">
-        <div className="absolute inset-0 opacity-[0.11]">
+      <section className="relative isolate overflow-hidden border-b border-teal-950/10 bg-[#e5f3f1] dark:border-white/10 dark:bg-[#061719]">
+        <div className="absolute inset-0 opacity-[0.08] dark:opacity-[0.05]">
           <Image
             src="/webfile/static/note.webp"
             alt=""
@@ -554,14 +554,26 @@ export default async function ShopPage() {
             aria-hidden="true"
           />
         </div>
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(248,241,223,0.98)_0%,rgba(248,241,223,0.91)_54%,rgba(248,241,223,0.76)_100%)]" />
-        <div className="relative mx-auto grid w-full max-w-6xl gap-10 px-5 py-14 md:grid-cols-[1.1fr_0.9fr] md:items-end md:py-18">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_84%_18%,rgba(20,184,166,0.24),transparent_30%),radial-gradient(circle_at_18%_70%,rgba(34,197,94,0.14),transparent_28%),linear-gradient(135deg,rgba(229,243,241,0.98)_0%,rgba(218,241,237,0.94)_46%,rgba(203,232,229,0.88)_100%)] dark:bg-[radial-gradient(circle_at_84%_18%,rgba(45,212,191,0.18),transparent_32%),radial-gradient(circle_at_18%_72%,rgba(34,197,94,0.1),transparent_28%),linear-gradient(135deg,rgba(6,23,25,0.98)_0%,rgba(8,42,43,0.96)_50%,rgba(8,54,55,0.9)_100%)]" />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(176deg,transparent_0%,transparent_48%,rgba(255,255,255,0.98)_50%,rgba(255,255,255,1)_100%)] dark:bg-[linear-gradient(176deg,transparent_0%,transparent_48%,rgba(2,6,23,0.98)_50%,rgba(2,6,23,1)_100%)]"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute right-[-12rem] top-24 h-80 w-80 rounded-full border border-teal-700/15 dark:border-teal-200/10"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute left-[-8rem] bottom-16 h-56 w-56 rounded-full border border-emerald-700/10 dark:border-emerald-100/10"
+        />
+        <div className="relative mx-auto grid w-full max-w-6xl gap-10 px-5 pb-24 pt-14 md:grid-cols-[1.1fr_0.9fr] md:items-end md:pb-28 md:pt-20">
           <div>
-            <p className="text-sm font-semibold text-emerald-800">Ocarinana 陶笛推荐</p>
-            <h1 className="mt-3 text-4xl font-extrabold leading-tight tracking-normal text-zinc-950 md:text-5xl">
+            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">Ocarinana 陶笛推荐</p>
+            <h1 className="mt-3 text-4xl font-extrabold leading-tight tracking-normal text-zinc-950 md:text-5xl dark:text-white">
               先选对陶笛，再开始稳定练习
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-zinc-700 md:text-lg">
+            <p className="mt-5 max-w-2xl text-base leading-8 text-zinc-700 md:text-lg dark:text-emerald-50/78">
               这不是单纯的商品货架。我们把陶笛种类、调性、材质、学习阶段和商品选择放在同一页，帮助你判断第一支或下一支陶笛应该买什么。
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">

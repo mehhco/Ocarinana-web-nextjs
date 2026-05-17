@@ -28,14 +28,6 @@ export function CookieConsent() {
     
     // 触发自定义事件，通知 Analytics 可以加载
     window.dispatchEvent(new Event("cookie-consent-accepted"));
-    
-    // 如果页面已经加载但 Analytics 未初始化，刷新页面
-    if (typeof window !== "undefined") {
-      const w = window as unknown as Window & { gtag?: Function };
-      if (!w.gtag) {
-        window.location.reload();
-      }
-    }
   };
 
   const handleReject = () => {

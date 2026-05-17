@@ -108,6 +108,18 @@
 }
 
 @layer utilities {
+  @keyframes loading-slide {
+    0% {
+      transform: translateX(-120%);
+    }
+    50% {
+      transform: translateX(140%);
+    }
+    100% {
+      transform: translateX(360%);
+    }
+  }
+
   /* 确保 line-clamp 工具类可用 */
   .line-clamp-2 {
     display: -webkit-box;
