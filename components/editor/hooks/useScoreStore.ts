@@ -1493,7 +1493,7 @@ export const useScoreStore = create<ScoreStore>()(
 
       const element = document.measures[selectedMeasureIndex]?.elements[selectedNoteIndex];
 
-      if (!element || element.type !== 'note') return;
+      if (!element || (element.type !== 'note' && element.type !== 'extension')) return;
 
       const expressions = document.expressions || [];
       const existing = expressions.find(

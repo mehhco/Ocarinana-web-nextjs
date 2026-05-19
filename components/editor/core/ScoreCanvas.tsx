@@ -79,6 +79,9 @@ function createScoreScaleStyle(displayScale: number): CSSProperties {
     '--score-lyric-text-font': rem(0.875),
     '--score-ornament-row-height': rem(0.875),
     '--score-ornament-font': rem(0.875),
+    '--score-breath-mark-height': rem(0.8125),
+    '--score-breath-mark-width': rem(0.75),
+    '--score-breath-stroke-width': px(1.65, 1.1),
     '--score-expression-row-height': rem(1),
     '--score-expression-font': rem(0.875),
     '--score-final-barline-height': rem(1.5),
@@ -275,14 +278,14 @@ function MordentMark({ direction }: { direction: 'upper' | 'lower' }) {
 
 function BreathMark() {
   return (
-    <svg aria-hidden="true" className="h-[var(--score-ornament-font)] w-4" viewBox="0 0 20 16">
+    <svg aria-hidden="true" className="h-[var(--score-breath-mark-height)] w-[var(--score-breath-mark-width)]" viewBox="0 0 20 16">
       <path
         d="M6 2.5 L10 13.5 L14 2.5"
         fill="none"
         stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth="2.3"
+        strokeWidth="var(--score-breath-stroke-width)"
       />
     </svg>
   );
@@ -297,11 +300,15 @@ function OrnamentRow({ expressions }: { expressions: ExpressionMark[] }) {
   }
 
   return (
-    <div className="flex items-center justify-center gap-1 text-slate-800">
+    <div className="relative flex h-full w-full items-center justify-center text-slate-800">
       {ornamentExpression && (
         <MordentMark direction={ornamentExpression.value === 'lower-mordent' ? 'lower' : 'upper'} />
       )}
-      {breathExpression && <BreathMark />}
+      {breathExpression && (
+        <span className="absolute right-0 top-0 flex h-full items-start justify-end">
+          <BreathMark />
+        </span>
+      )}
     </div>
   );
 }
@@ -348,7 +355,7 @@ function buildNotePositions(measures: Measure[]): NotePosition[] {
 
 const LYRIC_ROW_CLASS = 'mt-0.5 flex h-[var(--score-lyric-row-height)] flex-shrink-0 items-center justify-center';
 const TIE_SLOT_CLASS = 'relative h-[var(--score-tie-height)] w-full flex-shrink-0 overflow-visible';
-const ORNAMENT_ROW_CLASS = 'flex h-[var(--score-ornament-row-height)] flex-shrink-0 items-center justify-center';
+const ORNAMENT_ROW_CLASS = 'flex h-[var(--score-ornament-row-height)] w-full flex-shrink-0 items-center justify-center';
 const EXPRESSION_ROW_CLASS = 'flex h-[var(--score-expression-row-height)] flex-shrink-0 items-center justify-center';
 
 function getDurationSlotClassName(slotLineCount: number): string {
@@ -644,7 +651,11 @@ const NoteElementComponent = memo(function NoteElementComponent({
       onClick={onClick}
     >
       <div className={cn('w-[var(--score-fingering-width)] flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-[var(--score-fingering-height)]' : 'h-0')} />
-      {showOrnamentRow && <div className={ORNAMENT_ROW_CLASS} />}
+      {showOrnamentRow && (
+        <div className={ORNAMENT_ROW_CLASS}>
+          {element.type === 'extension' && <OrnamentRow expressions={expressions} />}
+        </div>
+      )}
       {showTieRow && <TieSegment position={tieSegmentPosition} />}
       <div className="h-[var(--score-high-dot-row-height)] flex-shrink-0" />
       <div className="flex h-[var(--score-main-row-height)] flex-shrink-0 items-center justify-center">

@@ -496,9 +496,9 @@ const DYNAMIC_HELP: Record<DynamicMark, HelpContent> = {
 const BREATH_HELP: HelpContent = {
   title: '换气记号',
   meaning: '提示歌唱或管乐在此处快速换气，其他乐器可理解为极短停顿。',
-  usage: '先选中音符，再点换气；再次点击可取消。记号显示在音符上方。',
+  usage: '先选中音符或延长线，再点换气；再次点击可取消。记号显示在元素上方。',
   preview: <BreathPreview />,
-  summary: '在选中音符上方添加换气提示。',
+  summary: '在选中元素上方添加换气提示。',
 };
 
 const ORNAMENT_HELP: Record<OrnamentMark, HelpContent> = {
@@ -626,6 +626,7 @@ export const ElementPanel = memo(function ElementPanel() {
   const availableNotes = getAvailableNotes(settings.keySignature);
   const basicNotes = settings.keySignature === 'G' ? G_BASIC_NOTES : BASIC_NOTES;
   const hasSelection = selectedMeasureIndex !== null && selectedNoteIndex !== null;
+  const canToggleBreathMark = selectedElement?.type === 'note' || selectedElement?.type === 'extension';
   const selectedDuration =
     selectedElement && (selectedElement.type === 'note' || selectedElement.type === 'rest')
       ? selectedElement.duration
@@ -913,7 +914,7 @@ export const ElementPanel = memo(function ElementPanel() {
               <span className="text-xs font-semibold tracking-wider text-slate-500">时值</span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-2 gap-1.5">
               {DURATION_OPTIONS.map((option) => (
                 <ActionButton
                   key={option.value}
@@ -922,25 +923,6 @@ export const ElementPanel = memo(function ElementPanel() {
                   help={DURATION_HELP[option.value]}
                   showInlineHelp={showHelp}
                   className="whitespace-nowrap px-1 text-[10px]"
-                >
-                  {option.label}
-                </ActionButton>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <span className="text-xs font-semibold tracking-wider text-slate-500">休止符</span>
-              <div className="h-px flex-1 bg-slate-200" />
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {REST_OPTIONS.map((option) => (
-                <ActionButton
-                  key={option.value}
-                  onClick={() => handleRestClick(option.value)}
-                  help={REST_HELP[option.value]}
-                  showInlineHelp={showHelp}
                 >
                   {option.label}
                 </ActionButton>
@@ -1005,6 +987,25 @@ export const ElementPanel = memo(function ElementPanel() {
 
           <div>
             <div className="mb-2 flex items-center gap-2">
+              <span className="text-xs font-semibold tracking-wider text-slate-500">休止符</span>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {REST_OPTIONS.map((option) => (
+                <ActionButton
+                  key={option.value}
+                  onClick={() => handleRestClick(option.value)}
+                  help={REST_HELP[option.value]}
+                  showInlineHelp={showHelp}
+                >
+                  {option.label}
+                </ActionButton>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center gap-2">
               <span className="text-xs font-semibold tracking-wider text-slate-500">演奏表达</span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
@@ -1027,7 +1028,7 @@ export const ElementPanel = memo(function ElementPanel() {
                 <ActionButton
                   onClick={toggleBreathMark}
                   active={hasBreathMark}
-                  disabled={selectedElement?.type !== 'note'}
+                  disabled={!canToggleBreathMark}
                   help={BREATH_HELP}
                   showInlineHelp={showHelp}
                 >
