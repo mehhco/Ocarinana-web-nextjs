@@ -184,14 +184,16 @@ export function PublicScoreViewer({ document, isAuthenticated }: PublicScoreView
           </Button>
         </div>
       </div>
-      <div className="h-[70vh] min-h-[520px] bg-white">
-        <ScoreCanvas
-          exportRef={exportRef}
-          readOnly
-          displayScale={displayScale}
-          showLyricsOverride={viewerDisplay.showLyrics}
-          showFingeringOverride={viewerDisplay.showFingering}
-        />
+      <div className="h-[70vh] min-h-[520px] overflow-x-auto bg-white">
+        <div className="mx-auto h-full w-[760px] max-w-none">
+          <ScoreCanvas
+            exportRef={exportRef}
+            readOnly
+            displayScale={displayScale}
+            showLyricsOverride={viewerDisplay.showLyrics}
+            showFingeringOverride={viewerDisplay.showFingering}
+          />
+        </div>
       </div>
     </div>
   );

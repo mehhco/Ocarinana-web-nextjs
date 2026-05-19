@@ -40,6 +40,8 @@ interface ScoreCanvasProps {
 function createScoreScaleStyle(displayScale: number): CSSProperties {
   const scale = getNormalizedScoreDisplayScale(displayScale) / 100;
   const rem = (value: number) => `${Number((value * scale).toFixed(4))}rem`;
+  const minRem = (value: number, min: number) => `${Number(Math.max(min, value * scale).toFixed(4))}rem`;
+  const px = (value: number, min: number) => `${Number(Math.max(min, value * scale).toFixed(2))}px`;
 
   return {
     '--score-note-width': rem(3.5),
@@ -50,7 +52,8 @@ function createScoreScaleStyle(displayScale: number): CSSProperties {
     '--score-measure-py': rem(0.25),
     '--score-fingering-width': rem(3),
     '--score-fingering-height': rem(2.75),
-    '--score-tie-height': rem(0.5),
+    '--score-tie-height': minRem(0.5, 0.5),
+    '--score-tie-stroke-width': px(2, 1.5),
     '--score-dot-row-height': rem(0.875),
     '--score-main-row-height': rem(1.25),
     '--score-note-body-width': rem(2.25),
@@ -237,7 +240,7 @@ function TieSegment({
       {position !== 'none' && (
         <span
           className={cn(
-            'block h-2 border-t-2 border-slate-800',
+            'block h-full border-t border-slate-800 [border-top-width:var(--score-tie-stroke-width)]',
             position === 'middle' && 'absolute bottom-0 left-0 right-0',
             position === 'start' && 'absolute bottom-0 left-1/2 right-0 rounded-tl-full',
             position === 'end' && 'absolute bottom-0 left-0 right-1/2 rounded-tr-full'
@@ -340,7 +343,7 @@ function buildNotePositions(measures: Measure[]): NotePosition[] {
 }
 
 const LYRIC_ROW_CLASS = 'mt-0.5 flex h-[var(--score-lyric-row-height)] flex-shrink-0 items-center justify-center';
-const TIE_SLOT_CLASS = 'relative h-[var(--score-tie-height)] w-full flex-shrink-0 overflow-hidden';
+const TIE_SLOT_CLASS = 'relative h-[var(--score-tie-height)] w-full flex-shrink-0 overflow-visible';
 const ORNAMENT_ROW_CLASS = 'flex h-[var(--score-ornament-row-height)] flex-shrink-0 items-center justify-center';
 const EXPRESSION_ROW_CLASS = 'flex h-[var(--score-expression-row-height)] flex-shrink-0 items-center justify-center';
 
