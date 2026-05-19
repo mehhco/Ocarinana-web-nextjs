@@ -22,9 +22,9 @@ export function ProductCard({ product, highlight, audience, specs }: ProductCard
     : null;
 
   return (
-    <Card className="group flex h-full flex-col overflow-hidden rounded-md border-zinc-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
+    <Card className="group flex h-full flex-col overflow-hidden rounded-md border-zinc-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-white/10 dark:bg-white/[0.045]">
       <CardHeader className="p-0">
-        <div className="relative w-full aspect-square overflow-hidden bg-[#f6f0e4]">
+        <div className="relative w-full aspect-square overflow-hidden bg-[#f6f0e4] dark:bg-slate-900">
           {product.image_url ? (
             <Image
               src={product.image_url}
@@ -43,7 +43,7 @@ export function ProductCard({ product, highlight, audience, specs }: ProductCard
             <PlatformBadge platform={product.platform} />
           </div>
           {highlight && (
-            <div className="absolute bottom-2 left-2 right-2 rounded bg-white/95 px-2 py-1 text-xs font-medium text-emerald-900 shadow-sm">
+            <div className="absolute bottom-2 left-2 right-2 rounded bg-white/95 px-2 py-1 text-xs font-medium text-emerald-900 shadow-sm dark:bg-slate-950/90 dark:text-emerald-200">
               {highlight}
             </div>
           )}
@@ -59,7 +59,7 @@ export function ProductCard({ product, highlight, audience, specs }: ProductCard
           {product.title}
         </h3>
         {audience && (
-          <p className="mb-2 rounded-sm bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-900">
+          <p className="mb-2 rounded-sm bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-900 dark:bg-emerald-300/12 dark:text-emerald-200">
             适合：{audience}
           </p>
         )}
@@ -73,7 +73,7 @@ export function ProductCard({ product, highlight, audience, specs }: ProductCard
             {specs.map((spec) => (
               <span
                 key={spec}
-                className="rounded-sm border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs text-zinc-600"
+                className="rounded-sm border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs text-zinc-600 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-300"
               >
                 {spec}
               </span>

@@ -127,6 +127,94 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  .night-page-classroom {
+    --night-accent: 190 242 100;
+    --night-accent-strong: 132 204 22;
+    --night-surface: 15 23 42;
+    --night-surface-soft: 17 24 39;
+  }
+
+  .night-page-shop {
+    --night-accent: 94 234 212;
+    --night-accent-strong: 20 184 166;
+    --night-surface: 8 28 32;
+    --night-surface-soft: 12 38 43;
+  }
+
+  .dark .night-page {
+    background-color: rgb(2 6 23);
+    color: rgb(248 250 252);
+    color-scheme: dark;
+  }
+
+  .dark .night-page .bg-white,
+  .dark .night-page [class~="bg-[#fbfaf6]"],
+  .dark .night-page [class~="bg-[#fffdf7]"],
+  .dark .night-page [class~="bg-[#f8f1df]"],
+  .dark .night-page [class~="bg-[#f6f0e4]"],
+  .dark .night-page .bg-zinc-50 {
+    background-color: rgb(var(--night-surface) / 0.88);
+  }
+
+  .dark .night-page [class~="bg-white/70"],
+  .dark .night-page [class~="bg-white/75"],
+  .dark .night-page [class~="bg-white/95"] {
+    background-color: rgb(255 255 255 / 0.1);
+  }
+
+  .dark .night-page .bg-emerald-50,
+  .dark .night-page .bg-emerald-100,
+  .dark .night-page .bg-amber-100 {
+    background-color: rgb(var(--night-accent) / 0.14);
+  }
+
+  .dark .night-page .text-zinc-950,
+  .dark .night-page .text-zinc-900,
+  .dark .night-page .text-zinc-800 {
+    color: rgb(248 250 252);
+  }
+
+  .dark .night-page .text-zinc-700,
+  .dark .night-page .text-zinc-600 {
+    color: rgb(203 213 225);
+  }
+
+  .dark .night-page .text-zinc-500 {
+    color: rgb(148 163 184);
+  }
+
+  .dark .night-page .text-emerald-800,
+  .dark .night-page .text-emerald-900,
+  .dark .night-page .text-amber-900 {
+    color: rgb(var(--night-accent));
+  }
+
+  .dark .night-page .border-zinc-100,
+  .dark .night-page .border-zinc-200,
+  .dark .night-page .border-zinc-300,
+  .dark .night-page [class~="border-emerald-900/10"],
+  .dark .night-page [class~="border-emerald-900/15"],
+  .dark .night-page .border-red-200 {
+    border-color: rgb(255 255 255 / 0.1);
+  }
+
+  .dark .night-page [class~="ring-zinc-200"],
+  .dark .night-page [class~="ring-emerald-900/10"] {
+    --tw-ring-color: rgb(255 255 255 / 0.1);
+  }
+
+  .dark .night-page .hover\:border-emerald-700:hover {
+    border-color: rgb(var(--night-accent-strong) / 0.78);
+  }
+
+  .dark .night-page .hover\:bg-emerald-50:hover {
+    background-color: rgb(var(--night-accent) / 0.12);
+  }
+
+  .dark .night-page .hover\:text-emerald-800:hover {
+    color: rgb(var(--night-accent));
+  }
 }
 
 /* 滚动条样式控制类 */

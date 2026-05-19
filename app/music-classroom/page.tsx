@@ -148,7 +148,7 @@ function SectionHeader({
 
 export default function MusicClassroomPage() {
   return (
-    <main className="min-h-screen flex flex-col bg-[#fbfaf6]">
+    <main className="night-page night-page-classroom min-h-screen flex flex-col bg-[#fbfaf6]">
       <AppNav currentPath="/music-classroom" variant="classroom" />
 
       <ArticleSchema

@@ -540,7 +540,7 @@ export default async function ShopPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col bg-[#fbfaf6]">
+    <main className="night-page night-page-shop min-h-screen flex flex-col bg-[#fbfaf6]">
       <AppNav currentPath="/shop" variant="shop" />
 
       <section className="relative isolate overflow-hidden border-b border-teal-950/10 bg-[#e5f3f1] dark:border-white/10 dark:bg-[#061719]">

@@ -33,6 +33,8 @@ interface ScoreCanvasProps {
   exportRef?: RefObject<HTMLDivElement | null>;
   readOnly?: boolean;
   displayScale?: number;
+  showLyricsOverride?: boolean;
+  showFingeringOverride?: boolean;
 }
 
 function createScoreScaleStyle(displayScale: number): CSSProperties {
@@ -835,7 +837,13 @@ const MeasureComponent = memo(function MeasureComponent({
   );
 });
 
-export function ScoreCanvas({ exportRef, readOnly = false, displayScale = 100 }: ScoreCanvasProps) {
+export function ScoreCanvas({
+  exportRef,
+  readOnly = false,
+  displayScale = 100,
+  showLyricsOverride,
+  showFingeringOverride,
+}: ScoreCanvasProps) {
   const {
     document: scoreDoc,
     selectedMeasureIndex,
@@ -862,7 +870,8 @@ export function ScoreCanvas({ exportRef, readOnly = false, displayScale = 100 }:
   const [composingLyricKey, setComposingLyricKey] = useState<string | null>(null);
   const lyricInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  const showLyrics = scoreDoc.settings.showLyrics;
+  const showLyrics = showLyricsOverride ?? scoreDoc.settings.showLyrics;
+  const showFingering = showFingeringOverride ?? scoreDoc.settings.showFingering;
   const notePositions = useMemo(() => buildNotePositions(scoreDoc.measures), [scoreDoc.measures]);
   const notePositionIndexMap = useMemo<Map<string, number>>(() => {
     const entries: Array<[string, number]> = notePositions.map((position, index) => [
@@ -1287,7 +1296,7 @@ export function ScoreCanvas({ exportRef, readOnly = false, displayScale = 100 }:
                     measureIndex={measureIndex}
                     selectedNoteIndex={isSelected ? selectedNoteIndex : null}
                     keySignature={scoreDoc.settings.keySignature}
-                    showFingering={scoreDoc.settings.showFingering}
+                    showFingering={showFingering}
                     showLyrics={showLyrics}
                     durationSlotLineCount={durationSlotLineCount}
                     beams={scoreDoc.beams || []}

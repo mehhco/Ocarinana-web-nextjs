@@ -29,8 +29,8 @@ export function ProductList({ products, isLoading }: ProductListProps) {
 
   if (products.length === 0) {
     return (
-      <div className="rounded-md border border-dashed border-zinc-300 bg-white px-5 py-10 text-center">
-        <p className="font-medium text-zinc-900">暂无真实商品</p>
+      <div className="rounded-md border border-dashed border-zinc-300 bg-white px-5 py-10 text-center dark:border-white/10 dark:bg-white/[0.045]">
+        <p className="font-medium text-zinc-900 dark:text-white">暂无真实商品</p>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           添加 Supabase products 数据后，这里会自动显示真实商品卡片。
         </p>
