@@ -53,18 +53,20 @@ function createScoreScaleStyle(displayScale: number): CSSProperties {
     '--score-fingering-width': rem(3),
     '--score-fingering-height': rem(2.75),
     '--score-tie-height': minRem(0.5, 0.5),
+    '--score-tie-arc-height': minRem(0.4375, 0.375),
     '--score-tie-stroke-width': px(2, 1.5),
-    '--score-dot-row-height': rem(0.875),
+    '--score-high-dot-row-height': minRem(0.5625, 0.5),
+    '--score-low-dot-row-height': minRem(0.75, 0.625),
     '--score-main-row-height': rem(1.25),
     '--score-note-body-width': rem(2.25),
     '--score-note-font': rem(1.125),
-    '--score-dot-font': rem(1.25),
+    '--score-dot-font': rem(1),
     '--score-augmentation-dot-font': rem(0.875),
-    '--score-duration-slot-1': rem(0.75),
-    '--score-duration-slot-2': rem(0.9375),
-    '--score-duration-slot-3': rem(1.25),
+    '--score-duration-slot-1': rem(0.875),
+    '--score-duration-slot-2': rem(1.0625),
+    '--score-duration-slot-3': rem(1.375),
     '--score-duration-line-gap': rem(0.1875),
-    '--score-duration-slot-pad-top': rem(0.4375),
+    '--score-duration-slot-pad-top': rem(0.625),
     '--score-duration-line-height': rem(0.125),
     '--score-duration-line-width': rem(0.875),
     '--score-duration-beam-isolated-width': rem(1),
@@ -240,10 +242,12 @@ function TieSegment({
       {position !== 'none' && (
         <span
           className={cn(
-            'block h-full border-t border-slate-800 [border-top-width:var(--score-tie-stroke-width)]',
+            'block h-[var(--score-tie-arc-height)] border-t border-slate-800 [border-top-width:var(--score-tie-stroke-width)]',
             position === 'middle' && 'absolute bottom-0 left-0 right-0',
-            position === 'start' && 'absolute bottom-0 left-1/2 right-0 rounded-tl-full',
-            position === 'end' && 'absolute bottom-0 left-0 right-1/2 rounded-tr-full'
+            position === 'start' &&
+              'absolute bottom-0 left-1/2 right-0 rounded-tl-full border-l [border-left-width:var(--score-tie-stroke-width)]',
+            position === 'end' &&
+              'absolute bottom-0 left-0 right-1/2 rounded-tr-full border-r [border-right-width:var(--score-tie-stroke-width)]'
           )}
         />
       )}
@@ -517,7 +521,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
           <TieSegment position={tieSegmentPosition} />
         )}
 
-        <div className="flex h-[var(--score-dot-row-height)] flex-shrink-0 items-center justify-center">
+        <div className="flex h-[var(--score-high-dot-row-height)] flex-shrink-0 items-center justify-center">
           {element.hasHighDot && element.value !== 'b7' && (
             <span className="text-[length:var(--score-dot-font)] font-bold leading-none text-slate-800">•</span>
           )}
@@ -556,7 +560,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
           />
         )}
 
-        <div className="flex h-[var(--score-dot-row-height)] flex-shrink-0 items-center justify-center">
+        <div className="flex h-[var(--score-low-dot-row-height)] flex-shrink-0 items-center justify-center">
           {element.hasLowDot && (
             <span
               className={cn(
@@ -642,7 +646,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
       <div className={cn('w-[var(--score-fingering-width)] flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-[var(--score-fingering-height)]' : 'h-0')} />
       {showOrnamentRow && <div className={ORNAMENT_ROW_CLASS} />}
       {showTieRow && <TieSegment position={tieSegmentPosition} />}
-      <div className="h-[var(--score-dot-row-height)] flex-shrink-0" />
+      <div className="h-[var(--score-high-dot-row-height)] flex-shrink-0" />
       <div className="flex h-[var(--score-main-row-height)] flex-shrink-0 items-center justify-center">
         <span className={cn('text-[length:var(--score-note-font)] font-bold', symbolColor)}>
           {element.type === 'barline' ? renderBarlineSymbol(element) : symbol}
@@ -673,7 +677,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
       ) : durationSlotLineCount > 0 ? (
         <div className={getDurationSpacerClassName(durationSlotLineCount)} />
       ) : null}
-      <div className="h-[var(--score-dot-row-height)] flex-shrink-0" />
+      <div className="h-[var(--score-low-dot-row-height)] flex-shrink-0" />
       {showExpressionRow && <div className={EXPRESSION_ROW_CLASS} />}
       {showLyrics && <div className={LYRIC_ROW_CLASS} />}
     </div>
