@@ -71,3 +71,12 @@ export async function isShopEnabled(): Promise<boolean> {
   return config?.enabled === true;
 }
 
+/**
+ * 检查订阅收款内部灰度是否启用
+ * @returns true 如果订阅收款灰度启用，否则 false
+ */
+export async function isBillingEnabled(): Promise<boolean> {
+  const config = await getConfig('billing_enabled');
+  return config?.enabled === true;
+}
+
