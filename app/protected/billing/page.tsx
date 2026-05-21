@@ -115,7 +115,6 @@ export default async function BillingPage() {
 
           <div className="mt-6 grid gap-3">
             <CheckoutButton paymentType="alipay">支付宝支付</CheckoutButton>
-            <CheckoutButton paymentType="wxpay">微信支付</CheckoutButton>
           </div>
         </div>
 
@@ -126,7 +125,7 @@ export default async function BillingPage() {
               <h2 className="text-lg font-semibold text-zinc-950">灰度测试注意事项</h2>
               <div className="mt-3 grid gap-3 text-sm leading-7 text-zinc-600 md:grid-cols-2">
                 <p>返回页面不直接开通权益，必须等待 ZPAY notify 回调验签成功。</p>
-                <p>如果支付后状态长时间未更新，请用订单号在 ZPAY 后台和 billing_events 表中核对。</p>
+                <p>当前灰度只开放支付宝付款。如果支付后状态长时间未更新，请用订单号在 ZPAY 后台和 billing_events 表中核对。</p>
                 <p>关闭 billing_enabled 后不能创建新订单，但已支付订单回调仍应正常入账。</p>
                 <p>正式收费前需要补齐服务协议、退款说明、价格策略和会员权益定义。</p>
               </div>
