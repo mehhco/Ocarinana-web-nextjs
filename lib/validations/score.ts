@@ -1,15 +1,17 @@
 import { z } from "zod";
 
-const noteValueSchema = z.enum(["1", "2", "3", "4", "5", "6", "7", "b7"]);
+const noteValueSchema = z.enum(["1", "2", "3", "4", "5", "6", "7", "b7", "#6"]);
 const durationSchema = z.enum(["1", "1/2", "1/4", "1/8", "1/16", "1/32"]);
 const keySignatureSchema = z.enum(["C", "D", "E", "F", "G", "A", "B", "Bb", "Eb"]);
 const timeSignatureSchema = z.enum(["2/4", "3/4", "4/4", "6/8", "9/8", "12/8"]);
 const skinSchema = z.enum(["white", "light-beige", "light-blue"]);
+const instrumentTypeSchema = z.enum(["12-hole", "6-hole"]);
 const barlineTypeSchema = z.enum(["single", "double", "final", "repeat-start", "repeat-end"]);
 const dynamicMarkSchema = z.enum(["p", "mp", "mf", "f"]);
 const ornamentMarkSchema = z.enum(["upper-mordent", "lower-mordent"]);
 
 export const scoreSettingsSchema = z.object({
+  instrumentType: instrumentTypeSchema.default("12-hole"),
   keySignature: keySignatureSchema.default("C"),
   timeSignature: timeSignatureSchema.default("4/4"),
   tempo: z.number().min(40).max(300).default(120),
@@ -133,6 +135,7 @@ export const scoreDocumentSchema = z.object({
   lyrics: z.array(lyricSchema).default([]),
   settings: scoreSettingsSchema.default({
     keySignature: "C",
+    instrumentType: "12-hole",
     timeSignature: "4/4",
     tempo: 120,
     showTempo: true,

@@ -3,7 +3,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "登录 - Ocarinana",
-  description: "登录到 Ocarinana 陶笛谱生成器，开始创建和管理你的数字简谱与陶笛指法谱",
+  description: "登录到 Ocarinana 陶笛谱生成器，开始创建和管理你的六孔或十二孔陶笛指法谱",
   keywords: [
     "Ocarinana登录",
     "陶笛谱生成器登录",

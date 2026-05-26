@@ -19,6 +19,9 @@ const STATIC_ASSETS = [
   '/webfile/static/C-graph/1.webp',
   '/webfile/static/F-graph/1.webp',
   '/webfile/static/G-graph/1.webp',
+  '/webfile/static/6hole-C-graph/1.svg',
+  '/webfile/static/6hole-F-graph/1.svg',
+  '/webfile/static/6hole-G-graph/1.svg',
   // 其他关键指法图（前几张）
   '/webfile/static/C-graph/2.webp',
   '/webfile/static/C-graph/3.webp',
@@ -26,6 +29,12 @@ const STATIC_ASSETS = [
   '/webfile/static/F-graph/3.webp',
   '/webfile/static/G-graph/2.webp',
   '/webfile/static/G-graph/3.webp',
+  '/webfile/static/6hole-C-graph/2.svg',
+  '/webfile/static/6hole-C-graph/3.svg',
+  '/webfile/static/6hole-F-graph/2.svg',
+  '/webfile/static/6hole-F-graph/3.svg',
+  '/webfile/static/6hole-G-graph/2.svg',
+  '/webfile/static/6hole-G-graph/3.svg',
 ];
 
 // 需要缓存的 API 路径模式

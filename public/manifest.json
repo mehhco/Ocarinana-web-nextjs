@@ -1,7 +1,7 @@
 {
   "name": "Ocarinana - 陶笛谱生成器",
   "short_name": "Ocarinana",
-  "description": "专业的在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配",
+  "description": "专业的在线陶笛谱生成器，支持六孔和十二孔数字简谱编辑、陶笛指法图自动匹配",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -2,11 +2,13 @@
  * Editor data types for the score editor.
  */
 
-export type NoteValue = '1' | '2' | '3' | '4' | '5' | '6' | '7' | 'b7';
+export type NoteValue = '1' | '2' | '3' | '4' | '5' | '6' | '7' | 'b7' | '#6';
 
 export type Duration = '1' | '1/2' | '1/4' | '1/8' | '1/16' | '1/32';
 
 export type KeySignature = 'C' | 'F' | 'G';
+
+export type InstrumentType = '12-hole' | '6-hole';
 
 export type TimeSignature = '2/4' | '3/4' | '4/4' | '6/8';
 
@@ -129,6 +131,7 @@ export interface ScoreDocument {
 }
 
 export interface ScoreSettings {
+  instrumentType: InstrumentType;
   keySignature: KeySignature;
   timeSignature: TimeSignature;
   tempo: number;
@@ -163,6 +166,7 @@ export interface History {
 
 export type FingeringKey =
   | 'b7'
+  | '#6'
   | '1'
   | '2'
   | '3'
@@ -185,7 +189,7 @@ export type FingeringKey =
   | '6-low'
   | '7-low';
 
-export type FingeringMap = Record<KeySignature, Record<FingeringKey, string>>;
+export type FingeringMap = Record<InstrumentType, Record<KeySignature, Partial<Record<FingeringKey, string>>>>;
 
 export interface RenderOptions {
   container: HTMLElement;

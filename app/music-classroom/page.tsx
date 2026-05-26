@@ -70,7 +70,7 @@ const editorFlow = [
   "先确定曲名、调号、拍号和每行小节数。",
   "按乐句输入音符，不急着调整所有细节。",
   "检查简谱符号：休止、附点、连线、反复和歌词位置。",
-  "切换指法图显示，确认陶笛调性与目标乐器一致。",
+  "选择六孔或十二孔陶笛类型，切换指法图显示，确认陶笛调性与目标乐器一致。",
   "导出前放大检查小节拥挤、换行和歌词遮挡。",
 ];
 
@@ -423,7 +423,7 @@ export default function MusicClassroomPage() {
       <section id="editor" className="scroll-mt-24 border-b border-zinc-200 bg-[#fbfaf6]">
         <div className="mx-auto w-full max-w-6xl px-5 py-14 md:py-16">
           <SectionHeader eyebrow="Lesson 04" title="编辑器使用：把音乐判断转化成清晰谱面">
-            编辑器不是最后一步的排版工具，而是整理音乐信息的工作台。高质量陶笛谱通常先确认调号和音域，再录入音符和节奏，最后检查指法图、歌词、换行和导出清晰度。
+            编辑器不是最后一步的排版工具，而是整理音乐信息的工作台。高质量陶笛谱通常先确认六孔或十二孔类型、调号和音域，再录入音符和节奏，最后检查指法图、歌词、换行和导出清晰度。
           </SectionHeader>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">

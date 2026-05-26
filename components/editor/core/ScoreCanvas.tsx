@@ -18,11 +18,11 @@ import {
 import { PlusIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
-import { DEFAULT_PRODUCER } from '../lib/constants';
+import { DEFAULT_PRODUCER, getInstrumentLabel } from '../lib/constants';
 import { getNormalizedScoreDisplayScale } from '../hooks/useScoreDisplayScale';
 import { getFingeringUrl } from '../lib/fingeringMap';
 import { LyricsInput } from '../overlay/LyricsInput';
-import type { Beam, Duration, ExpressionMark, KeySignature, Lyric, Measure, ScoreElement, Tie } from '@/lib/editor/types';
+import type { Beam, Duration, ExpressionMark, InstrumentType, KeySignature, Lyric, Measure, ScoreElement, Tie } from '@/lib/editor/types';
 
 interface NotePosition {
   measureIndex: number;
@@ -336,7 +336,9 @@ function renderBarlineSymbol(element: ScoreElement) {
 }
 
 function renderNoteValue(value: string) {
-  return value === 'b7' ? '♭7' : value;
+  if (value === 'b7') return '♭7';
+  if (value === '#6') return '#6';
+  return value;
 }
 
 function buildNotePositions(measures: Measure[]): NotePosition[] {
@@ -434,6 +436,7 @@ interface NoteElementProps {
   noteIndex: number;
   isSelected: boolean;
   isBeamPreview: boolean;
+  instrumentType: InstrumentType;
   keySignature: KeySignature;
   showFingering: boolean;
   showLyrics: boolean;
@@ -460,6 +463,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
   noteIndex,
   isSelected,
   isBeamPreview,
+  instrumentType,
   keySignature,
   showFingering,
   showLyrics,
@@ -483,7 +487,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
     const durationLineCount = getDurationLineCount(element.duration);
     const hasDurationLines = durationLineCount > 0;
     const fingeringUrl = showFingering
-      ? getFingeringUrl(keySignature, element.value, element.hasHighDot || false, element.hasLowDot || false)
+      ? getFingeringUrl(keySignature, element.value, element.hasHighDot || false, element.hasLowDot || false, instrumentType)
       : null;
     const tieSegmentPosition = getTieSegmentPosition(ties, measureIndex, noteIndex);
     const isInDurationBeam = isPositionInDurationBeam(beams, measureIndex, noteIndex);
@@ -699,6 +703,7 @@ interface MeasureProps {
   measure: Measure;
   measureIndex: number;
   selectedNoteIndex: number | null;
+  instrumentType: InstrumentType;
   keySignature: KeySignature;
   showFingering: boolean;
   showLyrics: boolean;
@@ -743,6 +748,7 @@ const MeasureComponent = memo(function MeasureComponent({
   measure,
   measureIndex,
   selectedNoteIndex,
+  instrumentType,
   keySignature,
   showFingering,
   showLyrics,
@@ -797,6 +803,7 @@ const MeasureComponent = memo(function MeasureComponent({
                 noteIndex <= selectedNoteIndex
               )
             }
+            instrumentType={instrumentType}
             keySignature={keySignature}
             showFingering={showFingering}
             showLyrics={showLyrics}
@@ -1271,7 +1278,7 @@ export function ScoreCanvas({
                 </span>
               )}
               <span className="w-full font-medium text-slate-700">
-                十二孔陶笛{scoreDoc.settings.keySignature}调指法
+                {getInstrumentLabel(scoreDoc.settings.instrumentType)}{scoreDoc.settings.keySignature}调指法
               </span>
             </div>
 
@@ -1313,6 +1320,7 @@ export function ScoreCanvas({
                     measure={measure}
                     measureIndex={measureIndex}
                     selectedNoteIndex={isSelected ? selectedNoteIndex : null}
+                    instrumentType={scoreDoc.settings.instrumentType}
                     keySignature={scoreDoc.settings.keySignature}
                     showFingering={showFingering}
                     showLyrics={showLyrics}

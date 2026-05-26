@@ -16,6 +16,7 @@ type ScoreDocument = {
   ties: unknown[];
   lyrics: unknown[];
   settings: {
+    instrumentType?: string;
     keySignature: string;
     timeSignature: string;
     tempo: number;

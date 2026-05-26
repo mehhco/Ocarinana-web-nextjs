@@ -124,6 +124,7 @@ export async function POST(req: Request) {
     expressions: [],
     lyrics: [],
     settings: {
+      instrumentType: "12-hole" as const,
       keySignature: "C" as const,
       timeSignature: "4/4" as const,
       tempo: 120,

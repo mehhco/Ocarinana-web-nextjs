@@ -58,6 +58,7 @@ class ScoreModel {
     constructor() {
         this.title = '未命名简谱';
         this.measures = [[]];
+        this.instrumentType = '12-hole';
         this.keySignature = 'C';
         this.timeSignature = '4/4';
         this.tempo = 120;
@@ -210,6 +211,7 @@ class ScoreModel {
             ties: JSON.parse(JSON.stringify(this.ties)),
             lyrics: JSON.parse(JSON.stringify(this.lyrics)),
             settings: {
+                instrumentType: this.instrumentType,
                 keySignature: this.keySignature,
                 timeSignature: this.timeSignature,
                 tempo: this.tempo,
@@ -234,6 +236,7 @@ class ScoreModel {
         this.ties = doc.ties || [];
         this.lyrics = doc.lyrics || [];
         const s = doc.settings || {};
+        this.instrumentType = s.instrumentType === '6-hole' ? '6-hole' : '12-hole';
         this.keySignature = s.keySignature || 'C';
         this.timeSignature = s.timeSignature || '4/4';
         this.tempo = typeof s.tempo === 'number' ? s.tempo : 120;
@@ -255,6 +258,7 @@ class ScoreModel {
         const currentState = {
             title: this.title,
             measures: JSON.parse(JSON.stringify(this.measures)),
+            instrumentType: this.instrumentType,
             keySignature: this.keySignature,
             timeSignature: this.timeSignature,
             tempo: this.tempo,
@@ -309,6 +313,7 @@ class ScoreModel {
         if (index >= 0 && index < this.history.length) {
             const state = this.history[index];
             this.measures = JSON.parse(JSON.stringify(state.measures));
+            this.instrumentType = state.instrumentType || '12-hole';
             this.keySignature = state.keySignature;
             this.timeSignature = state.timeSignature;
             this.lyrics = JSON.parse(JSON.stringify(state.lyrics));
@@ -422,6 +427,7 @@ class ScoreModel {
         try {
             const state = JSON.parse(stateStr);
             this.measures = state.measures || [[]];
+            this.instrumentType = state.instrumentType || '12-hole';
             this.keySignature = state.keySignature || 'C';
             this.timeSignature = state.timeSignature || '4/4';
             this.tempo = typeof state.tempo === 'number' ? state.tempo : 120;
@@ -503,18 +509,68 @@ const FINGERING_MAPS = {
     }
 };
 
+const SIX_HOLE_FINGERING_MAPS = {
+    'C': {
+        "1": "./static/6hole-C-graph/1.svg",
+        "2": "./static/6hole-C-graph/2.svg",
+        "3": "./static/6hole-C-graph/3.svg",
+        "4": "./static/6hole-C-graph/4.svg",
+        "5": "./static/6hole-C-graph/5.svg",
+        "6": "./static/6hole-C-graph/6.svg",
+        "7": "./static/6hole-C-graph/7.svg",
+        "1-high": "./static/6hole-C-graph/1h.svg",
+        "2-high": "./static/6hole-C-graph/2h.svg",
+        "3-high": "./static/6hole-C-graph/3h.svg",
+        "4-high": "./static/6hole-C-graph/4h.svg",
+        "7-low": "./static/6hole-C-graph/7l.svg"
+    },
+    'F': {
+        "1": "./static/6hole-F-graph/1.svg",
+        "2": "./static/6hole-F-graph/2.svg",
+        "3": "./static/6hole-F-graph/3.svg",
+        "4": "./static/6hole-F-graph/4.svg",
+        "5": "./static/6hole-F-graph/5.svg",
+        "6": "./static/6hole-F-graph/6.svg",
+        "7": "./static/6hole-F-graph/7.svg",
+        "1-high": "./static/6hole-F-graph/1h.svg",
+        "4-low": "./static/6hole-F-graph/4l.svg",
+        "5-low": "./static/6hole-F-graph/5l.svg",
+        "6-low": "./static/6hole-F-graph/6l.svg",
+        "7-low": "./static/6hole-F-graph/7l.svg"
+    },
+    'G': {
+        "1": "./static/6hole-G-graph/1.svg",
+        "2": "./static/6hole-G-graph/2.svg",
+        "3": "./static/6hole-G-graph/3.svg",
+        "4": "./static/6hole-G-graph/4.svg",
+        "5": "./static/6hole-G-graph/5.svg",
+        "#6": "./static/6hole-G-graph/6.svg",
+        "3-low": "./static/6hole-G-graph/3l.svg",
+        "4-low": "./static/6hole-G-graph/4l.svg",
+        "5-low": "./static/6hole-G-graph/5l.svg",
+        "6-low": "./static/6hole-G-graph/6l.svg",
+        "7-low": "./static/6hole-G-graph/7l.svg"
+    }
+};
+
+const FINGERING_MAPS_BY_INSTRUMENT = {
+    '12-hole': FINGERING_MAPS,
+    '6-hole': SIX_HOLE_FINGERING_MAPS
+};
+
 // 性能优化：自动将所有图片路径转换为 WebP（如果浏览器支持）
 (function() {
     'use strict';
     
-    // 遍历所有调号
-    Object.keys(FINGERING_MAPS).forEach(function(key) {
-        const fingeringMap = FINGERING_MAPS[key];
-        
-        // 遍历该调号下的所有音符
-        Object.keys(fingeringMap).forEach(function(note) {
-            // 将 PNG 路径转换为优化后的路径（WebP 或 PNG）
-            fingeringMap[note] = window.getOptimizedImagePath(fingeringMap[note]);
+    // 遍历所有陶笛类型和调号
+    Object.keys(FINGERING_MAPS_BY_INSTRUMENT).forEach(function(instrumentType) {
+        const maps = FINGERING_MAPS_BY_INSTRUMENT[instrumentType];
+        Object.keys(maps).forEach(function(key) {
+            const fingeringMap = maps[key];
+            Object.keys(fingeringMap).forEach(function(note) {
+                // 将 PNG 路径转换为优化后的路径（WebP 或 PNG），SVG 保持原路径
+                fingeringMap[note] = window.getOptimizedImagePath(fingeringMap[note]);
+            });
         });
     });
     
@@ -1921,7 +1977,8 @@ class ScoreViewController {
         }
 
         const keySignature = this.model.keySignature;
-        const fingeringMap = FINGERING_MAPS[keySignature];
+        const instrumentMaps = FINGERING_MAPS_BY_INSTRUMENT[this.model.instrumentType || '12-hole'] || FINGERING_MAPS;
+        const fingeringMap = instrumentMaps[keySignature];
         
         if (!fingeringMap) {
             return null;

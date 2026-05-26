@@ -8,11 +8,13 @@ import { EditorClientWrapper } from "@/components/editor-client-wrapper";
 
 export const metadata: Metadata = {
   title: "乐谱编辑器 - Ocarinana",
-  description: "在线编辑数字简谱与陶笛指法谱，支持实时预览、自动指法匹配、高清导出",
+  description: "在线编辑六孔和十二孔陶笛数字简谱与指法谱，支持实时预览、自动指法匹配、高清导出",
   keywords: [
     "乐谱编辑器",
     "数字简谱编辑",
     "陶笛指法谱",
+    "六孔陶笛谱",
+    "十二孔陶笛谱",
     "在线乐谱制作",
     "简谱生成器",
   ],

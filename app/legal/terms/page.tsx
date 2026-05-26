@@ -64,7 +64,7 @@ export default function TermsOfService() {
             </p>
             <ul>
               <li>📝 数字简谱编辑和创作</li>
-              <li>🎵 陶笛指法图自动匹配（C/F/G 调）</li>
+              <li>🎵 六孔与十二孔陶笛指法图自动匹配（C/F/G 调）</li>
               <li>🎤 歌词编辑和对齐</li>
               <li>💾 云端同步和本地存储</li>
               <li>🖼️ 高清图片导出</li>

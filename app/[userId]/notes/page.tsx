@@ -9,7 +9,7 @@ import { PlusIcon } from "@/components/ui/icons";
 
 export const metadata: Metadata = {
   title: "我的乐谱 - Ocarinana",
-  description: "管理你的数字简谱与陶笛指法谱",
+  description: "管理你的六孔和十二孔陶笛指法谱",
   robots: {
     index: false, // 用户个人页面不应被搜索引擎索引
     follow: false,
@@ -93,6 +93,7 @@ export default async function UserNotesPage({ params }: PageProps) {
         ? `/protected/editor/v2?scoreId=${encodeURIComponent(row.score_id)}`
         : `/protected/scores?scoreId=${encodeURIComponent(row.score_id)}`,
     settings: {
+      instrumentType: row.document?.settings?.instrumentType || "12-hole",
       keySignature: row.document?.settings?.keySignature || "C",
       timeSignature: row.document?.settings?.timeSignature || "4/4",
     },
@@ -110,7 +111,7 @@ export default async function UserNotesPage({ params }: PageProps) {
           <div>
             <h1 className="text-3xl font-bold">我的乐谱</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              管理你的数字简谱与陶笛指法谱
+              管理你的六孔和十二孔陶笛指法谱
             </p>
           </div>
           <div className="flex gap-3">

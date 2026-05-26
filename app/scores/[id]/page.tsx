@@ -63,6 +63,7 @@ export default async function PublicScorePage({ params }: PublicScorePageProps) 
 
   const document = data.document;
   const settings = document?.settings || {};
+  const instrumentLabel = settings.instrumentType === "6-hole" ? "六孔" : "十二孔";
   const normalizedDocument = isV2Document(document)
     ? {
         ...document,
@@ -88,6 +89,7 @@ export default async function PublicScorePage({ params }: PublicScorePageProps) 
           <div className="space-y-3">
             <h1 className="text-3xl font-bold">{data.title}</h1>
             <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">{instrumentLabel}</Badge>
               <Badge variant="secondary">1={settings.keySignature || "C"}</Badge>
               <Badge variant="outline">{settings.timeSignature || "4/4"}</Badge>
               {settings.showTempo !== false && (

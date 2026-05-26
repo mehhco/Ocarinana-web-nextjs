@@ -1,7 +1,49 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DEFAULT_PRODUCER,
+  DEFAULT_SETTINGS,
+  DEFAULT_TITLE,
+  INSTRUMENT_OPTIONS,
+} from '@/components/editor/lib/constants';
+import type { InstrumentType } from '@/lib/editor/types';
 
-export default async function NewScoreV2Page() {
+interface NewScoreV2PageProps {
+  searchParams: Promise<{ instrument?: string }>;
+}
+
+function isInstrumentType(value: string | undefined): value is InstrumentType {
+  return value === '12-hole' || value === '6-hole';
+}
+
+function createInitialDocument(instrumentType: InstrumentType) {
+  const now = new Date().toISOString();
+
+  return {
+    version: '2.0',
+    title: DEFAULT_TITLE,
+    producer: DEFAULT_PRODUCER,
+    lyricist: '',
+    composer: '',
+    additionalInfo: '',
+    measures: [{ id: 'measure-1', elements: [] }],
+    ties: [],
+    beams: [],
+    expressions: [],
+    lyrics: [],
+    settings: {
+      ...DEFAULT_SETTINGS,
+      instrumentType,
+    },
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+export default async function NewScoreV2Page({ searchParams }: NewScoreV2PageProps) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -12,32 +54,48 @@ export default async function NewScoreV2Page() {
     redirect('/auth/login');
   }
 
-  const now = new Date().toISOString();
-  const document = {
-    version: '2.0',
-    title: '未命名简谱',
-    producer: 'www.ocarinana.com',
-    lyricist: '',
-    composer: '',
-    additionalInfo: '',
-    measures: [{ id: 'measure-1', elements: [] }],
-    ties: [],
-    beams: [],
-    expressions: [],
-    lyrics: [],
-    settings: {
-      keySignature: 'C',
-      timeSignature: '4/4',
-      tempo: 120,
-      showTempo: true,
-      skin: 'white',
-      showLyrics: false,
-      showFingering: true,
-    },
-    createdAt: now,
-    updatedAt: now,
-  };
+  const params = await searchParams;
+  const instrumentType = isInstrumentType(params.instrument) ? params.instrument : null;
 
+  if (!instrumentType) {
+    return (
+      <main className="min-h-screen bg-slate-50 px-5 py-10">
+        <div className="mx-auto flex max-w-3xl flex-col gap-6">
+          <div>
+            <Button asChild variant="ghost" size="sm" className="mb-4 px-0 text-slate-600">
+              <Link href={`/${user.id}/notes`}>返回我的乐谱</Link>
+            </Button>
+            <h1 className="text-2xl font-bold tracking-normal text-slate-900">选择陶笛类型</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              新建后陶笛类型会锁定，六孔和十二孔乐谱会分别使用对应的音域与指法图。
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {INSTRUMENT_OPTIONS.map((option) => (
+              <Card key={option.value} className="border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg">{option.label}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="min-h-12 text-sm leading-6 text-slate-600">
+                    {option.value === '6-hole'
+                      ? '适合制作六孔陶笛谱，支持 C/F/G 调和对应六孔指法图。'
+                      : '适合继续制作十二孔陶笛谱，兼容现有 C/F/G 调指法图。'}
+                  </p>
+                  <Button asChild className="w-full">
+                    <Link href={`/protected/editor/v2/new?instrument=${option.value}`}>选择{option.shortLabel}</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const document = createInitialDocument(instrumentType);
   let createdScoreId: string | null = null;
 
   try {

@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "乐谱广场 - Ocarinana",
-  description: "浏览 Ocarinana 用户主动公开分享的陶笛数字简谱。",
+  description: "浏览 Ocarinana 用户主动公开分享的六孔和十二孔陶笛数字简谱。",
   robots: {
     index: true,
     follow: true,
@@ -22,6 +22,7 @@ export const metadata: Metadata = {
 interface ScoresSquarePageProps {
   searchParams: Promise<{
     q?: string;
+    instrument?: string;
     key?: string;
     time?: string;
     sort?: string;
@@ -30,6 +31,10 @@ interface ScoresSquarePageProps {
 }
 
 const PAGE_SIZE = 12;
+const INSTRUMENT_OPTIONS = [
+  { value: "12-hole", label: "十二孔" },
+  { value: "6-hole", label: "六孔" },
+];
 const KEY_OPTIONS = ["C", "F", "G"];
 const TIME_OPTIONS = ["2/4", "3/4", "4/4", "6/8", "9/8", "12/8"];
 const SORT_OPTIONS = [
@@ -63,6 +68,7 @@ function createPageHref(params: Record<string, string | undefined>, page: number
 export default async function ScoresSquarePage({ searchParams }: ScoresSquarePageProps) {
   const params = await searchParams;
   const q = (params.q || "").trim();
+  const instrument = params.instrument || "all";
   const key = params.key || "all";
   const time = params.time || "all";
   const sort = params.sort || "published";
@@ -70,6 +76,7 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
   const offset = (page - 1) * PAGE_SIZE;
 
   const supabase = await createClient();
+  const authPromise = supabase.auth.getClaims();
   let query = supabase
     .from("scores")
     .select("score_id, title, document, updated_at, published_at, public_author_label", { count: "exact" })
@@ -77,6 +84,12 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
 
   if (q) {
     query = query.ilike("title", `%${q}%`);
+  }
+
+  if (instrument === "6-hole") {
+    query = query.eq("document->settings->>instrumentType", "6-hole");
+  } else if (instrument === "12-hole") {
+    query = query.or("document->settings->>instrumentType.eq.12-hole,document->settings->>instrumentType.is.null");
   }
 
   if (key !== "all") {
@@ -95,7 +108,12 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
     query = query.order("published_at", { ascending: false, nullsFirst: false });
   }
 
-  const { data, error, count } = await query.range(offset, offset + PAGE_SIZE - 1);
+  const [authResult, scoresResult] = await Promise.all([
+    authPromise,
+    query.range(offset, offset + PAGE_SIZE - 1),
+  ]);
+  const { data, error, count } = scoresResult;
+  const createScoreHref = authResult.data?.claims?.sub ? "/protected/editor/v2/new" : "/editor";
   const total = count || 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -108,19 +126,32 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
           <div>
             <h1 className="text-3xl font-bold">乐谱广场</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              浏览用户主动公开分享的陶笛数字简谱。
+              浏览用户主动公开分享的六孔和十二孔陶笛数字简谱。
             </p>
           </div>
           <Button asChild variant="outline">
-            <Link href="/protected/editor/v2/new">创作新乐谱</Link>
+            <Link href={createScoreHref}>创作新乐谱</Link>
           </Button>
         </div>
 
-        <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-[1fr_160px_160px_160px_auto]">
+        <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-[1fr_140px_140px_140px_140px_auto]">
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input name="q" defaultValue={q} placeholder="搜索乐谱标题..." className="pl-9" />
           </div>
+          <Select name="instrument" defaultValue={instrument}>
+            <SelectTrigger>
+              <SelectValue placeholder="全部陶笛" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部陶笛</SelectItem>
+              {INSTRUMENT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select name="key" defaultValue={key}>
             <SelectTrigger>
               <SelectValue placeholder="全部调号" />
@@ -180,6 +211,7 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {(data || []).map((score) => {
                 const settings = score.document?.settings || {};
+                const instrumentLabel = settings.instrumentType === "6-hole" ? "六孔" : "十二孔";
 
                 return (
                   <Card key={score.score_id} className="transition-shadow hover:shadow-lg">
@@ -192,6 +224,7 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">{instrumentLabel}</Badge>
                         <Badge variant="secondary">1={settings.keySignature || "C"}</Badge>
                         <Badge variant="outline">{settings.timeSignature || "4/4"}</Badge>
                       </div>
@@ -219,7 +252,7 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
                   </Button>
                 ) : (
                   <Button asChild variant="outline" size="sm">
-                    <Link href={createPageHref({ q, key, time, sort }, page - 1)}>上一页</Link>
+                    <Link href={createPageHref({ q, instrument, key, time, sort }, page - 1)}>上一页</Link>
                   </Button>
                 )}
                 <span className="text-sm text-muted-foreground">
@@ -231,7 +264,7 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
                   </Button>
                 ) : (
                   <Button asChild variant="outline" size="sm">
-                    <Link href={createPageHref({ q, key, time, sort }, page + 1)}>下一页</Link>
+                    <Link href={createPageHref({ q, instrument, key, time, sort }, page + 1)}>下一页</Link>
                   </Button>
                 )}
               </div>

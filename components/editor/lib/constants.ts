@@ -2,6 +2,25 @@
  * 编辑器常量定义
  */
 
+import type { InstrumentType } from '@/lib/editor/types';
+
+// ============ 陶笛类型选项 ============
+
+export const INSTRUMENT_OPTIONS: { value: InstrumentType; label: string; shortLabel: string }[] = [
+  { value: '12-hole', label: '十二孔陶笛', shortLabel: '十二孔' },
+  { value: '6-hole', label: '六孔陶笛', shortLabel: '六孔' },
+];
+
+export const DEFAULT_INSTRUMENT_TYPE: InstrumentType = '12-hole';
+
+export function getInstrumentLabel(instrumentType?: InstrumentType | string): string {
+  return INSTRUMENT_OPTIONS.find((option) => option.value === instrumentType)?.label ?? '十二孔陶笛';
+}
+
+export function getInstrumentShortLabel(instrumentType?: InstrumentType | string): string {
+  return INSTRUMENT_OPTIONS.find((option) => option.value === instrumentType)?.shortLabel ?? '十二孔';
+}
+
 // ============ 调号选项 ============
 
 export const KEY_SIGNATURE_OPTIONS = [
@@ -88,33 +107,56 @@ export const LOW_NOTES = [
   { value: '7', display: '7̣', name: '低音si', solfege: 'B' },
 ] as const;
 
-// 各调号可用音域配置
-// 根据 fingeringMap.ts 分析得出:
-// C调: 高音 1̇-4̇, 基础 1-7, 低音 6̣-7̣
-// F调: 高音 1̇, 基础 1-7, 低音 3̣-7̣
-// G调: 无高音映射, 基础 1-6 + ♭7, 低音 2̣-7̣
-export const KEY_SIGNATURE_RANGES: Record<string, {
+export type NoteRange = {
   high: string[];
   basic: string[];
   low: string[];
-}> = {
-  C: {
-    high: ['1', '2', '3', '4'],  // 1̇-4̇
-    basic: ['1', '2', '3', '4', '5', '6', '7'],  // 1-7
-    low: ['6', '7'],  // 6̣-7̣
+};
+
+// 各陶笛类型和调号可用音域配置，根据指法图素材命名得出。
+export const KEY_SIGNATURE_RANGES: Record<InstrumentType, Record<string, NoteRange>> = {
+  '12-hole': {
+    C: {
+      high: ['1', '2', '3', '4'],
+      basic: ['1', '2', '3', '4', '5', '6', '7'],
+      low: ['6', '7'],
+    },
+    F: {
+      high: ['1'],
+      basic: ['1', '2', '3', '4', '5', '6', '7'],
+      low: ['3', '4', '5', '6', '7'],
+    },
+    G: {
+      high: [],
+      basic: ['1', '2', '3', '4', '5', '6', 'b7'],
+      low: ['2', '3', '4', '5', '6', '7'],
+    },
   },
-  F: {
-    high: ['1'],  // 1̇
-    basic: ['1', '2', '3', '4', '5', '6', '7'],  // 1-7
-    low: ['3', '4', '5', '6', '7'],  // 3̣-7̣
-  },
-  G: {
-    high: [],
-    basic: ['1', '2', '3', '4', '5', '6', 'b7'],  // 1-6 + ♭7
-    low: ['2', '3', '4', '5', '6', '7'],  // 2̣-7̣
+  '6-hole': {
+    C: {
+      high: ['1', '2', '3', '4'],
+      basic: ['1', '2', '3', '4', '5', '6', '7'],
+      low: ['7'],
+    },
+    F: {
+      high: ['1'],
+      basic: ['1', '2', '3', '4', '5', '6', '7'],
+      low: ['4', '5', '6', '7'],
+    },
+    G: {
+      high: [],
+      basic: ['1', '2', '3', '4', '5', '#6'],
+      low: ['3', '4', '5', '6', '7'],
+    },
   },
 };
 
+export function getAvailableNoteRange(
+  instrumentType: InstrumentType = DEFAULT_INSTRUMENT_TYPE,
+  keySignature: string = 'C'
+): NoteRange {
+  return KEY_SIGNATURE_RANGES[instrumentType]?.[keySignature] ?? KEY_SIGNATURE_RANGES[DEFAULT_INSTRUMENT_TYPE].C;
+}
 
 // ============ 装饰音 ============
 
@@ -185,6 +227,7 @@ export const DEFAULT_TITLE = '未命名简谱';
 export const DEFAULT_PRODUCER = 'www.ocarinana.com';
 
 export const DEFAULT_SETTINGS = {
+  instrumentType: DEFAULT_INSTRUMENT_TYPE,
   keySignature: 'C' as const,
   timeSignature: '4/4' as const,
   tempo: 120,

@@ -5,6 +5,7 @@ import { EyeIcon, EyeOffIcon, Mic2Icon, MusicIcon, Trash2Icon } from '@/componen
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
+import { getAvailableNoteRange, getInstrumentLabel } from '../lib/constants';
 import type { BarlineType, Duration, DynamicMark, NoteValue, OrnamentMark } from '@/lib/editor/types';
 
 interface HelpContent {
@@ -261,6 +262,15 @@ const G_BASIC_NOTES: { value: NoteValue; display: string }[] = [
   { value: '5', display: '5' },
   { value: '6', display: '6' },
   { value: 'b7', display: '♭7' },
+];
+
+const SIX_HOLE_G_BASIC_NOTES: { value: NoteValue; display: string }[] = [
+  { value: '1', display: '1' },
+  { value: '2', display: '2' },
+  { value: '3', display: '3' },
+  { value: '4', display: '4' },
+  { value: '5', display: '5' },
+  { value: '#6', display: '#6' },
 ];
 
 
@@ -542,26 +552,16 @@ const UTILITY_HELP = {
   },
 };
 
-function getAvailableNotes(keySignature: string): { high: string[]; basic: string[]; low: string[] } {
-  const ranges: Record<string, { high: string[]; basic: string[]; low: string[] }> = {
-    C: {
-      high: ['1', '2', '3', '4'],
-      basic: ['1', '2', '3', '4', '5', '6', '7'],
-      low: ['6', '7'],
-    },
-    F: {
-      high: ['1'],
-      basic: ['1', '2', '3', '4', '5', '6', '7'],
-      low: ['3', '4', '5', '6', '7'],
-    },
-    G: {
-      high: [],
-      basic: ['1', '2', '3', '4', '5', '6', 'b7'],
-      low: ['2', '3', '4', '5', '6', '7'],
-    },
-  };
+function getBasicNoteOptions(instrumentType: string, keySignature: string): { value: NoteValue; display: string }[] {
+  if (instrumentType === '6-hole' && keySignature === 'G') {
+    return SIX_HOLE_G_BASIC_NOTES;
+  }
 
-  return ranges[keySignature] || ranges.C;
+  if (keySignature === 'G') {
+    return G_BASIC_NOTES;
+  }
+
+  return BASIC_NOTES;
 }
 
 function getBeamDurationLevel(duration: Duration): number {
@@ -623,8 +623,8 @@ export const ElementPanel = memo(function ElementPanel() {
   const settings = useScoreStore((state) => state.document.settings);
   const updateSettings = useScoreStore((state) => state.updateSettings);
 
-  const availableNotes = getAvailableNotes(settings.keySignature);
-  const basicNotes = settings.keySignature === 'G' ? G_BASIC_NOTES : BASIC_NOTES;
+  const availableNotes = getAvailableNoteRange(settings.instrumentType, settings.keySignature);
+  const basicNotes = getBasicNoteOptions(settings.instrumentType, settings.keySignature);
   const hasSelection = selectedMeasureIndex !== null && selectedNoteIndex !== null;
   const canToggleBreathMark = selectedElement?.type === 'note' || selectedElement?.type === 'extension';
   const selectedDuration =
@@ -755,7 +755,9 @@ export const ElementPanel = memo(function ElementPanel() {
             <div className="flex items-center justify-between gap-2">
               <div>
                 <div className="text-xs font-semibold text-slate-700">使用帮助</div>
-                <div className="mt-0.5 text-[11px] text-slate-500">悬停按钮可查看说明</div>
+                <div className="mt-0.5 text-[11px] text-slate-500">
+                  {getInstrumentLabel(settings.instrumentType)} · 1={settings.keySignature}
+                </div>
               </div>
               <button
                 type="button"

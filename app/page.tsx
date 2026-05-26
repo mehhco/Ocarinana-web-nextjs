@@ -15,12 +15,14 @@ import { ImagePreloader, CRITICAL_IMAGES } from "@/components/image-preloader";
 export const metadata: Metadata = {
   title: "Ocarinana - 陶笛谱生成器 | 在线数字简谱编辑工具",
   description:
-    "Ocarinana 是专业的在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配、歌词编辑与高清图片导出。",
+    "Ocarinana 是专业的在线陶笛谱生成器，支持六孔和十二孔陶笛数字简谱编辑、指法图自动匹配、歌词编辑与高清图片导出。",
   keywords: [
     "陶笛谱生成器",
     "数字简谱编辑器",
     "在线乐谱制作",
     "陶笛指法图",
+    "六孔陶笛谱",
+    "十二孔陶笛谱",
     "简谱编辑工具",
     "音乐制作",
     "ocarina",
@@ -29,7 +31,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Ocarinana - 陶笛谱生成器",
     description:
-      "在线制作数字简谱，自动生成陶笛指法图，并导出适合打印与分享的高清图片。",
+      "在线制作六孔或十二孔陶笛数字简谱，自动生成指法图，并导出适合打印与分享的高清图片。",
     type: "website",
     url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   },
@@ -64,7 +66,7 @@ const features = [
   },
   {
     title: "指法图联动",
-    desc: "根据调号和音高自动匹配陶笛指法图，减少手动查表。",
+    desc: "根据陶笛类型、调号和音高自动匹配指法图，减少手动查表。",
   },
   {
     title: "高清导出",
@@ -87,11 +89,11 @@ export default function Home() {
       <WebSiteSchema
         url={baseUrl}
         name="Ocarinana - 陶笛谱生成器"
-        description="在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配、歌词编辑与高清图片导出。"
+        description="在线陶笛谱生成器，支持六孔和十二孔数字简谱编辑、陶笛指法图自动匹配、歌词编辑与高清图片导出。"
       />
       <SoftwareApplicationSchema
         name="Ocarinana"
-        description="在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配。"
+        description="在线陶笛谱生成器，支持六孔和十二孔数字简谱编辑、陶笛指法图自动匹配。"
         url={baseUrl}
         applicationCategory="MusicApplication"
         operatingSystem="Web Browser"
@@ -144,11 +146,11 @@ export default function Home() {
                 在线陶笛谱生成器
               </p>
               <h1 className="max-w-3xl text-4xl font-extrabold leading-tight tracking-normal md:text-6xl">
-                在线制作数字简谱，自动生成陶笛指法图
+                在线制作六孔和十二孔陶笛谱
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-8 text-zinc-700 md:text-lg dark:text-emerald-50/78">
                 Ocarinana 面向陶笛学习者、音乐教师和内容创作者。输入简谱音符，实时预览
-                C/F/G 调指法图，完成后导出适合打印与分享的高清图片。
+                六孔或十二孔 C/F/G 调指法图，完成后导出适合打印与分享的高清图片。
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <CtaStartButton />
@@ -161,7 +163,7 @@ export default function Home() {
               </div>
               <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-zinc-600 dark:text-emerald-50/68">
                 <span>无需安装</span>
-                <span>支持指法图联动</span>
+                <span>支持六孔/十二孔</span>
                 <span>PNG 高清导出</span>
                 <span>云端乐谱管理</span>
               </div>

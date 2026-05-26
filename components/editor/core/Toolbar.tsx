@@ -26,6 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
 import { ScoreScaleControl } from './ScoreScaleControl';
+import { getInstrumentShortLabel } from '../lib/constants';
 import type { KeySignature, TimeSignature } from '@/lib/editor/types';
 
 const KEY_SIGNATURE_OPTIONS: { value: KeySignature; label: string }[] = [
@@ -254,6 +255,9 @@ export const Toolbar = memo(function Toolbar({
               />
 
               <div className="hidden shrink-0 items-center gap-1.5 lg:flex">
+                <span className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-600 shadow-sm">
+                  {getInstrumentShortLabel(document.settings.instrumentType)}
+                </span>
                 <span className="text-[11px] font-medium text-slate-500">调号</span>
                 <Select value={document.settings.keySignature} onValueChange={handleKeySignatureChange}>
                   <SelectTrigger className={cn(SELECT_TRIGGER_CLASS, 'w-16')}>

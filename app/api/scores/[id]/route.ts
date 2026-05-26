@@ -47,7 +47,8 @@ export async function GET(
     beams: data.document?.beams ?? [],
     expressions: data.document?.expressions ?? [],
     lyrics: data.document?.lyrics ?? [],
-    settings: data.document?.settings ?? {
+    settings: {
+      instrumentType: "12-hole",
       keySignature: "C",
       timeSignature: "4/4",
       tempo: 120,
@@ -55,6 +56,7 @@ export async function GET(
       skin: "white",
       showLyrics: false,
       showFingering: false,
+      ...(data.document?.settings ?? {}),
     },
     createdAt: data.created_at,
     updatedAt: data.updated_at,

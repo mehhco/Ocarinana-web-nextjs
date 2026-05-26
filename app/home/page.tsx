@@ -42,7 +42,7 @@ export default async function HomeDashboardPage() {
         <div className="flex-1 w-full max-w-5xl mx-auto px-5 py-16">
           <div className="text-center space-y-4">
             <h1 className="text-3xl font-bold">欢迎来到 Ocarinana</h1>
-            <p className="text-foreground/70">登录后即可创建、保存并管理你的数字简谱与陶笛指法谱。</p>
+            <p className="text-foreground/70">登录后即可创建、保存并管理你的六孔或十二孔陶笛指法谱。</p>
             <div className="flex items-center justify-center gap-4 pt-2">
               <Button asChild>
                 <Link href="/auth/login">登录</Link>

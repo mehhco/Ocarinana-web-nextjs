@@ -10,6 +10,7 @@ import { Edit2Icon, EyeIcon, EyeOffIcon, Trash2Icon } from "@/components/ui/icon
 interface ScoreCardProps {
   scoreId: string;
   title: string;
+  instrumentType?: string;
   keySignature: string;
   timeSignature: string;
   updatedAt: string;
@@ -39,6 +40,7 @@ function formatRelativeTime(dateString: string): string {
 export function ScoreCard({
   scoreId,
   title,
+  instrumentType = "12-hole",
   keySignature,
   timeSignature,
   updatedAt,
@@ -51,6 +53,7 @@ export function ScoreCard({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
   const href = editorHref || `/protected/scores?scoreId=${encodeURIComponent(scoreId)}`;
+  const instrumentLabel = instrumentType === "6-hole" ? "六孔" : "十二孔";
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -143,6 +146,9 @@ export function ScoreCard({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs">
+            {instrumentLabel}
+          </Badge>
           <Badge variant="secondary" className="text-xs">
             1={keySignature}
           </Badge>

@@ -3,7 +3,7 @@
 <div align="center">
   <img src="./public/webfile/static/Cfinger.png" alt="Ocarinana" width="200"/>
   
-  <p><strong>在线数字简谱与陶笛指法谱生成器</strong></p>
+  <p><strong>在线数字简谱与六孔/十二孔陶笛指法谱生成器</strong></p>
   <p>快速编排、实时预览、一键导出</p>
 
   [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
@@ -19,7 +19,7 @@
 
 ### 核心功能
 - 🎼 **数字简谱生成** - 所见即所得的乐谱编辑器
-- 🎹 **陶笛指法联动** - 自动根据调号显示指法图（支持 C/F/G 调）
+- 🎹 **陶笛指法联动** - 自动根据陶笛类型和调号显示指法图（支持六孔/十二孔 C/F/G 调）
 - 📝 **歌词编辑** - 支持中英文歌词智能对齐
 - 💾 **自动保存** - 本地存储 + 云端同步
 - 🖼️ **图片导出** - 高质量 PNG 导出，适合打印分享

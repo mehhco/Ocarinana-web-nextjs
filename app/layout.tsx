@@ -21,12 +21,14 @@ export const metadata: Metadata = {
     template: "%s | Ocarinana",
   },
   description:
-    "Ocarinana 是专业的在线陶笛谱生成器，支持数字简谱编辑、陶笛指法图自动匹配、歌词编辑与高清图片导出。",
+    "Ocarinana 是专业的在线陶笛谱生成器，支持六孔和十二孔陶笛数字简谱编辑、指法图自动匹配、歌词编辑与高清图片导出。",
   keywords: [
     "陶笛谱",
     "数字简谱",
     "简谱生成器",
     "陶笛指法",
+    "六孔陶笛谱",
+    "十二孔陶笛谱",
     "在线乐谱编辑",
     "音乐制作",
     "ocarina",
@@ -45,7 +47,7 @@ export const metadata: Metadata = {
     locale: "zh_CN",
     url: defaultUrl,
     title: "Ocarinana - 陶笛谱生成器",
-    description: "专业的在线陶笛谱生成器，支持数字简谱编辑、指法图匹配和高清导出。",
+    description: "专业的在线陶笛谱生成器，支持六孔和十二孔数字简谱编辑、指法图匹配和高清导出。",
     siteName: "Ocarinana",
     images: [
       {
@@ -59,7 +61,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Ocarinana - 陶笛谱生成器",
-    description: "专业的在线陶笛谱生成器，支持数字简谱编辑、指法图匹配和高清导出。",
+    description: "专业的在线陶笛谱生成器，支持六孔和十二孔数字简谱编辑、指法图匹配和高清导出。",
     images: [`${defaultUrl}/twitter-image.webp`],
     creator: "@ocarinana",
   },

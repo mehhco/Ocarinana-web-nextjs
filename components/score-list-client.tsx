@@ -30,6 +30,7 @@ interface Score {
   publishedAt?: string | null;
   editorHref?: string;
   settings: {
+    instrumentType?: string;
     keySignature: string;
     timeSignature: string;
   };
@@ -46,6 +47,12 @@ const KEY_OPTIONS = [
   { value: "C", label: "1=C" },
   { value: "F", label: "1=F" },
   { value: "G", label: "1=G" },
+];
+
+const INSTRUMENT_OPTIONS = [
+  { value: "all", label: "全部陶笛" },
+  { value: "12-hole", label: "十二孔" },
+  { value: "6-hole", label: "六孔" },
 ];
 
 const TIME_OPTIONS = [
@@ -65,6 +72,7 @@ const SORT_OPTIONS = [
 export const ScoreListClient = memo(function ScoreListClient({ initialScores }: ScoreListClientProps) {
   const [scores, setScores] = useState<Score[]>(initialScores);
   const [searchQuery, setSearchQuery] = useState("");
+  const [instrumentFilter, setInstrumentFilter] = useState("all");
   const [keyFilter, setKeyFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("updated_at");
@@ -79,11 +87,14 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
       const matchesSearch = score.title
         .toLowerCase()
         .includes(debouncedSearchQuery.toLowerCase());
+      const scoreInstrument = score.settings.instrumentType || "12-hole";
+      const matchesInstrument =
+        instrumentFilter === "all" || scoreInstrument === instrumentFilter;
       const matchesKey =
         keyFilter === "all" || score.settings.keySignature === keyFilter;
       const matchesTime =
         timeFilter === "all" || score.settings.timeSignature === timeFilter;
-      return matchesSearch && matchesKey && matchesTime;
+      return matchesSearch && matchesInstrument && matchesKey && matchesTime;
     });
 
     filtered.sort((a, b) => {
@@ -96,7 +107,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
     });
 
     return filtered;
-  }, [scores, debouncedSearchQuery, keyFilter, timeFilter, sortBy]);
+  }, [scores, debouncedSearchQuery, instrumentFilter, keyFilter, timeFilter, sortBy]);
 
   // 分页
   const totalPages = Math.ceil(filteredAndSortedScores.length / ITEMS_PER_PAGE);
@@ -143,7 +154,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
         <div className="text-center space-y-2">
           <h3 className="text-xl font-semibold">还没有创建任何乐谱</h3>
           <p className="text-sm text-muted-foreground max-w-md">
-            开始创作你的第一首数字简谱，体验便捷的陶笛指法谱生成功能
+            开始创作你的第一首六孔或十二孔陶笛谱，体验便捷的指法谱生成功能
           </p>
         </div>
         <Button asChild size="lg">
@@ -168,6 +179,24 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
               className="pl-9"
             />
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <FilterIcon className="h-4 w-4" />
+                {INSTRUMENT_OPTIONS.find((option) => option.value === instrumentFilter)?.label}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {INSTRUMENT_OPTIONS.map((option) => (
+                <DropdownMenuItem
+                  key={option.value}
+                  onClick={() => handleFilterChange(setInstrumentFilter, option.value)}
+                >
+                  {option.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
@@ -230,6 +259,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
             variant="outline"
             onClick={() => {
               setSearchQuery("");
+              setInstrumentFilter("all");
               setKeyFilter("all");
               setTimeFilter("all");
               setCurrentPage(1);
@@ -255,6 +285,24 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
             className="pl-9"
           />
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <FilterIcon className="h-4 w-4" />
+              {INSTRUMENT_OPTIONS.find((option) => option.value === instrumentFilter)?.label}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {INSTRUMENT_OPTIONS.map((option) => (
+              <DropdownMenuItem
+                key={option.value}
+                onClick={() => handleFilterChange(setInstrumentFilter, option.value)}
+              >
+                {option.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="gap-2">
@@ -323,6 +371,7 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
             key={score.scoreId}
             scoreId={score.scoreId}
             title={score.title}
+            instrumentType={score.settings.instrumentType || "12-hole"}
             keySignature={score.settings.keySignature}
             timeSignature={score.settings.timeSignature}
             updatedAt={score.updatedAt}
