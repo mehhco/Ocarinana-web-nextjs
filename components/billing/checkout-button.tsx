@@ -3,15 +3,16 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { BILLING_PLAN_ID } from '@/lib/billing/plans';
+import type { BillingPlan } from '@/lib/billing/plans';
 import type { ZpayPaymentType } from '@/lib/billing/zpay';
 
 interface CheckoutButtonProps {
+  planId: BillingPlan['id'];
   paymentType: ZpayPaymentType;
   children: React.ReactNode;
 }
 
-export function CheckoutButton({ paymentType, children }: CheckoutButtonProps) {
+export function CheckoutButton({ planId, paymentType, children }: CheckoutButtonProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +28,7 @@ export function CheckoutButton({ paymentType, children }: CheckoutButtonProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          planId: BILLING_PLAN_ID,
+          planId,
           paymentType,
         }),
       });

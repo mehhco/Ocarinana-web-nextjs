@@ -173,17 +173,19 @@ export default function TermsOfService() {
           </section>
 
           <section className="mt-8">
-            <h2 className="text-2xl font-semibold mt-8 mb-4">6. 付费服务（未来）</h2>
+            <h2 className="text-2xl font-semibold mt-8 mb-4">6. 付费服务</h2>
             
             <h3 className="text-xl font-semibold mt-6 mb-3">6.1 定价</h3>
             <p>
-              当前所有功能免费提供。我们保留在未来引入付费功能的权利。
-              任何付费功能将在实施前至少 30 天通知用户。
+              Ocarinana 提供免费版和 Plus 会员服务。免费版保留基础创作能力，
+              Plus 会员按购买时展示的有效期、额度和功能权益开通。
             </p>
 
             <h3 className="text-xl font-semibold mt-6 mb-3">6.2 退款政策</h3>
             <p>
-              付费服务实施后，我们将提供 14 天无理由退款保证（仅限首次购买）。
+              Plus 会员为固定有效期服务，不是自动续费。到期后已有乐谱不会被删除，
+              但超出免费额度的新建、公开、导出和会员专属能力可能会受到限制。
+              首次购买后 7 天内如未明显滥用导出、分享等服务，可联系我们人工处理退款。
             </p>
           </section>
 

@@ -44,7 +44,7 @@ export default async function BillingCheckoutPage({
           <h1 className="mt-3 text-2xl font-bold text-zinc-950">该订单无需继续支付</h1>
           <p className="mt-3 text-sm leading-7 text-zinc-600">当前状态：{order.status}</p>
           <Button asChild className="mt-6">
-            <Link href="/protected/billing">返回订阅页</Link>
+            <Link href="/protected/me/plus">返回 Plus 权益</Link>
           </Button>
         </div>
       </div>

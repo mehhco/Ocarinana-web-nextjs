@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createScoreSchema } from "@/lib/validations/score";
 import { checkRateLimit, getIdentifier, RATE_LIMITS, rateLimitResponse } from "@/lib/rate-limit";
+import { entitlementError, getUserEntitlements } from "@/lib/billing/entitlements";
+import { canUseBilling } from "@/lib/billing/access";
 
 interface ScoreListRow {
   score_id: string;
@@ -101,6 +103,29 @@ export async function POST(req: Request) {
     error: userErr,
   } = await supabase.auth.getUser();
   if (userErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (await canUseBilling()) {
+    const entitlements = await getUserEntitlements(user.id);
+    const { count: scoreCount, error: countError } = await supabase
+      .from("scores")
+      .select("score_id", { count: "exact", head: true })
+      .eq("owner_user_id", user.id);
+
+    if (countError) {
+      return NextResponse.json({ error: countError.message }, { status: 500 });
+    }
+
+    if ((scoreCount || 0) >= entitlements.privateScoreLimit) {
+      return NextResponse.json(
+        entitlementError({
+          code: "PRIVATE_SCORE_LIMIT_REACHED",
+          message: `当前账号最多可保存 ${entitlements.privateScoreLimit} 首私有乐谱，升级 Plus 可保存更多作品。`,
+          limit: entitlements.privateScoreLimit,
+        }),
+        { status: 403 }
+      );
+    }
+  }
 
   // 解析并验证请求体
   let body = null;

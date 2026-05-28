@@ -65,7 +65,7 @@ export default async function BillingReturnPage({
 
         <div className="flex gap-3">
           <Button asChild>
-            <Link href="/protected/billing">返回订阅页</Link>
+            <Link href="/protected/me/plus">返回 Plus 权益</Link>
           </Button>
           <Button asChild variant="outline">
             <Link href="/protected/editor/v2/new">打开编辑器</Link>

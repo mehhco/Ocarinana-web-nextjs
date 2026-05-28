@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getUserEntitlements } from '@/lib/billing/entitlements';
+import { canUseBilling } from '@/lib/billing/access';
+import { BillingRedirectNotice } from '@/components/billing/billing-redirect-notice';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -59,11 +62,11 @@ export default async function NewScoreV2Page({ searchParams }: NewScoreV2PagePro
 
   if (!instrumentType) {
     return (
-      <main className="min-h-screen bg-slate-50 px-5 py-10">
-        <div className="mx-auto flex max-w-3xl flex-col gap-6">
-          <div>
-            <Button asChild variant="ghost" size="sm" className="mb-4 px-0 text-slate-600">
-              <Link href={`/${user.id}/notes`}>返回我的乐谱</Link>
+      <main className="flex min-h-screen w-full items-center justify-center bg-slate-50 px-5 py-10 text-center sm:py-16">
+        <div className="mx-auto w-full max-w-3xl space-y-7">
+          <div className="text-center">
+            <Button asChild variant="ghost" size="sm" className="mb-5 text-slate-600">
+              <Link href="/protected/me/scores">返回我的乐谱</Link>
             </Button>
             <h1 className="text-2xl font-bold tracking-normal text-slate-900">选择陶笛类型</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -71,14 +74,14 @@ export default async function NewScoreV2Page({ searchParams }: NewScoreV2PagePro
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="mx-auto grid max-w-3xl gap-4 md:grid-cols-2">
             {INSTRUMENT_OPTIONS.map((option) => (
-              <Card key={option.value} className="border-slate-200 bg-white shadow-sm">
+              <Card key={option.value} className="flex h-full flex-col border-slate-200 bg-white text-center shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-lg">{option.label}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="min-h-12 text-sm leading-6 text-slate-600">
+                <CardContent className="flex flex-1 flex-col space-y-4">
+                  <p className="flex-1 text-sm leading-6 text-slate-600">
                     {option.value === '6-hole'
                       ? '适合制作六孔陶笛谱，支持 C/F/G 调和对应六孔指法图。'
                       : '适合继续制作十二孔陶笛谱，兼容现有 C/F/G 调指法图。'}
@@ -93,6 +96,26 @@ export default async function NewScoreV2Page({ searchParams }: NewScoreV2PagePro
         </div>
       </main>
     );
+  }
+
+  if (await canUseBilling()) {
+    const entitlements = await getUserEntitlements(user.id);
+    const { count } = await supabase
+      .from('scores')
+      .select('score_id', { count: 'exact', head: true })
+      .eq('owner_user_id', user.id);
+
+    if ((count || 0) >= entitlements.privateScoreLimit) {
+      return (
+        <BillingRedirectNotice
+          title="暂时无法继续创建乐谱"
+          description={`当前账号已保存 ${count || 0} 首乐谱，免费版最多可保存 ${entitlements.privateScoreLimit} 首。需要充值或升级 Plus 后，才能继续创建新的私有乐谱。`}
+          billingHref="/protected/me/plus?reason=score-limit"
+          backHref="/protected/me/scores"
+          backLabel="返回我的乐谱"
+        />
+      );
+    }
   }
 
   const document = createInitialDocument(instrumentType);

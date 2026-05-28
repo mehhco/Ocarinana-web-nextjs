@@ -18,9 +18,12 @@ export async function AuthButton({ userEmail }: AuthButtonProps = {}) {
 
   return email ? (
     <div className="flex min-w-0 items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-      <span className="hidden max-w-44 truncate md:inline">
+      <Link href="/protected/me" className="hidden max-w-44 truncate hover:text-emerald-800 md:inline">
         你好，{email}
-      </span>
+      </Link>
+      <Button asChild size="sm" variant="outline" className="md:hidden">
+        <Link href="/protected/me">我的</Link>
+      </Button>
       <LogoutButton />
     </div>
   ) : (

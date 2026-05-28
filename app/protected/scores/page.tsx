@@ -31,14 +31,11 @@ export default async function ScoresPage() {
     redirect("/auth/login");
   }
 
-  // 获取用户 ID 用于构建乐谱列表链接
-  const userId = data.user.id;
-
   return (
     <>
       <div className="fixed top-2 left-4 z-50">
         <Button asChild size="sm" variant="secondary" className="shadow">
-          <Link href={`/${userId}/notes`} aria-label="返回我的乐谱列表">
+          <Link href="/protected/me/scores" aria-label="返回我的乐谱列表">
             <ArrowLeftIcon className="mr-2 h-4 w-4" /> 返回我的乐谱列表
           </Link>
         </Button>

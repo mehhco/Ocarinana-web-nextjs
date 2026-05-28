@@ -48,7 +48,7 @@ export default async function EditorV2Page({ searchParams }: EditorV2PageProps) 
     <ScoreEditor 
       initialDocument={initialDocument || undefined}
       scoreId={scoreId}
-      backHref={`/${user.id}/notes`}
+      backHref="/protected/me/scores"
     />
   );
 }

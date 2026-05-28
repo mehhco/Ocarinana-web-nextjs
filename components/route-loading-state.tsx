@@ -24,8 +24,8 @@ const pageCopy: Record<RouteLoadingVariant, { title: string; description: string
     description: "正在整理陶笛分类和推荐信息...",
   },
   notes: {
-    title: "我的乐谱",
-    description: "正在同步你的乐谱列表...",
+    title: "我的",
+    description: "正在同步你的个人中心...",
   },
 };
 
@@ -49,7 +49,7 @@ function StaticLoadingNav({
 }) {
   const tabLabels =
     showPrivateTab
-      ? ["我的乐谱", "乐谱广场", "音乐课堂", "陶笛推荐"]
+      ? ["我的", "乐谱广场", "音乐课堂", "陶笛推荐"]
       : publicTabLabels;
   const isClassroom = variant === "classroom";
   const isShop = variant === "shop";
@@ -266,7 +266,7 @@ export async function RouteLoadingState({ variant }: RouteLoadingStateProps) {
         ? "音乐课堂"
         : variant === "shop"
           ? "陶笛推荐"
-          : "我的乐谱";
+          : "我的";
 
   return (
     <main className="min-h-screen bg-white text-zinc-950 dark:bg-slate-950 dark:text-white">

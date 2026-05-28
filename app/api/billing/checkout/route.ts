@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getBillingAccess } from '@/lib/billing/access';
-import { BILLING_PLAN_ID } from '@/lib/billing/plans';
+import { BILLING_PLAN_IDS } from '@/lib/billing/plans';
 import { createBillingOrder } from '@/lib/billing/orders';
 import { checkRateLimit, getIdentifier, RATE_LIMITS, rateLimitResponse } from '@/lib/rate-limit';
 
 const checkoutSchema = z.object({
-  planId: z.literal(BILLING_PLAN_ID),
+  planId: z.enum(BILLING_PLAN_IDS),
   paymentType: z.enum(['alipay', 'wxpay']),
 });
 
