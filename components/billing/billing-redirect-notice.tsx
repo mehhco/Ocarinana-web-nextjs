@@ -1,11 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { AlertCircle, ArrowRight, TimerReset } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { PendingLink } from '@/components/pending-link';
 
 type BillingRedirectNoticeProps = {
   title: string;
@@ -54,13 +54,15 @@ export function BillingRedirectNotice({
 
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
               <Button asChild variant="outline">
-                <Link href={backHref}>{backLabel}</Link>
+                <PendingLink href={backHref} pendingText="返回中..." showPendingSpinner>
+                  {backLabel}
+                </PendingLink>
               </Button>
               <Button asChild className="gap-2">
-                <Link href={billingHref}>
+                <PendingLink href={billingHref} pendingText="打开中..." showPendingSpinner>
                   去充值 / 升级
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
+                </PendingLink>
               </Button>
             </div>
           </CardContent>

@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { LoadingButtonContent } from "@/components/loading-button-content";
 import {
   Card,
   CardContent,
@@ -12,8 +13,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Link from "next/link";
 import { useState } from "react";
+import { PendingLink } from "@/components/pending-link";
 
 export function ForgotPasswordForm({
   className,
@@ -82,17 +83,20 @@ export function ForgotPasswordForm({
                 </div>
                 {error && <p className="text-sm text-red-500">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "发送中..." : "发送重置邮件"}
+                  <LoadingButtonContent loading={isLoading} loadingText="发送中...">
+                    发送重置邮件
+                  </LoadingButtonContent>
                 </Button>
               </div>
               <div className="mt-4 text-center text-sm">
                 已有账户？{" "}
-                <Link
+                <PendingLink
                   href="/auth/login"
                   className="underline underline-offset-4"
+                  pendingText="打开中..."
                 >
                   立即登录
-                </Link>
+                </PendingLink>
               </div>
             </form>
           </CardContent>

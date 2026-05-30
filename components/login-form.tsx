@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { LoadingButtonContent } from "@/components/loading-button-content";
 import {
   Card,
   CardContent,
@@ -12,9 +13,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PendingLink } from "@/components/pending-link";
 
 export function LoginForm({
   className,
@@ -42,7 +43,6 @@ export function LoginForm({
       router.push("/");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "发生错误");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -73,12 +73,13 @@ export function LoginForm({
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">密码</Label>
-                  <Link
+                  <PendingLink
                     href="/auth/forgot-password"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                    pendingText="打开中..."
                   >
                     忘记密码？
-                  </Link>
+                  </PendingLink>
                 </div>
                 <Input
                   id="password"
@@ -90,17 +91,20 @@ export function LoginForm({
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "登录中..." : "登录"}
+                <LoadingButtonContent loading={isLoading} loadingText="登录中...">
+                  登录
+                </LoadingButtonContent>
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
               还没有账户？{" "}
-              <Link
+              <PendingLink
                 href="/auth/sign-up"
                 className="underline underline-offset-4"
+                pendingText="打开中..."
               >
                 立即注册
-              </Link>
+              </PendingLink>
             </div>
           </form>
         </CardContent>

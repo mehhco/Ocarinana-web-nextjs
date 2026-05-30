@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ScoreEditor } from "@/components/editor/core/ScoreEditor";
+import { PendingLink } from "@/components/pending-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -84,7 +85,9 @@ export default async function PublicEditorPage({ searchParams }: PublicEditorPag
                       : "试用十二孔陶笛谱制作，兼容现有 C/F/G 调十二孔指法图。"}
                   </p>
                   <Button asChild className="w-full">
-                    <Link href={`/editor?instrument=${option.value}`}>选择{option.shortLabel}</Link>
+                    <PendingLink href={`/editor?instrument=${option.value}`} pendingText="打开中..." showPendingSpinner>
+                      选择{option.shortLabel}
+                    </PendingLink>
                   </Button>
                 </CardContent>
               </Card>
@@ -106,7 +109,9 @@ export default async function PublicEditorPage({ searchParams }: PublicEditorPag
             当前为试用模式，可导出图片；登录后可保存到云端
           </span>
           <Button asChild size="sm" variant="outline">
-            <Link href="/auth/login">登录保存</Link>
+            <PendingLink href="/auth/login" pendingText="打开中..." showPendingSpinner>
+              登录保存
+            </PendingLink>
           </Button>
         </div>
       </div>

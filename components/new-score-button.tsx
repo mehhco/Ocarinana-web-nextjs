@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { LoadingButtonContent } from "@/components/loading-button-content";
 import { useState } from "react";
 
 export default function NewScoreButton() {
@@ -16,7 +17,9 @@ export default function NewScoreButton() {
 
   return (
     <Button size="sm" variant="secondary" onClick={handleCreate} disabled={loading}>
-      {loading ? "创建中..." : "新建"}
+      <LoadingButtonContent loading={loading} loadingText="创建中...">
+        新建
+      </LoadingButtonContent>
     </Button>
   );
 }

@@ -1,8 +1,8 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { PublicationRewardHint } from '@/components/billing/publication-reward-hint';
 import { LazyScoreListClient } from '@/components/lazy-components';
+import { PendingLink } from '@/components/pending-link';
 import { UpgradePrompt } from '@/components/personal/UpgradePrompt';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from '@/components/ui/icons';
@@ -109,10 +109,10 @@ export default async function MeScoresPage() {
           <p className="mt-1 text-sm text-zinc-600">管理作品、继续编辑、删除草稿或公开到乐谱广场。</p>
         </div>
         <Button asChild size="lg" className="gap-2">
-          <Link href="/protected/editor/v2/new">
+          <PendingLink href="/protected/editor/v2/new" pendingText="创建中..." showPendingSpinner>
             <PlusIcon className="h-5 w-5" />
             新建乐谱
-          </Link>
+          </PendingLink>
         </Button>
       </div>
 

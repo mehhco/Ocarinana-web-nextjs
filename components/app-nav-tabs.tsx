@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { PendingLink } from "@/components/pending-link";
 
 export interface AppNavItem {
   href: string;
@@ -53,7 +53,7 @@ export function AppNavTabs({
       )}
     >
       <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 py-2 md:h-16 md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-7 md:px-5 md:py-0">
-        <Link
+        <PendingLink
           href="/"
           className={cn(
             "brand-font min-w-0 truncate text-3xl drop-shadow-sm transition-colors duration-200 md:text-4xl",
@@ -66,7 +66,7 @@ export function AppNavTabs({
           onMouseEnter={() => router.prefetch("/")}
         >
           Ocarinana
-        </Link>
+        </PendingLink>
 
         <div className="justify-self-end md:col-start-3 md:row-start-1">
           {authSlot}
@@ -83,9 +83,10 @@ export function AppNavTabs({
               const active = isActive(pathname, item);
 
               return (
-                <Link
+                <PendingLink
                   key={item.href}
                   href={item.href}
+                  pendingText={`${item.label}...`}
                   onFocus={() => router.prefetch(item.href)}
                   onMouseEnter={() => router.prefetch(item.href)}
                   className={cn(
@@ -118,7 +119,7 @@ export function AppNavTabs({
                   )}
                 >
                   {item.label}
-                </Link>
+                </PendingLink>
               );
             })}
           </div>

@@ -2,9 +2,9 @@
 
 import { useState, useMemo, memo } from "react";
 import { useDebounce } from "@/components/performance-optimized";
-import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PendingLink } from "@/components/pending-link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -158,7 +158,9 @@ export const ScoreListClient = memo(function ScoreListClient({ initialScores }: 
           </p>
         </div>
         <Button asChild size="lg">
-          <Link href="/protected/editor/v2/new">创建第一个乐谱</Link>
+          <PendingLink href="/protected/editor/v2/new" pendingText="创建中..." showPendingSpinner>
+            创建第一个乐谱
+          </PendingLink>
         </Button>
       </div>
     );

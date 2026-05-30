@@ -1,9 +1,9 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getUserEntitlements } from '@/lib/billing/entitlements';
 import { canUseBilling } from '@/lib/billing/access';
 import { BillingRedirectNotice } from '@/components/billing/billing-redirect-notice';
+import { PendingLink } from '@/components/pending-link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -66,7 +66,9 @@ export default async function NewScoreV2Page({ searchParams }: NewScoreV2PagePro
         <div className="mx-auto w-full max-w-3xl space-y-7">
           <div className="text-center">
             <Button asChild variant="ghost" size="sm" className="mb-5 text-slate-600">
-              <Link href="/protected/me/scores">返回我的乐谱</Link>
+              <PendingLink href="/protected/me/scores" pendingText="返回中..." showPendingSpinner>
+                返回我的乐谱
+              </PendingLink>
             </Button>
             <h1 className="text-2xl font-bold tracking-normal text-slate-900">选择陶笛类型</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -87,7 +89,9 @@ export default async function NewScoreV2Page({ searchParams }: NewScoreV2PagePro
                       : '适合继续制作十二孔陶笛谱，兼容现有 C/F/G 调指法图。'}
                   </p>
                   <Button asChild className="w-full">
-                    <Link href={`/protected/editor/v2/new?instrument=${option.value}`}>选择{option.shortLabel}</Link>
+                    <PendingLink href={`/protected/editor/v2/new?instrument=${option.value}`} pendingText="创建中..." showPendingSpinner>
+                      选择{option.shortLabel}
+                    </PendingLink>
                   </Button>
                 </CardContent>
               </Card>

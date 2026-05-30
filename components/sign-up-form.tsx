@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { LoadingButtonContent } from "@/components/loading-button-content";
 import {
   Card,
   CardContent,
@@ -12,9 +13,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PendingLink } from "@/components/pending-link";
 
 export function SignUpForm({
   className,
@@ -58,7 +59,6 @@ export function SignUpForm({
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "发生错误");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -110,14 +110,16 @@ export function SignUpForm({
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "创建账户中..." : "注册"}
+                <LoadingButtonContent loading={isLoading} loadingText="创建账户中...">
+                  注册
+                </LoadingButtonContent>
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
               已有账户？{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
+              <PendingLink href="/auth/login" className="underline underline-offset-4" pendingText="打开中...">
                 立即登录
-              </Link>
+              </PendingLink>
             </div>
           </form>
         </CardContent>

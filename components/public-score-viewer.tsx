@@ -108,6 +108,7 @@ export function PublicScoreViewer({ document, isAuthenticated }: PublicScoreView
 
     if (!isAuthenticated) {
       const next = `${window.location.pathname}${window.location.search}`;
+      setExporting(true);
       window.location.assign(`/auth/login?next=${encodeURIComponent(next)}`);
       return;
     }

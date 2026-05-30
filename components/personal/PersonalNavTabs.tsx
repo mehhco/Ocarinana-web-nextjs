@@ -1,8 +1,8 @@
 "use client";
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { PendingLink } from '@/components/pending-link';
 
 const items = [
   { href: '/protected/me/scores', label: '我的乐谱' },
@@ -25,9 +25,10 @@ export function PersonalNavTabs() {
           const active = isActive(pathname, item.href);
 
           return (
-            <Link
+            <PendingLink
               key={item.href}
               href={item.href}
+              pendingText={`${item.label}...`}
               className={cn(
                 'relative inline-flex h-11 items-center justify-center px-3 text-sm font-medium text-zinc-600 transition-colors',
                 'after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:transition-transform',
@@ -37,7 +38,7 @@ export function PersonalNavTabs() {
               )}
             >
               {item.label}
-            </Link>
+            </PendingLink>
           );
         })}
       </nav>

@@ -4,12 +4,15 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { LoadingButtonContent } from "@/components/loading-button-content";
 
 export function CtaStartButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleClick = useCallback(async () => {
+    if (loading) return;
+
     setLoading(true);
     try {
       const supabase = createClient();
@@ -19,10 +22,10 @@ export function CtaStartButton() {
       } else {
         router.push("/editor");
       }
-    } finally {
+    } catch {
       setLoading(false);
     }
-  }, [router]);
+  }, [loading, router]);
 
   return (
     <Button
@@ -31,7 +34,9 @@ export function CtaStartButton() {
       disabled={loading}
       className="h-12 rounded-md bg-emerald-700 px-8 text-base text-white shadow-sm hover:bg-emerald-800 focus-visible:ring-emerald-700 md:text-lg"
     >
-      {loading ? "请稍候..." : "立即开始编辑"}
+      <LoadingButtonContent loading={loading} loadingText="正在打开...">
+        立即开始编辑
+      </LoadingButtonContent>
     </Button>
   );
 }

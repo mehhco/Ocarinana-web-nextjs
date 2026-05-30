@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { LoadingButtonContent } from "@/components/loading-button-content";
 import {
   Card,
   CardContent,
@@ -37,7 +38,6 @@ export function UpdatePasswordForm({
       router.push("/protected");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "发生错误");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -67,7 +67,9 @@ export function UpdatePasswordForm({
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "保存中..." : "保存新密码"}
+                <LoadingButtonContent loading={isLoading} loadingText="保存中...">
+                  保存新密码
+                </LoadingButtonContent>
               </Button>
             </div>
           </form>

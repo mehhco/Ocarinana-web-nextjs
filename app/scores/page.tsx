@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AppNav } from "@/components/app-nav";
+import { PendingLink } from "@/components/pending-link";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -130,7 +132,9 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
             </p>
           </div>
           <Button asChild variant="outline">
-            <Link href={createScoreHref}>创作新乐谱</Link>
+            <PendingLink href={createScoreHref} pendingText="打开中..." showPendingSpinner>
+              创作新乐谱
+            </PendingLink>
           </Button>
         </div>
 
@@ -190,7 +194,7 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
               ))}
             </SelectContent>
           </Select>
-          <Button type="submit">筛选</Button>
+          <PendingSubmitButton loadingText="筛选中...">筛选</PendingSubmitButton>
         </form>
 
         {error ? (
@@ -233,10 +237,10 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
                         <div>公开于：{formatDate(score.published_at)}</div>
                       </div>
                       <Button asChild size="sm" className="w-full">
-                        <Link href={`/scores/${score.score_id}`}>
+                        <PendingLink href={`/scores/${score.score_id}`} pendingText="打开中..." showPendingSpinner>
                           <EyeIcon className="h-4 w-4" />
                           查看乐谱
-                        </Link>
+                        </PendingLink>
                       </Button>
                     </CardContent>
                   </Card>
@@ -252,7 +256,9 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
                   </Button>
                 ) : (
                   <Button asChild variant="outline" size="sm">
-                    <Link href={createPageHref({ q, instrument, key, time, sort }, page - 1)}>上一页</Link>
+                    <PendingLink href={createPageHref({ q, instrument, key, time, sort }, page - 1)} pendingText="加载中...">
+                      上一页
+                    </PendingLink>
                   </Button>
                 )}
                 <span className="text-sm text-muted-foreground">
@@ -264,7 +270,9 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
                   </Button>
                 ) : (
                   <Button asChild variant="outline" size="sm">
-                    <Link href={createPageHref({ q, instrument, key, time, sort }, page + 1)}>下一页</Link>
+                    <PendingLink href={createPageHref({ q, instrument, key, time, sort }, page + 1)} pendingText="加载中...">
+                      下一页
+                    </PendingLink>
                   </Button>
                 )}
               </div>
