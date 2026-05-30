@@ -1,7 +1,14 @@
-import { getBillingAccess } from '@/lib/billing/access';
-import { getCurrentSubscription } from '@/lib/billing/orders';
-import { getUserEntitlements } from '@/lib/billing/entitlements';
+import type { User } from '@supabase/supabase-js';
+import { isBillingEnabled } from '@/lib/supabase/config';
+import type { Subscription } from '@/lib/billing/orders';
+import {
+  FREE_ENTITLEMENTS,
+  getPlusEntitlements,
+  type UserEntitlements,
+} from '@/lib/billing/entitlements';
 import { createClient } from '@/lib/supabase/server';
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 export type PersonalScoreStats = {
   total: number;
@@ -31,6 +38,17 @@ export type PersonalOrder = {
   subscription_period_end: string | null;
 };
 
+type PersonalCenterOptions = {
+  supabase?: SupabaseServerClient;
+  user?: User | null;
+};
+
+type SubscriptionEntitlementRow = Subscription & {
+  plan_id?: string | null;
+  status?: string | null;
+  current_period_end?: string | null;
+};
+
 function getShanghaiDateKey() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Shanghai',
@@ -54,24 +72,52 @@ export function formatDateTime(value: string | null | undefined) {
   }).format(new Date(value));
 }
 
-export async function getPersonalCenterData(userId: string) {
-  const supabase = await createClient();
+function getEntitlementsFromSubscription(subscription: SubscriptionEntitlementRow | null): UserEntitlements {
+  if (
+    subscription?.status !== 'active' ||
+    !subscription.current_period_end ||
+    new Date(subscription.current_period_end).getTime() <= Date.now()
+  ) {
+    return FREE_ENTITLEMENTS;
+  }
+
+  return getPlusEntitlements({
+    planId: subscription.plan_id ?? null,
+    currentPeriodEnd: subscription.current_period_end,
+  });
+}
+
+export async function getPersonalCenterData(userId: string, options: PersonalCenterOptions = {}) {
+  const supabase = options.supabase ?? (await createClient());
   const usageDate = getShanghaiDateKey();
   const rewardMonth = getCurrentRewardMonth();
 
   const [
-    access,
-    subscription,
-    entitlements,
+    billingEnabled,
+    accessUser,
+    billingTesterResult,
+    subscriptionResult,
     totalScoresResult,
     publicScoresResult,
     usageResult,
     recentOrdersResult,
     rewardRowsResult,
   ] = await Promise.all([
-    getBillingAccess(),
-    getCurrentSubscription(userId).catch(() => null),
-    getUserEntitlements(userId),
+    isBillingEnabled().catch(() => false),
+    options.user !== undefined
+      ? Promise.resolve(options.user)
+      : supabase.auth.getUser().then(({ data, error }) => (error ? null : data.user)),
+    supabase
+      .from('billing_testers')
+      .select('active')
+      .eq('user_id', userId)
+      .eq('active', true)
+      .maybeSingle(),
+    supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle(),
     supabase
       .from('scores')
       .select('score_id', { count: 'exact', head: true })
@@ -102,12 +148,18 @@ export async function getPersonalCenterData(userId: string) {
 
   const total = totalScoresResult.count || 0;
   const publicCount = publicScoresResult.count || 0;
+  const subscription = subscriptionResult.error ? null : (subscriptionResult.data as Subscription | null);
+  const entitlements = getEntitlementsFromSubscription(subscription as SubscriptionEntitlementRow | null);
   const rewardDaysThisMonth = (rewardRowsResult.data || [])
     .filter((row) => row.status === 'granted')
     .reduce((totalDays, row) => totalDays + (row.reward_days || 0), 0);
 
   return {
-    access,
+    access: {
+      billingEnabled,
+      user: accessUser,
+      isTester: billingTesterResult.data?.active === true,
+    },
     subscription,
     entitlements,
     scoreStats: {

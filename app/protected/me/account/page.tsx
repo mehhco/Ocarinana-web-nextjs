@@ -3,6 +3,12 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { PlanStatusCard } from '@/components/personal/PlanStatusCard';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { formatCnyFromCents } from '@/lib/billing/plans';
 import { formatDateTime, getPersonalCenterData } from '@/lib/personal-center';
 import { createClient } from '@/lib/supabase/server';
@@ -27,7 +33,7 @@ export default async function MeAccountPage() {
     redirect('/auth/login');
   }
 
-  const { entitlements, recentOrders } = await getPersonalCenterData(user.id);
+  const { entitlements, recentOrders } = await getPersonalCenterData(user.id, { supabase, user });
 
   return (
     <div className="space-y-6">
@@ -38,7 +44,25 @@ export default async function MeAccountPage() {
           <dl className="mt-5 space-y-3 text-sm">
             <div className="flex items-center justify-between gap-4 border-t border-zinc-100 pt-3">
               <dt className="text-zinc-500">用户 ID</dt>
-              <dd className="max-w-56 truncate font-medium text-zinc-950">{user.id}</dd>
+              <dd className="min-w-0 flex-1 text-right">
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        aria-label={`用户 ID：${user.id}`}
+                        className="inline-block max-w-full truncate rounded-sm bg-zinc-50 px-2 py-1 font-mono text-xs font-medium text-zinc-950 ring-1 ring-zinc-200 sm:max-w-72"
+                        tabIndex={0}
+                        title={user.id}
+                      >
+                        {user.id}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[min(90vw,36rem)] break-all font-mono leading-5" side="top">
+                      {user.id}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </dd>
             </div>
             <div className="flex items-center justify-between gap-4 border-t border-zinc-100 pt-3">
               <dt className="text-zinc-500">注册时间</dt>

@@ -55,7 +55,7 @@ export default async function MeOverviewPage() {
     redirect('/auth/login');
   }
 
-  const data = await getPersonalCenterData(user.id);
+  const data = await getPersonalCenterData(user.id, { supabase, user });
   const { entitlements, scoreStats, usage, rewardProgress } = data;
   const isNearPrivateLimit = !entitlements.isPlus && scoreStats.total >= entitlements.privateScoreLimit * 0.8;
   const PrimaryIcon = getPrimaryAction({

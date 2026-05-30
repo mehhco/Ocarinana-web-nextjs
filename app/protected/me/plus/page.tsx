@@ -75,7 +75,7 @@ export default async function MePlusPage({ searchParams }: PlusPageProps) {
   const resolvedSearchParams = await searchParams;
   const reasonNotice = getReasonNotice(getSingleParam(resolvedSearchParams.reason));
   const { access, entitlements, scoreStats, usage, recentOrders, rewardProgress } =
-    await getPersonalCenterData(user.id);
+    await getPersonalCenterData(user.id, { supabase, user });
   const plans = getBillingPlans();
   const canCheckout = access.billingEnabled && access.isTester;
 
