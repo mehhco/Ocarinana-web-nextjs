@@ -137,6 +137,22 @@ type ScoreStore = ScoreStoreState & ScoreStoreActions;
 
 // ============ 辅助函数 ============
 
+function doTieRangesConflict(left: Tie, right: Tie): boolean {
+  if (
+    left.startMeasureIndex !== right.startMeasureIndex ||
+    left.endMeasureIndex !== right.endMeasureIndex ||
+    left.startMeasureIndex !== left.endMeasureIndex ||
+    right.startMeasureIndex !== right.endMeasureIndex
+  ) {
+    return false;
+  }
+
+  return (
+    left.startNoteIndex < right.endNoteIndex &&
+    right.startNoteIndex < left.endNoteIndex
+  );
+}
+
 /**
  * 生成稳定ID（用于SSR和客户端一致性）
  */
@@ -1224,15 +1240,7 @@ export const useScoreStore = create<ScoreStore>()(
         endNoteIndex: noteIndex,
       };
       
-      document.ties = [
-        ...(document.ties || []).filter(
-          tie => tie.startMeasureIndex !== measureIndex ||
-            tie.endMeasureIndex !== measureIndex ||
-            tie.endNoteIndex < tieStartPosition.noteIndex ||
-            tie.startNoteIndex > noteIndex
-        ),
-        newTie,
-      ];
+      document.ties = [...(document.ties || []).filter((tie) => !doTieRangesConflict(tie, newTie)), newTie];
       state.tieStartPosition = null;
       state.isTieMode = false;
       document.updatedAt = new Date().toISOString();

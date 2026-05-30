@@ -212,11 +212,15 @@ function isPositionInDurationBeam(beams: Beam[], measureIndex: number, noteIndex
   );
 }
 
-function getTieSegmentPosition(
+type TieSegmentPosition = 'start' | 'middle' | 'end';
+
+function getTieSegmentPositions(
   ties: Tie[],
   measureIndex: number,
   noteIndex: number
-): 'none' | 'start' | 'middle' | 'end' {
+): TieSegmentPosition[] {
+  const positions = new Set<TieSegmentPosition>();
+
   for (const tie of ties) {
     if (
       tie.startMeasureIndex !== measureIndex ||
@@ -227,23 +231,28 @@ function getTieSegmentPosition(
       continue;
     }
 
-    if (noteIndex === tie.startNoteIndex) return 'start';
-    if (noteIndex === tie.endNoteIndex) return 'end';
-    return 'middle';
+    if (noteIndex === tie.startNoteIndex) {
+      positions.add('start');
+    } else if (noteIndex === tie.endNoteIndex) {
+      positions.add('end');
+    } else {
+      positions.add('middle');
+    }
   }
 
-  return 'none';
+  return Array.from(positions);
 }
 
 function TieSegment({
-  position,
+  positions,
 }: {
-  position: 'none' | 'start' | 'middle' | 'end';
+  positions: TieSegmentPosition[];
 }) {
   return (
     <div className={TIE_SLOT_CLASS}>
-      {position !== 'none' && (
+      {positions.map((position) => (
         <span
+          key={position}
           className={cn(
             'block h-[var(--score-tie-arc-height)] border-t border-slate-800 [border-top-width:var(--score-tie-stroke-width)]',
             position === 'middle' && 'absolute bottom-0 left-0 right-0',
@@ -253,7 +262,7 @@ function TieSegment({
               'absolute bottom-0 left-0 right-1/2 rounded-tr-full border-r [border-right-width:var(--score-tie-stroke-width)]'
           )}
         />
-      )}
+      ))}
     </div>
   );
 }
@@ -489,7 +498,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
     const fingeringUrl = showFingering
       ? getFingeringUrl(keySignature, element.value, element.hasHighDot || false, element.hasLowDot || false, instrumentType)
       : null;
-    const tieSegmentPosition = getTieSegmentPosition(ties, measureIndex, noteIndex);
+    const tieSegmentPositions = getTieSegmentPositions(ties, measureIndex, noteIndex);
     const isInDurationBeam = isPositionInDurationBeam(beams, measureIndex, noteIndex);
     const dynamicExpression = expressions.find((expression) => expression.type === 'dynamic');
 
@@ -529,7 +538,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
         )}
 
         {showTieRow && (
-          <TieSegment position={tieSegmentPosition} />
+          <TieSegment positions={tieSegmentPositions} />
         )}
 
         <div className="flex h-[var(--score-high-dot-row-height)] flex-shrink-0 items-center justify-center">
@@ -637,7 +646,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
   const symbolColor = element.type === 'barline' ? 'text-slate-700' : 'text-slate-800';
   const restDurationLineCount = element.type === 'rest' ? getDurationLineCount(element.duration) : 0;
   const isInDurationBeam = isPositionInDurationBeam(beams, measureIndex, noteIndex);
-  const tieSegmentPosition = getTieSegmentPosition(ties, measureIndex, noteIndex);
+  const tieSegmentPositions = getTieSegmentPositions(ties, measureIndex, noteIndex);
 
   return (
     <div
@@ -660,7 +669,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
           {element.type === 'extension' && <OrnamentRow expressions={expressions} />}
         </div>
       )}
-      {showTieRow && <TieSegment position={tieSegmentPosition} />}
+      {showTieRow && <TieSegment positions={tieSegmentPositions} />}
       <div className="h-[var(--score-high-dot-row-height)] flex-shrink-0" />
       <div className="flex h-[var(--score-main-row-height)] flex-shrink-0 items-center justify-center">
         <span className={cn('text-[length:var(--score-note-font)] font-bold', symbolColor)}>
