@@ -59,25 +59,23 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [deleteSelectedElement]);
 
-  const reserveGuestExport = useCallback(async () => {
-    if (scoreId) return true;
-
+  const reserveExport = useCallback(async () => {
     const response = await fetch('/api/guest-export-limit', {
       method: 'POST',
     });
     const payload = await response.json().catch(() => null);
 
     if (!response.ok || !payload?.allowed) {
-      showError(payload?.error || '今日游客导出次数已用完，请注册登录后继续导出。');
+      showError(payload?.error || '今日导出次数已用完，请稍后再试。');
       return false;
     }
 
     if (typeof payload.remaining === 'number') {
-      showToast(`游客今日还可导出 ${payload.remaining} 次`);
+      showToast(`今日还可导出 ${payload.remaining} 次`);
     }
 
     return true;
-  }, [scoreId]);
+  }, []);
 
   const handleExportImage = useCallback(async () => {
     if (isExporting) return;
@@ -85,7 +83,7 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
     setExporting(true);
 
     try {
-      const canExport = await reserveGuestExport();
+      const canExport = await reserveExport();
       if (!canExport) return;
 
       await new Promise<void>((resolve) => {
@@ -102,7 +100,7 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
     } finally {
       setExporting(false);
     }
-  }, [documentTitle, isExporting, reserveGuestExport, setExporting]);
+  }, [documentTitle, isExporting, reserveExport, setExporting]);
 
   const handleManualSave = useCallback(async () => {
     if (!scoreId) {

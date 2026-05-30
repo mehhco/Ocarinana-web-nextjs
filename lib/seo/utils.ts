@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { SITE_NAME, absoluteUrl, siteUrl } from '@/lib/seo/site';
 
 /**
  * SEO工具函数库
@@ -22,28 +23,23 @@ export interface SEOConfig {
  * 生成标准的Metadata对象
  */
 export function generateMetadata(config: SEOConfig): Metadata {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const siteName = 'Ocarinana';
-  
   const metadata: Metadata = {
-    title: config.title.includes('Ocarinana') 
+    title: config.title.includes(SITE_NAME) 
       ? config.title 
-      : `${config.title} | ${siteName}`,
+      : `${config.title} | ${SITE_NAME}`,
     description: config.description,
     keywords: config.keywords,
     openGraph: {
       type: config.type || 'website',
       locale: 'zh_CN',
-      url: config.url || baseUrl,
+      url: config.url ? absoluteUrl(config.url) : siteUrl,
       title: config.title,
       description: config.description,
-      siteName,
+      siteName: SITE_NAME,
       images: config.image
         ? [
             {
-              url: config.image.startsWith('http') 
-                ? config.image 
-                : `${baseUrl}${config.image}`,
+              url: absoluteUrl(config.image),
               width: 1200,
               height: 630,
               alt: config.title,
@@ -51,7 +47,7 @@ export function generateMetadata(config: SEOConfig): Metadata {
           ]
         : [
             {
-              url: `${baseUrl}/opengraph-image.webp`,
+              url: absoluteUrl('/opengraph-image.webp'),
               width: 1200,
               height: 630,
               alt: config.title,
@@ -68,8 +64,8 @@ export function generateMetadata(config: SEOConfig): Metadata {
       title: config.title,
       description: config.description,
       images: config.image
-        ? [config.image.startsWith('http') ? config.image : `${baseUrl}${config.image}`]
-        : [`${baseUrl}/twitter-image.webp`],
+        ? [absoluteUrl(config.image)]
+        : [absoluteUrl('/twitter-image.webp')],
     },
     robots: {
       index: !config.noindex,
@@ -83,7 +79,7 @@ export function generateMetadata(config: SEOConfig): Metadata {
       },
     },
     alternates: {
-      canonical: config.url || baseUrl,
+      canonical: config.url ? absoluteUrl(config.url) : siteUrl,
     },
   };
 
@@ -139,13 +135,11 @@ export function generateKeywords(
 export function generateBreadcrumbs(
   items: Array<{ name: string; url: string }>
 ): Array<{ name: string; url: string }> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  
   return [
-    { name: '首页', url: baseUrl },
+    { name: '首页', url: siteUrl },
     ...items.map((item) => ({
       name: item.name,
-      url: item.url.startsWith('http') ? item.url : `${baseUrl}${item.url}`,
+      url: absoluteUrl(item.url),
     })),
   ];
 }

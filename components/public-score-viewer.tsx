@@ -8,7 +8,7 @@ import { ScoreScaleControl } from "@/components/editor/core/ScoreScaleControl";
 import { useScoreStore } from "@/components/editor/hooks/useScoreStore";
 import { useScoreDisplayScale } from "@/components/editor/hooks/useScoreDisplayScale";
 import { exportAsImage } from "@/components/editor/lib/exportUtils";
-import { showError, showSuccess } from "@/lib/toast";
+import { showError, showSuccess, showToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { ScoreDocument } from "@/lib/editor/types";
 
@@ -21,7 +21,6 @@ interface ViewerDisplayPreferences {
 
 interface PublicScoreViewerProps {
   document: Partial<ScoreDocument>;
-  isAuthenticated: boolean;
 }
 
 function getDefaultViewerDisplayPreferences(document: Partial<ScoreDocument>): ViewerDisplayPreferences {
@@ -66,7 +65,7 @@ function storeViewerDisplayPreferences(preferences: ViewerDisplayPreferences) {
   }
 }
 
-export function PublicScoreViewer({ document, isAuthenticated }: PublicScoreViewerProps) {
+export function PublicScoreViewer({ document }: PublicScoreViewerProps) {
   const initialize = useScoreStore((state) => state.initialize);
   const title = useScoreStore((state) => state.document.title);
   const setExporting = useScoreStore((state) => state.setExporting);
@@ -106,15 +105,22 @@ export function PublicScoreViewer({ document, isAuthenticated }: PublicScoreView
   const handleExport = useCallback(async () => {
     if (isExporting) return;
 
-    if (!isAuthenticated) {
-      const next = `${window.location.pathname}${window.location.search}`;
-      setExporting(true);
-      window.location.assign(`/auth/login?next=${encodeURIComponent(next)}`);
-      return;
-    }
-
     setExporting(true);
     try {
+      const response = await fetch("/api/guest-export-limit", {
+        method: "POST",
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.allowed) {
+        showError(payload?.error || "今日导出次数已用完，请稍后再试。");
+        return;
+      }
+
+      if (typeof payload.remaining === "number") {
+        showToast(`今日还可导出 ${payload.remaining} 次`);
+      }
+
       await new Promise<void>((resolve) => {
         window.requestAnimationFrame(() => {
           window.requestAnimationFrame(() => resolve());
@@ -129,7 +135,7 @@ export function PublicScoreViewer({ document, isAuthenticated }: PublicScoreView
     } finally {
       setExporting(false);
     }
-  }, [isAuthenticated, isExporting, setExporting, title]);
+  }, [isExporting, setExporting, title]);
 
   if (!ready) {
     return (

@@ -1834,7 +1834,36 @@ class ScoreViewController {
 
 
 
-    exportAsImage() {
+    async reserveExportLimit() {
+        try {
+            const response = await fetch('/api/guest-export-limit', {
+                method: 'POST'
+            });
+            const payload = await response.json().catch(() => null);
+
+            if (!response.ok || !payload?.allowed) {
+                alert(payload?.error || '今日导出次数已用完，请稍后再试。');
+                return false;
+            }
+
+            if (typeof payload.remaining === 'number') {
+                console.info(`今日还可导出 ${payload.remaining} 次`);
+            }
+
+            return true;
+        } catch (error) {
+            console.error('导出次数校验失败:', error);
+            alert('导出次数校验失败，请稍后再试。');
+            return false;
+        }
+    }
+
+    async exportAsImage() {
+        const canExport = await this.reserveExportLimit();
+        if (!canExport) {
+            return;
+        }
+
         const container = document.getElementById('score-container');
         
         // 添加导出模式类

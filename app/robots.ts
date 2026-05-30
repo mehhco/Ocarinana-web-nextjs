@@ -1,12 +1,11 @@
 import { MetadataRoute } from 'next';
+import { siteUrl } from '@/lib/seo/site';
 
 /**
  * 动态生成 robots.txt
  * Next.js 会自动将此文件转换为 /robots.txt
  */
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://ocarinana.com').replace(/\/$/, '');
-  
   return {
     rules: [
       {
@@ -59,7 +58,6 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: `${siteUrl}/sitemap.xml`,
   };
 }
-

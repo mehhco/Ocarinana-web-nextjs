@@ -57,7 +57,7 @@ export default async function MeOverviewPage() {
 
   const data = await getPersonalCenterData(user.id, { supabase, user });
   const { entitlements, scoreStats, usage, rewardProgress } = data;
-  const isNearPrivateLimit = !entitlements.isPlus && scoreStats.total >= entitlements.privateScoreLimit * 0.8;
+  const isNearPrivateLimit = !entitlements.isPlus && scoreStats.private >= entitlements.privateScoreLimit * 0.8;
   const PrimaryIcon = getPrimaryAction({
     totalScores: scoreStats.total,
     publicScores: scoreStats.public,
@@ -92,7 +92,7 @@ export default async function MeOverviewPage() {
       {isNearPrivateLimit && (
         <UpgradePrompt
           title="保存额度接近上限"
-          description={`你已保存 ${scoreStats.total} 首乐谱，免费版最多保存 ${entitlements.privateScoreLimit} 首。公开乐谱不受数量限制；升级 Plus 后可保存 100 首私有乐谱。`}
+          description={`你已保存 ${scoreStats.private} 首私有乐谱，免费版最多保存 ${entitlements.privateScoreLimit} 首。公开乐谱不受数量限制；升级 Plus 后可保存 100 首私有乐谱。`}
         />
       )}
 
@@ -129,7 +129,7 @@ export default async function MeOverviewPage() {
             <MusicIcon className="h-5 w-5 text-emerald-700" />
             <h2 className="text-lg font-semibold text-zinc-950">额度使用</h2>
           </div>
-          <UsageMeter label="保存乐谱" used={scoreStats.total} limit={entitlements.privateScoreLimit} unit="首" />
+          <UsageMeter label="私有乐谱" used={scoreStats.private} limit={entitlements.privateScoreLimit} unit="首" />
           <UsageMeter label="公开乐谱" used={scoreStats.public} limit={entitlements.publicScoreLimit} unit="首" />
           <UsageMeter label="今日导出" used={usage.exportCountToday} limit={entitlements.dailyExportLimit} unit="次" />
         </div>

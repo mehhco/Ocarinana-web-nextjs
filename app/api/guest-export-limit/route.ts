@@ -1,12 +1,10 @@
 import { createHmac, randomUUID, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { entitlementError, getUserEntitlements } from "@/lib/billing/entitlements";
-import { canUseBilling } from "@/lib/billing/access";
 
 const COOKIE_NAME = "ocarinana_guest_export";
-const DAILY_GUEST_EXPORT_LIMIT = 3;
+const DAILY_GUEST_EXPORT_LIMIT = 5;
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 2;
 
 type GuestExportCookie = {
@@ -97,18 +95,8 @@ export async function POST(request: Request) {
   const today = getTodayKey();
 
   if (user) {
-    if (!(await canUseBilling())) {
-      return jsonNoStore({
-        allowed: true,
-        authenticated: true,
-        remaining: null,
-        limit: null,
-      });
-    }
-
     const entitlements = await getUserEntitlements(user.id);
-    const admin = createAdminClient();
-    const { data, error } = await admin.rpc("increment_user_daily_export_usage", {
+    const { data, error } = await supabase.rpc("increment_user_daily_export_usage", {
       p_user_id: user.id,
       p_usage_date: today,
       p_limit: entitlements.dailyExportLimit,
@@ -124,10 +112,11 @@ export async function POST(request: Request) {
 
     const usage = Array.isArray(data) ? data[0] : null;
     if (!usage?.allowed) {
+      const usedCount = usage?.used_count ?? entitlements.dailyExportLimit;
       return jsonNoStore(
         entitlementError({
           code: "DAILY_EXPORT_LIMIT_REACHED",
-          message: `今日导出次数已用完。免费用户每日可导出 ${entitlements.dailyExportLimit} 次，升级 Plus 可获得更高额度和无水印导出。`,
+          message: `今日导出次数已用完（${usedCount}/${entitlements.dailyExportLimit}）。开通会员可享受更多导出次数，并支持无水印导出。`,
           limit: entitlements.dailyExportLimit,
         }),
         { status: 429 }
@@ -162,7 +151,7 @@ export async function POST(request: Request) {
         authenticated: false,
         remaining: 0,
         limit: DAILY_GUEST_EXPORT_LIMIT,
-        error: "今日游客导出次数已用完，请注册登录后继续导出。",
+        error: `今日导出次数已用完（${guestState.count}/${DAILY_GUEST_EXPORT_LIMIT}）。开通会员可享受更多导出次数，并支持保存乐谱和无水印导出。`,
       },
       { status: 429 }
     );

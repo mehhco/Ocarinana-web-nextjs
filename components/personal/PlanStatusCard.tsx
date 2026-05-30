@@ -9,7 +9,7 @@ interface PlanStatusCardProps {
 export function PlanStatusCard({ entitlements }: PlanStatusCardProps) {
   const features = entitlements.isPlus
     ? ['100 首保存空间', '公开乐谱无上限', '每日 100 次导出', '无水印导出']
-    : ['5 首保存空间', '公开乐谱无上限', '每日 3 次导出', '基础编辑器'];
+    : ['5 首保存空间', '公开乐谱无上限', '每日 5 次导出', '基础编辑器'];
 
   return (
     <section className="rounded-md border border-zinc-200 bg-white p-5 shadow-sm">

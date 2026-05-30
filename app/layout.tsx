@@ -7,36 +7,31 @@ import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { BaiduAnalytics } from "@/components/analytics/baidu-analytics";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { ResourceHints, COMMON_RESOURCE_HINTS } from "@/components/resource-hints";
+import {
+  SITE_NAME,
+  absoluteUrl,
+  defaultKeywords,
+  defaultOpenGraphImage,
+  defaultTwitterImage,
+  siteDescription,
+  siteUrl,
+} from "@/lib/seo/site";
 import "./globals.css";
 
-const defaultUrl = (
-  process.env.NEXT_PUBLIC_APP_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
-).replace(/\/$/, "");
-
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
+  metadataBase: new URL(siteUrl),
+  applicationName: SITE_NAME,
   title: {
-    default: "Ocarinana - 陶笛谱生成器 | 在线数字简谱编辑工具",
-    template: "%s | Ocarinana",
+    default: "Ocarinana - 在线陶笛谱生成器与数字简谱编辑器",
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "Ocarinana 是专业的在线陶笛谱生成器，支持六孔和十二孔陶笛数字简谱编辑、指法图自动匹配、歌词编辑与高清图片导出。",
-  keywords: [
-    "陶笛谱",
-    "数字简谱",
-    "简谱生成器",
-    "陶笛指法",
-    "六孔陶笛谱",
-    "十二孔陶笛谱",
-    "在线乐谱编辑",
-    "音乐制作",
-    "ocarina",
-    "sheet music",
-  ],
-  authors: [{ name: "Ocarinana Team" }],
-  creator: "Ocarinana",
-  publisher: "Ocarinana",
+  description: siteDescription,
+  keywords: defaultKeywords,
+  authors: [{ name: `${SITE_NAME} Team` }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "music",
+  classification: "MusicApplication",
   formatDetection: {
     email: false,
     address: false,
@@ -45,24 +40,24 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "zh_CN",
-    url: defaultUrl,
-    title: "Ocarinana - 陶笛谱生成器",
-    description: "专业的在线陶笛谱生成器，支持六孔和十二孔数字简谱编辑、指法图匹配和高清导出。",
-    siteName: "Ocarinana",
+    url: siteUrl,
+    title: "Ocarinana - 在线陶笛谱生成器与数字简谱编辑器",
+    description: siteDescription,
+    siteName: SITE_NAME,
     images: [
       {
-        url: `${defaultUrl}/opengraph-image.webp`,
+        url: absoluteUrl(defaultOpenGraphImage),
         width: 1200,
         height: 630,
-        alt: "Ocarinana - 陶笛谱生成器",
+        alt: "Ocarinana 在线陶笛谱生成器",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ocarinana - 陶笛谱生成器",
-    description: "专业的在线陶笛谱生成器，支持六孔和十二孔数字简谱编辑、指法图匹配和高清导出。",
-    images: [`${defaultUrl}/twitter-image.webp`],
+    title: "Ocarinana - 在线陶笛谱生成器",
+    description: siteDescription,
+    images: [absoluteUrl(defaultTwitterImage)],
     creator: "@ocarinana",
   },
   robots: {
@@ -86,7 +81,7 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   alternates: {
-    canonical: defaultUrl,
+    canonical: siteUrl,
   },
   other: process.env.NEXT_PUBLIC_BAIDU_SITE_VERIFICATION
     ? {

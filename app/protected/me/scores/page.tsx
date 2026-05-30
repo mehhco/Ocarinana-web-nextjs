@@ -99,7 +99,8 @@ export default async function MeScoresPage() {
       timeSignature: row.document?.settings?.timeSignature || '4/4',
     },
   }));
-  const shouldPromptPrivateLimit = !entitlements.isPlus && scores.length >= entitlements.privateScoreLimit * 0.8;
+  const privateScoreCount = scores.filter((score) => !score.isPublic).length;
+  const shouldPromptPrivateLimit = !entitlements.isPlus && privateScoreCount >= entitlements.privateScoreLimit * 0.8;
 
   return (
     <div className="space-y-6">
@@ -121,7 +122,7 @@ export default async function MeScoresPage() {
       {shouldPromptPrivateLimit && (
         <UpgradePrompt
           title="保存额度接近上限"
-          description={`你已保存 ${scores.length} 首乐谱，免费版最多保存 ${entitlements.privateScoreLimit} 首。公开乐谱不受数量限制；升级 Plus 后可保存 100 首私有乐谱。`}
+          description={`你已保存 ${privateScoreCount} 首私有乐谱，免费版最多保存 ${entitlements.privateScoreLimit} 首。公开乐谱不受数量限制；升级 Plus 后可保存 100 首私有乐谱。`}
         />
       )}
 

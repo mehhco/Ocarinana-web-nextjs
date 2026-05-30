@@ -148,6 +148,80 @@ export function BreadcrumbSchema({ items }: BreadcrumbSchemaProps) {
   );
 }
 
+interface MusicScoreSchemaProps {
+  name: string;
+  description: string;
+  url: string;
+  datePublished?: string | null;
+  dateModified?: string | null;
+  authorName?: string | null;
+  composer?: string | null;
+  lyricist?: string | null;
+  musicalKey?: string | null;
+  timeSignature?: string | null;
+  instrument?: string | null;
+  publisherUrl?: string | null;
+}
+
+export function MusicScoreSchema({
+  name,
+  description,
+  url,
+  datePublished,
+  dateModified,
+  authorName,
+  composer,
+  lyricist,
+  musicalKey,
+  timeSignature,
+  instrument,
+  publisherUrl,
+}: MusicScoreSchemaProps) {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'MusicComposition',
+    name,
+    description,
+    url,
+    datePublished: datePublished || undefined,
+    dateModified: dateModified || datePublished || undefined,
+    inLanguage: 'zh-CN',
+    isAccessibleForFree: true,
+    genre: '陶笛数字简谱',
+    musicalKey: musicalKey || undefined,
+    timeSignature: timeSignature || undefined,
+    instrument: instrument || undefined,
+    creator: {
+      '@type': authorName ? 'Person' : 'Organization',
+      name: authorName || 'Ocarinana',
+    },
+    composer: composer
+      ? {
+          '@type': 'Person',
+          name: composer,
+        }
+      : undefined,
+    lyricist: lyricist
+      ? {
+          '@type': 'Person',
+          name: lyricist,
+        }
+      : undefined,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Ocarinana',
+      url: publisherUrl || url,
+    },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
 import type { Product } from '@/lib/supabase/products';
 
 interface ProductSchemaProps {

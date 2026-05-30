@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { updateScoreSchema } from "@/lib/validations/score";
 import { checkRateLimit, getIdentifier, RATE_LIMITS, rateLimitResponse } from "@/lib/rate-limit";
-import { entitlementError, getUserEntitlements } from "@/lib/billing/entitlements";
-import { canUseBilling } from "@/lib/billing/access";
+import {
+  getPrivateScoreLimitStatus,
+  isPrivateScoreLimitError,
+  privateScoreLimitError,
+} from "@/lib/billing/entitlements";
 
 export async function GET(
   req: Request,
@@ -125,27 +128,14 @@ export async function POST(
     return NextResponse.json({ error: "无权限更新此乐谱" }, { status: 403 });
   }
 
-  if (!existing && await canUseBilling()) {
-    const entitlements = await getUserEntitlements(user.id);
-    const { count: scoreCount, error: countError } = await supabase
-      .from("scores")
-      .select("score_id", { count: "exact", head: true })
-      .eq("owner_user_id", user.id);
-
-    if (countError) {
-      return NextResponse.json({ error: countError.message }, { status: 500 });
-    }
-
-    if ((scoreCount || 0) >= entitlements.privateScoreLimit) {
-      return NextResponse.json(
-        entitlementError({
-          code: "PRIVATE_SCORE_LIMIT_REACHED",
-          message: `当前账号最多可保存 ${entitlements.privateScoreLimit} 首私有乐谱，升级 Plus 可保存更多作品。`,
-          limit: entitlements.privateScoreLimit,
-        }),
-        { status: 403 }
-      );
-    }
+  const limitStatus = !existing
+    ? await getPrivateScoreLimitStatus(user.id, supabase)
+    : null;
+  if (limitStatus?.limitReached) {
+    return NextResponse.json(
+      privateScoreLimitError(limitStatus),
+      { status: 403 }
+    );
   }
 
   // Upsert 用户自己的乐谱
@@ -158,7 +148,16 @@ export async function POST(
     },
     { onConflict: "score_id" }
   );
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    if (limitStatus && isPrivateScoreLimitError(error)) {
+      return NextResponse.json(
+        privateScoreLimitError(limitStatus),
+        { status: 403 }
+      );
+    }
+
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }
 

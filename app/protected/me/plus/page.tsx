@@ -35,7 +35,7 @@ const freeFeatures = [
   '基础编辑器',
   '最多保存 5 首私有乐谱',
   '公开乐谱无上限',
-  '每日 3 次导出',
+  '每日 5 次导出',
   '访问乐谱广场和音乐课堂',
 ];
 
@@ -54,7 +54,7 @@ function getReasonNotice(reason: string | undefined) {
   if (reason === 'export-limit') {
     return {
       title: '你遇到了每日导出限制',
-      description: '免费版每日可导出 3 次。升级 Plus 后每日可导出 100 次，并支持无水印导出。',
+      description: '免费版每日可导出 5 次。升级 Plus 后每日可导出 100 次，并支持无水印导出。',
     };
   }
 
@@ -98,7 +98,7 @@ export default async function MePlusPage({ searchParams }: PlusPageProps) {
 
         <div className="space-y-4 rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-zinc-950">额度使用</h2>
-          <UsageMeter label="保存乐谱" used={scoreStats.total} limit={entitlements.privateScoreLimit} unit="首" />
+          <UsageMeter label="私有乐谱" used={scoreStats.private} limit={entitlements.privateScoreLimit} unit="首" />
           <UsageMeter label="公开乐谱" used={scoreStats.public} limit={entitlements.publicScoreLimit} unit="首" />
           <UsageMeter label="今日导出" used={usage.exportCountToday} limit={entitlements.dailyExportLimit} unit="次" />
         </div>

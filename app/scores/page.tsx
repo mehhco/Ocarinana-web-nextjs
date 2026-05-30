@@ -10,14 +10,53 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EyeIcon, MusicIcon, SearchIcon } from "@/components/ui/icons";
 import { LazyThemeSwitcher } from "@/components/lazy-components";
+import { BreadcrumbSchema } from "@/components/seo/structured-data";
 import { createClient } from "@/lib/supabase/server";
+import {
+  SITE_NAME,
+  absoluteUrl,
+  defaultOpenGraphImage,
+  siteUrl,
+} from "@/lib/seo/site";
 
 export const metadata: Metadata = {
-  title: "乐谱广场 - Ocarinana",
-  description: "浏览 Ocarinana 用户主动公开分享的六孔和十二孔陶笛数字简谱。",
+  title: "乐谱广场 - 陶笛数字简谱分享",
+  description: "浏览 Ocarinana 用户公开分享的六孔、十二孔陶笛数字简谱，按曲名、陶笛类型、调号和拍号筛选，在线预览谱面与指法图。",
+  keywords: [
+    "陶笛谱分享",
+    "陶笛乐谱",
+    "陶笛数字简谱",
+    "六孔陶笛谱",
+    "十二孔陶笛谱",
+    "陶笛曲谱",
+  ],
+  openGraph: {
+    title: "乐谱广场 - Ocarinana",
+    description: "浏览公开分享的陶笛数字简谱，按陶笛类型、调号和拍号快速筛选。",
+    type: "website",
+    url: absoluteUrl("/scores"),
+    siteName: SITE_NAME,
+    images: [
+      {
+        url: absoluteUrl(defaultOpenGraphImage),
+        width: 1200,
+        height: 630,
+        alt: "Ocarinana 乐谱广场",
+      },
+    ],
+  },
+  alternates: {
+    canonical: absoluteUrl("/scores"),
+  },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
@@ -121,6 +160,12 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
 
   return (
     <main className="min-h-screen flex flex-col bg-background">
+      <BreadcrumbSchema
+        items={[
+          { name: "首页", url: siteUrl },
+          { name: "乐谱广场", url: absoluteUrl("/scores") },
+        ]}
+      />
       <AppNav currentPath="/scores" />
 
       <div className="flex-1 w-full max-w-6xl mx-auto px-5 py-8 space-y-6">
