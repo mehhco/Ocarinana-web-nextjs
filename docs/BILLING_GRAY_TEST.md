@@ -52,12 +52,12 @@ WHERE key = 'billing_enabled';
 
 1. 用已加入 `billing_testers` 的灰度账号访问 `/protected/billing`。
 2. 分别创建 Plus 月卡、季卡、年卡订单。
-3. 当前前台只开放支付宝支付，非灰度用户不会看到会员入口，也不会受到 Plus 免费额度限制影响。
+3. 当前前台只开放支付宝支付，非灰度用户不会看到会员入口；Plus 只影响保存空间、导出次数和无水印等会员能力。
 4. 支付完成后返回页应先显示确认中，再由 `/api/billing/zpay/notify` 更新为已支付。
 5. 核对 `billing_orders`、`subscriptions`、`billing_events` 三张表。
 6. 重放同一笔有效 notify，应只记录重复成功，不重复延长权益。
 
 ## 公开乐谱奖励
 
-正式 Plus 灰度期间，灰度用户公开优质乐谱可以获得 Plus 体验时长。
+公开乐谱本身是基础能力，不按游客、普通用户或 Plus 用户设置数量上限。正式 Plus 灰度期间，灰度用户公开优质乐谱可以获得 Plus 体验时长。
 具体规则和排查 SQL 见 `docs/SCORE_PUBLICATION_REWARDS.md`。

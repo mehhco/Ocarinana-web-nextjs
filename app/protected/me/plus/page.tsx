@@ -25,17 +25,16 @@ type PlusPageProps = {
 
 const plusFeatures = [
   '最多保存 100 首私有乐谱',
-  '最多公开 50 首乐谱',
   '每日 100 次高清导出',
   '无水印导出',
-  '更多公开发布额度',
+  '包含全部基础创作能力',
   '优先体验新功能',
 ];
 
 const freeFeatures = [
   '基础编辑器',
   '最多保存 5 首私有乐谱',
-  '最多公开 3 首乐谱',
+  '公开乐谱无上限',
   '每日 3 次导出',
   '访问乐谱广场和音乐课堂',
 ];
@@ -48,14 +47,7 @@ function getReasonNotice(reason: string | undefined) {
   if (reason === 'score-limit') {
     return {
       title: '你遇到了保存额度限制',
-      description: '免费版最多保存 5 首私有乐谱。升级 Plus 后可保存 100 首，并获得更高导出和公开额度。',
-    };
-  }
-
-  if (reason === 'public-score-limit') {
-    return {
-      title: '你遇到了公开额度限制',
-      description: '免费版最多公开 3 首乐谱。升级 Plus 后可公开 50 首，更适合持续整理曲库。',
+      description: '免费版最多保存 5 首私有乐谱。公开乐谱不受数量限制；升级 Plus 后可保存 100 首，并获得更高导出额度。',
     };
   }
 
@@ -119,7 +111,7 @@ export default async function MePlusPage({ searchParams }: PlusPageProps) {
             为持续创作准备的陶笛谱会员
           </h2>
           <p className="text-xs leading-5 text-zinc-500 md:border-l md:border-zinc-200 md:pl-3">
-            免费版保留完整入门体验。Plus 适合需要更多保存空间、无水印导出和公开额度的用户。
+            免费版保留完整入门体验和无限公开。Plus 适合需要更多保存空间、无水印导出和高频导出的用户。
           </p>
         </div>
       </section>
@@ -194,12 +186,19 @@ export default async function MePlusPage({ searchParams }: PlusPageProps) {
           <InfoIcon className="mt-1 h-5 w-5 flex-none text-emerald-800" />
           <div>
             <h2 className="text-lg font-semibold text-zinc-950">付款和续费说明</h2>
-            <div className="mt-3 grid gap-3 text-sm leading-7 text-zinc-600 md:grid-cols-2">
-              <p>当前只开放支付宝付款。ZPAY 异步通知验签成功后才会开通权益。</p>
-              <p>Plus 是有效期会员，不是自动续费。到期前续费会从当前到期日继续累加。</p>
-              <p>到期后不会删除已有乐谱，但超出免费额度时会限制新建、公开和会员导出能力。</p>
-              <p>如果支付后状态长时间未更新，请到“账户与订单”查看最近订单。</p>
-            </div>
+            <ul className="mt-3 grid gap-3 text-sm leading-7 text-zinc-600 md:grid-cols-2">
+              {[
+                '当前支持支付宝付款，支付完成后会自动开通权益。',
+                'Plus 是有效期会员，不是自动续费；到期前续费会从当前到期日继续累加。',
+                '到期后不会删除已有乐谱，公开乐谱也不会受限；超出免费保存或导出额度时会限制新建和会员导出能力。',
+                '如果支付后状态长时间未更新，请到“账户与订单”查看最近订单。',
+              ].map((item) => (
+                <li key={item} className="flex gap-2">
+                  <CheckIcon className="mt-1.5 h-4 w-4 flex-none text-emerald-700" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>

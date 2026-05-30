@@ -6,7 +6,7 @@ export type UserEntitlements = {
   planId: string | null;
   currentPeriodEnd: string | null;
   privateScoreLimit: number;
-  publicScoreLimit: number;
+  publicScoreLimit: number | null;
   dailyExportLimit: number;
   canExportWithoutWatermark: boolean;
   canUsePrivateShareLinks: boolean;
@@ -18,7 +18,7 @@ export const FREE_ENTITLEMENTS: UserEntitlements = {
   planId: null,
   currentPeriodEnd: null,
   privateScoreLimit: 5,
-  publicScoreLimit: 3,
+  publicScoreLimit: null,
   dailyExportLimit: 3,
   canExportWithoutWatermark: false,
   canUsePrivateShareLinks: false,
@@ -34,7 +34,7 @@ export function getPlusEntitlements(input: {
     planId: input.planId,
     currentPeriodEnd: input.currentPeriodEnd,
     privateScoreLimit: 100,
-    publicScoreLimit: 50,
+    publicScoreLimit: null,
     dailyExportLimit: 100,
     canExportWithoutWatermark: true,
     canUsePrivateShareLinks: true,
@@ -100,7 +100,7 @@ export async function getUserEntitlementsAdmin(userId: string): Promise<UserEnti
 export function entitlementError(input: {
   code: string;
   message: string;
-  limit?: number;
+  limit?: number | null;
 }) {
   return {
     error: input.message,

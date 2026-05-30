@@ -8,8 +8,8 @@ interface PlanStatusCardProps {
 
 export function PlanStatusCard({ entitlements }: PlanStatusCardProps) {
   const features = entitlements.isPlus
-    ? ['100 首私有乐谱', '50 首公开乐谱', '每日 100 次导出', '无水印导出']
-    : ['5 首私有乐谱', '3 首公开乐谱', '每日 3 次导出', '基础编辑器'];
+    ? ['100 首保存空间', '公开乐谱无上限', '每日 100 次导出', '无水印导出']
+    : ['5 首保存空间', '公开乐谱无上限', '每日 3 次导出', '基础编辑器'];
 
   return (
     <section className="rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
@@ -27,7 +27,7 @@ export function PlanStatusCard({ entitlements }: PlanStatusCardProps) {
       <p className="mt-4 text-sm text-zinc-600">
         {entitlements.isPlus
           ? `有效期至 ${formatDateTime(entitlements.currentPeriodEnd)}`
-          : '升级 Plus 后可扩容保存、公开和导出额度。'}
+          : '升级 Plus 后可扩容保存和导出额度，并支持无水印导出。'}
       </p>
       <ul className="mt-5 grid gap-3 sm:grid-cols-2">
         {features.map((feature) => (

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, getIdentifier, RATE_LIMITS, rateLimitResponse } from "@/lib/rate-limit";
-import { entitlementError, getUserEntitlements } from "@/lib/billing/entitlements";
 import { canUseBilling } from "@/lib/billing/access";
 import { checkScorePublicationQuality, grantPublicationReward } from "@/lib/billing/publication-rewards";
 
@@ -65,30 +64,6 @@ export async function POST(
 
   const isFirstPublication = isPublic && existingScore.is_public !== true;
   const billingRewardAvailable = isFirstPublication ? await canUseBilling() : false;
-
-  if (billingRewardAvailable) {
-    const entitlements = await getUserEntitlements(user.id);
-    const { count: publicScoreCount, error: publicCountError } = await supabase
-      .from("scores")
-      .select("score_id", { count: "exact", head: true })
-      .eq("owner_user_id", user.id)
-      .eq("is_public", true);
-
-    if (publicCountError) {
-      return NextResponse.json({ error: publicCountError.message }, { status: 500 });
-    }
-
-    if ((publicScoreCount || 0) >= entitlements.publicScoreLimit) {
-      return NextResponse.json(
-        entitlementError({
-          code: "PUBLIC_SCORE_LIMIT_REACHED",
-          message: `当前账号最多可公开 ${entitlements.publicScoreLimit} 首乐谱，升级 Plus 可公开更多作品。`,
-          limit: entitlements.publicScoreLimit,
-        }),
-        { status: 403 }
-      );
-    }
-  }
 
   const updatePayload = isPublic
     ? {
