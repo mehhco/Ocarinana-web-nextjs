@@ -56,7 +56,8 @@ export function SignUpForm({
       }
       
       // 无论是否自动登录，都跳转到成功页面，让用户手动登录
-      router.push("/auth/sign-up-success");
+      router.replace("/auth/sign-up-success");
+      router.refresh();
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "发生错误");
       setIsLoading(false);

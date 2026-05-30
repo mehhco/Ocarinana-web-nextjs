@@ -40,7 +40,8 @@ export function LoginForm({
       });
       if (error) throw error;
       // 登录成功后跳转到首页
-      router.push("/");
+      router.replace("/");
+      router.refresh();
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "发生错误");
       setIsLoading(false);
