@@ -8,6 +8,7 @@ import { ArrowUpRightIcon, ExternalLinkIcon, InfoIcon } from "@/components/ui/ic
 import { getActiveProducts, type Product } from "@/lib/supabase/products";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/structured-data";
 import { isShopEnabled } from "@/lib/supabase/config";
+import { SiteOwnerContact } from "../site-owner-contact";
 
 const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://ocarinana.com').replace(/\/$/, '');
 
@@ -724,7 +725,8 @@ export default async function ShopPage() {
 
       {/* 页脚 */}
       <footer className="w-full border-t mt-auto">
-        <div className="max-w-6xl mx-auto px-5 py-10">
+        <div className="max-w-6xl mx-auto flex flex-col gap-6 px-5 py-10">
+          <SiteOwnerContact />
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-foreground/60">
               © {new Date().getFullYear()} Ocarinana · 陶笛谱生成器

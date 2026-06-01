@@ -12,6 +12,7 @@ import { EyeIcon, MusicIcon, SearchIcon } from "@/components/ui/icons";
 import { LazyThemeSwitcher } from "@/components/lazy-components";
 import { BreadcrumbSchema } from "@/components/seo/structured-data";
 import { createClient } from "@/lib/supabase/server";
+import { SiteOwnerContact } from "../site-owner-contact";
 import {
   SITE_NAME,
   absoluteUrl,
@@ -326,9 +327,14 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
         )}
       </div>
 
-      <footer className="w-full flex items-center justify-center border-t text-center text-xs gap-8 py-10 mt-12">
-        <p>© {new Date().getFullYear()} Ocarinana · 陶笛谱生成器</p>
-        <LazyThemeSwitcher />
+      <footer className="mt-12 w-full border-t px-5 py-10 text-xs">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-5">
+          <SiteOwnerContact align="center" />
+          <div className="flex items-center justify-center gap-8 text-center">
+            <p>© {new Date().getFullYear()} Ocarinana · 陶笛谱生成器</p>
+            <LazyThemeSwitcher />
+          </div>
+        </div>
       </footer>
     </main>
   );

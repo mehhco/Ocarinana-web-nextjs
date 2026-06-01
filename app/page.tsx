@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { LazyThemeSwitcher } from "@/components/lazy-components";
 import { CtaStartButton } from "@/components/cta-start-button";
 import { AppNav } from "@/components/app-nav";
+import { SiteOwnerContact } from "./site-owner-contact";
 import {
   WebSiteSchema,
   SoftwareApplicationSchema,
@@ -294,24 +295,27 @@ export default function Home() {
 
         <footer className="w-full border-t border-zinc-200 bg-white dark:border-white/10 dark:bg-slate-950">
           <div className="mx-auto max-w-6xl px-5 py-10">
-            <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-              <p className="text-xs text-zinc-500 dark:text-slate-400">
-                © {new Date().getFullYear()} Ocarinana · 陶笛谱生成器
-              </p>
-              <div className="flex items-center gap-6 text-xs">
-                <Link
-                  href="/legal/privacy"
-                  className="text-zinc-500 transition-colors hover:text-zinc-950 dark:text-slate-400 dark:hover:text-white"
-                >
-                  隐私政策
-                </Link>
-                <Link
-                  href="/legal/terms"
-                  className="text-zinc-500 transition-colors hover:text-zinc-950 dark:text-slate-400 dark:hover:text-white"
-                >
-                  用户协议
-                </Link>
-                <LazyThemeSwitcher />
+            <div className="flex flex-col gap-6">
+              <SiteOwnerContact />
+              <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+                <p className="text-xs text-zinc-500 dark:text-slate-400">
+                  © {new Date().getFullYear()} Ocarinana · 陶笛谱生成器
+                </p>
+                <div className="flex items-center gap-6 text-xs">
+                  <Link
+                    href="/legal/privacy"
+                    className="text-zinc-500 transition-colors hover:text-zinc-950 dark:text-slate-400 dark:hover:text-white"
+                  >
+                    隐私政策
+                  </Link>
+                  <Link
+                    href="/legal/terms"
+                    className="text-zinc-500 transition-colors hover:text-zinc-950 dark:text-slate-400 dark:hover:text-white"
+                  >
+                    用户协议
+                  </Link>
+                  <LazyThemeSwitcher />
+                </div>
               </div>
             </div>
           </div>

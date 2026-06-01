@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpRightIcon, MusicIcon } from "@/components/ui/icons";
 import { LazyThemeSwitcher } from "@/components/lazy-components";
 import { ArticleSchema, BreadcrumbSchema } from "@/components/seo/structured-data";
+import { SiteOwnerContact } from "../site-owner-contact";
 
 const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://ocarinana.com").replace(/\/$/, "");
 
@@ -501,18 +502,21 @@ export default function MusicClassroomPage() {
       </section>
 
       <footer className="w-full border-t bg-[#fbfaf6]">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-10 md:flex-row">
-          <p className="text-xs text-foreground/60">
-            © {new Date().getFullYear()} Ocarinana · 陶笛谱生成器
-          </p>
-          <div className="flex items-center gap-6 text-xs">
-            <Link href="/legal/privacy" className="text-foreground/60 transition-colors hover:text-foreground">
-              隐私政策
-            </Link>
-            <Link href="/legal/terms" className="text-foreground/60 transition-colors hover:text-foreground">
-              用户协议
-            </Link>
-            <LazyThemeSwitcher />
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-10">
+          <SiteOwnerContact />
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+            <p className="text-xs text-foreground/60">
+              © {new Date().getFullYear()} Ocarinana · 陶笛谱生成器
+            </p>
+            <div className="flex items-center gap-6 text-xs">
+              <Link href="/legal/privacy" className="text-foreground/60 transition-colors hover:text-foreground">
+                隐私政策
+              </Link>
+              <Link href="/legal/terms" className="text-foreground/60 transition-colors hover:text-foreground">
+                用户协议
+              </Link>
+              <LazyThemeSwitcher />
+            </div>
           </div>
         </div>
       </footer>
