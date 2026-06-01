@@ -12,6 +12,7 @@ import {
 import { formatCnyFromCents } from '@/lib/billing/plans';
 import { formatDateTime, getPersonalCenterData } from '@/lib/personal-center';
 import { createClient } from '@/lib/supabase/server';
+import { OrderSupportContact } from '../../../order-support-contact';
 
 export const metadata: Metadata = {
   title: '账户与订单 - Ocarinana',
@@ -105,7 +106,12 @@ export default async function MeAccountPage() {
               {recentOrders.length > 0 ? (
                 recentOrders.map((order) => (
                   <tr key={order.id}>
-                    <td className="py-3 pr-4 text-zinc-950">{order.plan_name}</td>
+                    <td className="py-3 pr-4">
+                      <div className="font-medium text-zinc-950">{order.plan_name}</div>
+                      <div className="mt-1 max-w-48 truncate font-mono text-xs text-zinc-400" title={order.id}>
+                        ID {order.id}
+                      </div>
+                    </td>
                     <td className="py-3 pr-4 text-zinc-600">¥{formatCnyFromCents(order.amount_cents || 0)}</td>
                     <td className="py-3 pr-4">
                       <span className="rounded-sm border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs font-semibold text-zinc-700">
@@ -128,6 +134,8 @@ export default async function MeAccountPage() {
           </table>
         </div>
       </section>
+
+      <OrderSupportContact userEmail={user.email} />
     </div>
   );
 }

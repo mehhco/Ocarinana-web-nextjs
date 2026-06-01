@@ -7,6 +7,7 @@ import { createZpaySubmitParams } from '@/lib/billing/zpay';
 import { formatCnyFromCents } from '@/lib/billing/plans';
 import { getBillingAccess } from '@/lib/billing/access';
 import { getUserBillingOrder } from '@/lib/billing/orders';
+import { OrderSupportContact } from '../../../../order-support-contact';
 
 function getBaseUrl() {
   if (process.env.NEXT_PUBLIC_APP_URL) {
@@ -39,13 +40,21 @@ export default async function BillingCheckoutPage({
   if (order.status !== 'pending') {
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center">
-        <div className="w-full rounded-md border border-zinc-200 bg-white p-6">
-          <p className="text-sm font-semibold text-emerald-800">订单状态</p>
-          <h1 className="mt-3 text-2xl font-bold text-zinc-950">该订单无需继续支付</h1>
-          <p className="mt-3 text-sm leading-7 text-zinc-600">当前状态：{order.status}</p>
-          <Button asChild className="mt-6">
-            <Link href="/protected/me/plus">返回 Plus 权益</Link>
-          </Button>
+        <div className="w-full space-y-5">
+          <div className="rounded-md border border-zinc-200 bg-white p-6">
+            <p className="text-sm font-semibold text-emerald-800">订单状态</p>
+            <h1 className="mt-3 text-2xl font-bold text-zinc-950">该订单无需继续支付</h1>
+            <p className="mt-3 text-sm leading-7 text-zinc-600">当前状态：{order.status}</p>
+            <Button asChild className="mt-6">
+              <Link href="/protected/me/plus">返回 Plus 权益</Link>
+            </Button>
+          </div>
+          <OrderSupportContact
+            orderId={order.id}
+            outTradeNo={order.out_trade_no}
+            userEmail={access.user.email}
+            compact
+          />
         </div>
       </div>
     );
@@ -64,14 +73,22 @@ export default async function BillingCheckoutPage({
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center">
-      <div className="w-full rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold text-emerald-800">安全跳转</p>
-        <h1 className="mt-3 text-2xl font-bold text-zinc-950">正在前往 ZPAY 收银台</h1>
-        <p className="mt-3 text-sm leading-7 text-zinc-600">
-          订单已创建，浏览器会自动提交到 ZPAY。请在支付页面核对金额
-          ¥{formatCnyFromCents(order.amount_cents)} 和订单名称。
-        </p>
-        <ZpayAutoSubmitForm params={submitParams} />
+      <div className="w-full space-y-5">
+        <div className="rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
+          <p className="text-sm font-semibold text-emerald-800">安全跳转</p>
+          <h1 className="mt-3 text-2xl font-bold text-zinc-950">正在前往 ZPAY 收银台</h1>
+          <p className="mt-3 text-sm leading-7 text-zinc-600">
+            订单已创建，浏览器会自动提交到 ZPAY。请在支付页面核对金额
+            ¥{formatCnyFromCents(order.amount_cents)} 和订单名称。
+          </p>
+          <ZpayAutoSubmitForm params={submitParams} />
+        </div>
+        <OrderSupportContact
+          orderId={order.id}
+          outTradeNo={order.out_trade_no}
+          userEmail={access.user.email}
+          compact
+        />
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { OrderStatusPoller } from '@/components/billing/order-status-poller';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/server';
+import { OrderSupportContact } from '../../../order-support-contact';
 
 type ReturnSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -31,7 +32,7 @@ export default async function BillingReturnPage({
   const { data: order } = outTradeNo
     ? await supabase
         .from('billing_orders')
-        .select('id, status, paid_at, subscription_period_end')
+        .select('id, out_trade_no, status, paid_at, subscription_period_end')
         .eq('out_trade_no', outTradeNo)
         .eq('user_id', user.id)
         .maybeSingle()
@@ -62,6 +63,13 @@ export default async function BillingReturnPage({
             没有在当前账号下找到这笔订单。请回到订阅页查看最新状态，或在 ZPAY 后台和数据库中人工核对。
           </div>
         )}
+
+        <OrderSupportContact
+          orderId={order?.id}
+          outTradeNo={order?.out_trade_no || outTradeNo}
+          userEmail={user.email}
+          compact={!order}
+        />
 
         <div className="flex gap-3">
           <Button asChild>
