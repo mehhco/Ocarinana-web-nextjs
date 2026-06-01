@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { CheckoutButton } from '@/components/billing/checkout-button';
@@ -7,12 +6,12 @@ import { UsageMeter } from '@/components/personal/UsageMeter';
 import { Button } from '@/components/ui/button';
 import { CheckIcon, InfoIcon } from '@/components/ui/icons';
 import { formatCnyFromCents, getBillingPlans } from '@/lib/billing/plans';
-import { formatDateTime, getPersonalCenterData } from '@/lib/personal-center';
+import { getPersonalCenterData } from '@/lib/personal-center';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
   title: 'Plus 权益 - Ocarinana',
-  description: '查看当前权益、额度使用、Plus 方案和订单记录',
+  description: '查看当前权益、额度使用和 Plus 方案',
   robots: {
     index: false,
     follow: false,
@@ -74,7 +73,7 @@ export default async function MePlusPage({ searchParams }: PlusPageProps) {
 
   const resolvedSearchParams = await searchParams;
   const reasonNotice = getReasonNotice(getSingleParam(resolvedSearchParams.reason));
-  const { access, entitlements, scoreStats, usage, recentOrders, rewardProgress } =
+  const { access, entitlements, scoreStats, usage, rewardProgress } =
     await getPersonalCenterData(user.id, { supabase, user });
   const plans = getBillingPlans();
   const canCheckout = access.billingEnabled && access.isTester;
@@ -228,56 +227,6 @@ export default async function MePlusPage({ searchParams }: PlusPageProps) {
         </div>
       </section>
 
-      <section className="rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-zinc-500">最近订单</p>
-            <h2 className="mt-2 text-xl font-bold text-zinc-950">支付记录</h2>
-          </div>
-          <Button asChild variant="outline">
-            <Link href="/protected/me/account">查看账户与订单</Link>
-          </Button>
-        </div>
-
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[680px] text-left text-sm">
-            <thead className="border-b border-zinc-200 text-xs uppercase text-zinc-500">
-              <tr>
-                <th className="py-3 pr-4 font-semibold">订单</th>
-                <th className="py-3 pr-4 font-semibold">方式</th>
-                <th className="py-3 pr-4 font-semibold">金额</th>
-                <th className="py-3 pr-4 font-semibold">状态</th>
-                <th className="py-3 pr-4 font-semibold">创建时间</th>
-                <th className="py-3 pr-4 font-semibold">权益截止</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {recentOrders.length > 0 ? (
-                recentOrders.map((order) => (
-                  <tr key={order.id}>
-                    <td className="py-3 pr-4 text-zinc-950">{order.plan_name}</td>
-                    <td className="py-3 pr-4 text-zinc-600">支付宝</td>
-                    <td className="py-3 pr-4 text-zinc-600">¥{formatCnyFromCents(order.amount_cents || 0)}</td>
-                    <td className="py-3 pr-4">
-                      <span className="rounded-sm border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs font-semibold text-zinc-700">
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4 text-zinc-600">{formatDateTime(order.created_at)}</td>
-                    <td className="py-3 pr-4 text-zinc-600">{formatDateTime(order.subscription_period_end)}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-zinc-500">
-                    暂无订单。完成一次支付后，这里会显示购买结果。
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
     </div>
   );
 }
