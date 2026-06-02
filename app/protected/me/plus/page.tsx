@@ -76,7 +76,7 @@ export default async function MePlusPage({ searchParams }: PlusPageProps) {
   const { access, entitlements, scoreStats, usage, rewardProgress } =
     await getPersonalCenterData(user.id, { supabase, user });
   const plans = getBillingPlans();
-  const canCheckout = access.billingEnabled && access.isTester;
+  const canCheckout = access.canUseBilling;
 
   return (
     <div className="space-y-8">

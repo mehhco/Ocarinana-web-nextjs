@@ -1,4 +1,4 @@
-# ZPAY 收款内部灰度测试
+# ZPAY 收款正式运行
 
 ## 环境变量
 
@@ -15,29 +15,21 @@ BILLING_PLAN_AMOUNT_CENTS_JSON={"plus_monthly":990,"plus_quarterly":2500,"plus_y
 
 ## 数据库初始化
 
-执行 Supabase 迁移 `0006_billing_gray_test.sql` 和 `0007_billing_usage_and_plus_plans.sql` 后，默认 `billing_enabled` 为关闭。
+执行 Supabase 迁移 `0006_billing_gray_test.sql`、`0007_billing_usage_and_plus_plans.sql`、`0008_score_publication_rewards.sql` 和 `0012_enable_billing_formal_launch.sql` 后，`billing_enabled` 会设置为开启。
 
-开启灰度：
+正式开启：
 
 ```sql
 UPDATE public.app_config
 SET value = '{"enabled": true}'::jsonb,
+    description = 'Plus 订阅正式收费总开关',
     updated_at = NOW()
 WHERE key = 'billing_enabled';
 ```
 
-添加灰度用户：
+`billing_testers` 保留为历史灰度记录和内部标记，不再作为购买、创建订单或公开奖励的准入条件。
 
-```sql
-INSERT INTO public.billing_testers (user_id, active, note)
-VALUES ('USER_UUID_HERE', true, 'internal billing tester')
-ON CONFLICT (user_id)
-DO UPDATE SET active = EXCLUDED.active,
-              note = EXCLUDED.note,
-              updated_at = NOW();
-```
-
-关闭灰度入口：
+紧急关闭购买入口：
 
 ```sql
 UPDATE public.app_config
@@ -46,18 +38,18 @@ SET value = '{"enabled": false}'::jsonb,
 WHERE key = 'billing_enabled';
 ```
 
-关闭后不能创建新订单，但已经发起的订单仍会接受 ZPAY 异步通知并完成入账。
+关闭后不能创建新订单，也不会发放新的公开奖励；已经发起的订单仍会接受 ZPAY 异步通知并完成入账。
 
 ## 链路验证
 
-1. 用已加入 `billing_testers` 的灰度账号访问 `/protected/billing`。
+1. 用任意已登录账号访问 `/protected/me/plus`。
 2. 分别创建 Plus 月卡、季卡、年卡订单。
-3. 当前前台只开放支付宝支付，非灰度用户不会看到会员入口；Plus 只影响保存空间、导出次数和无水印等会员能力。
+3. 当前前台只开放支付宝支付；Plus 只影响保存空间、导出次数和无水印等会员能力。
 4. 支付完成后返回页应先显示确认中，再由 `/api/billing/zpay/notify` 更新为已支付。
 5. 核对 `billing_orders`、`subscriptions`、`billing_events` 三张表。
 6. 重放同一笔有效 notify，应只记录重复成功，不重复延长权益。
 
 ## 公开乐谱奖励
 
-公开乐谱本身是基础能力，不按游客、普通用户或 Plus 用户设置数量上限。正式 Plus 灰度期间，灰度用户公开优质乐谱可以获得 Plus 体验时长。
+公开乐谱本身是基础能力，不按游客、普通用户或 Plus 用户设置数量上限。正式运行期间，登录用户公开优质乐谱可以获得 Plus 体验时长。
 具体规则和排查 SQL 见 `docs/SCORE_PUBLICATION_REWARDS.md`。

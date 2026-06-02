@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     return jsonNoStore({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!access.billingEnabled || !access.isTester) {
+  if (!access.canUseBilling) {
     return jsonNoStore({ error: 'Billing is not available' }, { status: 404 });
   }
 

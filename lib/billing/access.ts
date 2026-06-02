@@ -15,25 +15,20 @@ export async function getBillingAccess() {
     return {
       billingEnabled,
       user: null,
+      canUseBilling: false,
       isTester: false,
     };
   }
 
-  const { data } = await supabase
-    .from('billing_testers')
-    .select('active')
-    .eq('user_id', user.id)
-    .eq('active', true)
-    .maybeSingle();
-
   return {
     billingEnabled,
     user,
-    isTester: data?.active === true,
+    canUseBilling: billingEnabled,
+    isTester: false,
   };
 }
 
 export async function canUseBilling() {
   const access = await getBillingAccess();
-  return access.billingEnabled && access.isTester && Boolean(access.user);
+  return access.canUseBilling;
 }

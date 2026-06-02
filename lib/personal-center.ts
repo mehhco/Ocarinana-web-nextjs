@@ -95,7 +95,6 @@ export async function getPersonalCenterData(userId: string, options: PersonalCen
   const [
     billingEnabled,
     accessUser,
-    billingTesterResult,
     subscriptionResult,
     totalScoresResult,
     publicScoresResult,
@@ -107,12 +106,6 @@ export async function getPersonalCenterData(userId: string, options: PersonalCen
     options.user !== undefined
       ? Promise.resolve(options.user)
       : supabase.auth.getUser().then(({ data, error }) => (error ? null : data.user)),
-    supabase
-      .from('billing_testers')
-      .select('active')
-      .eq('user_id', userId)
-      .eq('active', true)
-      .maybeSingle(),
     supabase
       .from('subscriptions')
       .select('*')
@@ -158,7 +151,8 @@ export async function getPersonalCenterData(userId: string, options: PersonalCen
     access: {
       billingEnabled,
       user: accessUser,
-      isTester: billingTesterResult.data?.active === true,
+      canUseBilling: billingEnabled && Boolean(accessUser),
+      isTester: false,
     },
     subscription,
     entitlements,

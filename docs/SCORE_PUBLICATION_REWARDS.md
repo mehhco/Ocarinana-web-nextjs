@@ -1,8 +1,8 @@
-# 公开乐谱 Plus 奖励灰度说明
+# 公开乐谱 Plus 奖励说明
 
 ## 规则
 
-- 仅对付费灰度用户生效：`billing_enabled=true` 且用户在 `billing_testers.active=true`。
+- 仅在 `billing_enabled=true` 且用户已登录时生效。
 - 公开乐谱本身不设数量上限；奖励只决定是否发放 Plus 体验时长。
 - 用户首次公开一首符合基础质量规则的乐谱，可获得 1 天 Plus 体验。
 - 同一首乐谱终身最多奖励一次，取消公开后再次公开不重复奖励。
@@ -62,10 +62,9 @@ SELECT public.revoke_score_publication_reward(
 
 ## 测试流程
 
-1. 确认用户在 `billing_testers` 中。
-2. 创建一首标题正常、内容不少于 8 个有效音乐元素的乐谱。
-3. 公开到乐谱广场。
-4. 检查 `score_publication_rewards.status = 'granted'`。
-5. 检查 `subscriptions.current_period_end` 增加 1 天。
-6. 再次取消公开并重新公开同一首乐谱，确认不重复奖励。
-7. 连续公开第 8 首合格乐谱，确认公开成功但不再发放奖励。
+1. 用已登录账号创建一首标题正常、内容不少于 8 个有效音乐元素的乐谱。
+2. 公开到乐谱广场。
+3. 检查 `score_publication_rewards.status = 'granted'`。
+4. 检查 `subscriptions.current_period_end` 增加 1 天。
+5. 再次取消公开并重新公开同一首乐谱，确认不重复奖励。
+6. 连续公开第 8 首合格乐谱，确认公开成功但不再发放奖励。
