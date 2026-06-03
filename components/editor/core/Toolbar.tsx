@@ -208,7 +208,7 @@ export const Toolbar = memo(function Toolbar({
 
   return (
     <header className="shrink-0 border-b border-slate-200 bg-white px-3 py-2">
-      <TooltipProvider delayDuration={200}>
+      <TooltipProvider delayDuration={1000} skipDelayDuration={0}>
         <div className="mx-auto flex w-[80vw] min-w-[1000px] flex-col gap-2">
           <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
             <div className="flex items-center gap-1.5">

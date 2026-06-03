@@ -793,7 +793,7 @@ export const ElementPanel = memo(function ElementPanel() {
   ]);
 
   return (
-    <TooltipProvider delayDuration={250}>
+    <TooltipProvider delayDuration={1000} skipDelayDuration={0}>
       <aside className="h-full w-full overflow-y-auto bg-slate-50/50">
         <div className="space-y-3 p-3">
           <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm">
