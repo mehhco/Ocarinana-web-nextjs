@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
 import { getAvailableNoteRange, getInstrumentLabel } from '../lib/constants';
+import { BARLINE_SHORTCUTS, DURATION_SHORTCUTS, EDITOR_SHORTCUT_LABELS } from '../lib/keyboardShortcuts';
 import type { BarlineType, Duration, DynamicMark, NoteValue, OrnamentMark } from '@/lib/editor/types';
 
 interface HelpContent {
@@ -14,6 +15,7 @@ interface HelpContent {
   usage: string;
   preview?: ReactNode;
   summary: string;
+  shortcut?: string;
 }
 
 type PanelDuration = Extract<Duration, '1/4' | '1/8' | '1/16' | '1/32'>;
@@ -82,6 +84,14 @@ function HelpTooltip({ help, children }: { help?: HelpContent; children: ReactNo
               <span className="pl-2 font-medium text-slate-400">用法</span>
               <SegmentedHelpText text={help.usage} className="pr-2" />
             </div>
+            {help.shortcut && (
+              <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-2">
+                <span className="font-medium text-slate-400">快捷</span>
+                <kbd className="inline-flex w-fit rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-700">
+                  {help.shortcut}
+                </kbd>
+              </div>
+            )}
           </div>
           {help.preview && (
             <div className="flex min-h-9 items-center justify-center rounded-md border border-slate-200 bg-white px-2 py-1">
@@ -143,6 +153,7 @@ const ActionButton = memo(function ActionButton({
       {showInlineHelp && help && (
         <div className="mt-1 rounded-md bg-slate-100 px-2 py-1 text-[10px] leading-snug text-slate-600">
           {help.summary}
+          {help.shortcut && <span className="ml-1 font-mono text-slate-500">({help.shortcut})</span>}
         </div>
       )}
     </div>
@@ -322,6 +333,7 @@ const DURATION_HELP: Record<PanelDuration, HelpContent> = {
     usage: '先点击一个数字音符，再点 1/4，可移除该音符下方的时值短横线。',
     preview: <DurationPreview lines={0} />,
     summary: '恢复为默认时值。',
+    shortcut: DURATION_SHORTCUTS['1/4'],
   },
   '1/8': {
     title: '八分音符',
@@ -329,6 +341,7 @@ const DURATION_HELP: Record<PanelDuration, HelpContent> = {
     usage: '先选中数字音符，再点 1/8，会在数字下方添加一条短横线。',
     preview: <DurationPreview lines={1} />,
     summary: '给音符加一条短横线。',
+    shortcut: DURATION_SHORTCUTS['1/8'],
   },
   '1/16': {
     title: '十六分音符',
@@ -336,6 +349,7 @@ const DURATION_HELP: Record<PanelDuration, HelpContent> = {
     usage: '先选中数字音符，再点 1/16，会在数字下方添加两条短横线。',
     preview: <DurationPreview lines={2} />,
     summary: '给音符加两条短横线。',
+    shortcut: DURATION_SHORTCUTS['1/16'],
   },
   '1/32': {
     title: '三十二分音符',
@@ -343,6 +357,7 @@ const DURATION_HELP: Record<PanelDuration, HelpContent> = {
     usage: '先选中数字音符，再点 1/32，会在数字下方添加三条短横线。',
     preview: <DurationPreview lines={3} />,
     summary: '给音符加三条短横线。',
+    shortcut: DURATION_SHORTCUTS['1/32'],
   },
 };
 
@@ -410,6 +425,7 @@ const MODIFIER_HELP = {
     usage: '先选中一个数字音符，再点附点；再次点击可取消。',
     preview: <TextPreview>5·</TextPreview>,
     summary: '让选中音符延长一半。',
+    shortcut: EDITOR_SHORTCUT_LABELS.augmentationDot,
   },
   extension: {
     title: '延长线',
@@ -417,6 +433,7 @@ const MODIFIER_HELP = {
     usage: '选中元素后点击，会在其后方插入延长线；未选中时插入到乐谱末尾。',
     preview: <TextPreview>5 -</TextPreview>,
     summary: '在音符后延长发声。',
+    shortcut: EDITOR_SHORTCUT_LABELS.extension,
   },
   tie: {
     title: '连音线',
@@ -424,6 +441,7 @@ const MODIFIER_HELP = {
     usage: '点连音线后，依次点击同一小节内从左到右的两个音符。',
     preview: <TextPreview>1 ︵ 2</TextPreview>,
     summary: '点击两个音符生成连线。',
+    shortcut: EDITOR_SHORTCUT_LABELS.tieMode,
   },
   beam: {
     title: '合并时值线',
@@ -431,6 +449,7 @@ const MODIFIER_HELP = {
     usage: '先点击合并时值线，再点起始音符和结束音符，最后确认合并。',
     preview: <BeamPreview />,
     summary: '连接相邻音符的短横线。',
+    shortcut: EDITOR_SHORTCUT_LABELS.beamMode,
   },
 };
 
@@ -441,6 +460,7 @@ const BARLINE_HELP: Record<BarlineType, HelpContent> = {
     usage: '点击后在选中元素后方插入；未选中时插入到乐谱末尾。',
     preview: <TextPreview>|</TextPreview>,
     summary: '分隔小节。',
+    shortcut: BARLINE_SHORTCUTS.single,
   },
   double: {
     title: '双线',
@@ -448,6 +468,7 @@ const BARLINE_HELP: Record<BarlineType, HelpContent> = {
     usage: '点击后插入双小节线。',
     preview: <TextPreview>||</TextPreview>,
     summary: '标记段落结束。',
+    shortcut: BARLINE_SHORTCUTS.double,
   },
   final: {
     title: '终止线',
@@ -455,6 +476,7 @@ const BARLINE_HELP: Record<BarlineType, HelpContent> = {
     usage: '点击后插入左细右粗的终止线。',
     preview: <FinalBarlinePreview />,
     summary: '标记乐曲结束。',
+    shortcut: BARLINE_SHORTCUTS.final,
   },
   'repeat-start': {
     title: '反复起',
@@ -462,6 +484,7 @@ const BARLINE_HELP: Record<BarlineType, HelpContent> = {
     usage: '和反复止配合使用，标记需要重复演奏的范围。',
     preview: <TextPreview>||:</TextPreview>,
     summary: '标记重复开始。',
+    shortcut: BARLINE_SHORTCUTS['repeat-start'],
   },
   'repeat-end': {
     title: '反复止',
@@ -469,6 +492,7 @@ const BARLINE_HELP: Record<BarlineType, HelpContent> = {
     usage: '演奏到这里时回到反复起位置再演奏一遍。',
     preview: <TextPreview>:||</TextPreview>,
     summary: '标记重复结束。',
+    shortcut: BARLINE_SHORTCUTS['repeat-end'],
   },
 };
 

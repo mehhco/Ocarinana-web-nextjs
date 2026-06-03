@@ -9,14 +9,26 @@ import { ScoreCanvas } from './ScoreCanvas';
 import { exportAsImage } from '../lib/exportUtils';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { EDITOR_SCORE_DISPLAY_SCALE_STORAGE_KEY, useScoreDisplayScale } from '../hooks/useScoreDisplayScale';
+import {
+  BARLINE_SHORTCUTS,
+  DURATION_SHORTCUTS,
+  EDITOR_SHORTCUT_LABELS,
+  isEditableShortcutTarget,
+  matchesEditorShortcut,
+} from '../lib/keyboardShortcuts';
 import { showError, showSuccess, showToast } from '@/lib/toast';
-import type { ScoreDocument } from '@/lib/editor/types';
+import type { BarlineType, Duration, ScoreDocument } from '@/lib/editor/types';
 
 interface ScoreEditorProps {
   initialDocument?: Partial<ScoreDocument>;
   scoreId?: string;
   backHref?: string;
 }
+
+const DURATION_SHORTCUT_ENTRIES = Object.entries(DURATION_SHORTCUTS) as Array<
+  [Extract<Duration, '1/4' | '1/8' | '1/16' | '1/32'>, string]
+>;
+const BARLINE_SHORTCUT_ENTRIES = Object.entries(BARLINE_SHORTCUTS) as Array<[BarlineType, string]>;
 
 export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId, backHref }: ScoreEditorProps) {
   const router = useRouter();
@@ -25,6 +37,12 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
   const setExporting = useScoreStore((state) => state.setExporting);
   const isExporting = useScoreStore((state) => state.isExporting);
   const deleteSelectedElement = useScoreStore((state) => state.deleteSelectedElement);
+  const updateNoteDuration = useScoreStore((state) => state.updateNoteDuration);
+  const addBarline = useScoreStore((state) => state.addBarline);
+  const addExtension = useScoreStore((state) => state.addExtension);
+  const toggleAugmentationDot = useScoreStore((state) => state.toggleAugmentationDot);
+  const toggleTieMode = useScoreStore((state) => state.toggleTieMode);
+  const toggleBeamMode = useScoreStore((state) => state.toggleBeamMode);
   const scoreExportRef = useRef<HTMLDivElement>(null);
   const { isDirty, isSaving, saveNow } = useAutoSave(scoreId);
   const [displayScale, setDisplayScale] = useScoreDisplayScale(EDITOR_SCORE_DISPLAY_SCALE_STORAGE_KEY);
@@ -35,29 +53,51 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Delete' || event.ctrlKey || event.metaKey || event.altKey) {
+      if (event.ctrlKey || event.metaKey || event.altKey || event.repeat || isEditableShortcutTarget(event.target)) {
         return;
       }
 
-      if (event.target instanceof HTMLElement) {
-        const tagName = event.target.tagName;
-        if (
-          event.target.isContentEditable ||
-          tagName === 'INPUT' ||
-          tagName === 'TEXTAREA' ||
-          tagName === 'SELECT'
-        ) {
-          return;
-        }
+      let handled = true;
+
+      const durationShortcut = DURATION_SHORTCUT_ENTRIES.find(([, shortcut]) => matchesEditorShortcut(event, shortcut));
+      const barlineShortcut = BARLINE_SHORTCUT_ENTRIES.find(([, shortcut]) => matchesEditorShortcut(event, shortcut));
+
+      if (matchesEditorShortcut(event, EDITOR_SHORTCUT_LABELS.deleteSelected)) {
+        deleteSelectedElement();
+      } else if (durationShortcut) {
+        updateNoteDuration(durationShortcut[0]);
+      } else if (barlineShortcut) {
+        addBarline(barlineShortcut[0]);
+      } else if (matchesEditorShortcut(event, EDITOR_SHORTCUT_LABELS.extension)) {
+        addExtension();
+      } else if (matchesEditorShortcut(event, EDITOR_SHORTCUT_LABELS.augmentationDot)) {
+        toggleAugmentationDot();
+      } else if (matchesEditorShortcut(event, EDITOR_SHORTCUT_LABELS.tieMode)) {
+        toggleTieMode();
+      } else if (matchesEditorShortcut(event, EDITOR_SHORTCUT_LABELS.beamMode)) {
+        toggleBeamMode();
+      } else {
+        handled = false;
+      }
+
+      if (!handled) {
+        return;
       }
 
       event.preventDefault();
-      deleteSelectedElement();
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [deleteSelectedElement]);
+  }, [
+    addBarline,
+    addExtension,
+    deleteSelectedElement,
+    toggleAugmentationDot,
+    toggleBeamMode,
+    toggleTieMode,
+    updateNoteDuration,
+  ]);
 
   const reserveExport = useCallback(async () => {
     const response = await fetch('/api/guest-export-limit', {
