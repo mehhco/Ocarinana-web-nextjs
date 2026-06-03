@@ -22,6 +22,8 @@ export type DynamicMark = 'p' | 'mp' | 'mf' | 'f';
 
 export type OrnamentMark = 'upper-mordent' | 'lower-mordent';
 
+export type LyricLine = 1 | 2;
+
 export interface Note {
   id: string;
   type: 'note';
@@ -77,6 +79,7 @@ export interface Tie {
 export interface Lyric {
   measureIndex: number;
   noteIndex: number;
+  line?: LyricLine;
   text: string;
 }
 

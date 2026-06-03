@@ -5,7 +5,7 @@
 
 import { useScoreStore } from './useScoreStore';
 import { useShallow } from 'zustand/react/shallow';
-import type { ScoreDocument, ScoreSettings } from '@/lib/editor/types';
+import type { LyricLine } from '@/lib/editor/types';
 
 // ============ 文档相关 Selectors ============
 
@@ -144,9 +144,9 @@ export const useMeasureLyrics = (measureIndex: number) =>
 /**
  * 获取特定位置的歌词
  */
-export const useElementLyrics = (measureIndex: number, noteIndex: number) =>
+export const useElementLyrics = (measureIndex: number, noteIndex: number, line: LyricLine = 1) =>
   useScoreStore((state) =>
     state.document.lyrics.find(
-      (l) => l.measureIndex === measureIndex && l.noteIndex === noteIndex
+      (l) => l.measureIndex === measureIndex && l.noteIndex === noteIndex && (l.line ?? 1) === line
     )?.text ?? ''
   );

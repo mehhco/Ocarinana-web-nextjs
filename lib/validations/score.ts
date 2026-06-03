@@ -89,6 +89,7 @@ const tieSchema = z.object({
 const lyricSchema = z.object({
   measureIndex: z.number().int().nonnegative(),
   noteIndex: z.number().int().nonnegative(),
+  line: z.union([z.literal(1), z.literal(2)]).optional().default(1),
   text: z.string(),
 });
 

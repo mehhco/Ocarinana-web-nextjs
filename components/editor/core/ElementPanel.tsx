@@ -550,6 +550,13 @@ const UTILITY_HELP = {
     preview: <TextPreview>春 → 空</TextPreview>,
     summary: '删除全部歌词。',
   },
+  secondLyrics: {
+    title: '第二行歌词',
+    meaning: '为反复段落显示第二排歌词输入格。',
+    usage: '点击后会显示歌词并展开第二行；适合同一音符需要上下两排歌词的乐谱。',
+    preview: <TextPreview>春 / 花</TextPreview>,
+    summary: '展开并编辑第二行歌词。',
+  },
 };
 
 function getBasicNoteOptions(instrumentType: string, keySignature: string): { value: NoteValue; display: string }[] {
@@ -602,6 +609,8 @@ export const ElementPanel = memo(function ElementPanel() {
   const endBeam = useScoreStore((state) => state.endBeam);
   const cancelBeamMode = useScoreStore((state) => state.cancelBeamMode);
   const clearAllLyrics = useScoreStore((state) => state.clearAllLyrics);
+  const activeLyricLine = useScoreStore((state) => state.activeLyricLine);
+  const setActiveLyricLine = useScoreStore((state) => state.setActiveLyricLine);
   const clearSelection = useScoreStore((state) => state.clearSelection);
   const toggleExpression = useScoreStore((state) => state.toggleExpression);
   const toggleBreathMark = useScoreStore((state) => state.toggleBreathMark);
@@ -643,6 +652,11 @@ export const ElementPanel = memo(function ElementPanel() {
   const selectedExpression = selectedExpressions.find((expression) => expression.type === 'dynamic')?.value ?? null;
   const hasBreathMark = selectedExpressions.some((expression) => expression.type === 'breath');
   const selectedOrnamentMark = selectedExpressions.find((expression) => expression.type === 'ornament')?.value ?? null;
+  const selectedMeasureHasSecondLyricLine =
+    selectedMeasureIndex !== null &&
+    document.lyrics.some(
+      (lyric) => lyric.measureIndex === selectedMeasureIndex && (lyric.line ?? 1) === 2 && lyric.text.trim()
+    );
 
   const canConfirmBeam = (() => {
     if (
@@ -724,6 +738,13 @@ export const ElementPanel = memo(function ElementPanel() {
   const toggleLyrics = useCallback(() => {
     updateSettings({ showLyrics: !settings.showLyrics });
   }, [settings.showLyrics, updateSettings]);
+
+  const activateSecondLyricLine = useCallback(() => {
+    setActiveLyricLine(2);
+    if (!settings.showLyrics) {
+      updateSettings({ showLyrics: true });
+    }
+  }, [setActiveLyricLine, settings.showLyrics, updateSettings]);
 
   const handleBeamAction = useCallback(() => {
     if (!isBeamMode) {
@@ -854,6 +875,20 @@ export const ElementPanel = memo(function ElementPanel() {
                 className="flex h-full items-center justify-center bg-slate-100 px-2 text-slate-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
               >
                 <Trash2Icon className="mx-auto h-3 w-3" />
+              </ActionButton>
+              <ActionButton
+                onClick={activateSecondLyricLine}
+                active={activeLyricLine === 2 || selectedMeasureHasSecondLyricLine}
+                help={UTILITY_HELP.secondLyrics}
+                showInlineHelp={showHelp}
+                className={cn(
+                  'col-span-2',
+                  activeLyricLine === 2 || selectedMeasureHasSecondLyricLine
+                    ? 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:border-indigo-300 hover:bg-indigo-100'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                )}
+              >
+                第二行歌词
               </ActionButton>
             </div>
           </div>

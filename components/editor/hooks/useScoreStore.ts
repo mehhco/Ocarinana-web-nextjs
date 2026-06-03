@@ -23,6 +23,7 @@ import type {
   Tie,
   Beam,
   Lyric,
+  LyricLine,
   BarlineType,
   DynamicMark,
   OrnamentMark,
@@ -48,6 +49,7 @@ interface ScoreStoreState {
   isExporting: boolean;
   isSaving: boolean;
   isInsertMode: boolean;
+  activeLyricLine: LyricLine;
   
   // 连音线工具状态
   isTieMode: boolean;
@@ -111,9 +113,10 @@ interface ScoreStoreActions {
   cancelBeamMode: () => void;
   
   // 歌词操作
-  updateLyrics: (measureIndex: number, noteIndex: number, text: string) => void;
+  updateLyrics: (measureIndex: number, noteIndex: number, text: string, line?: LyricLine) => void;
   updateLyricsBatch: (entries: Lyric[]) => void;
   clearAllLyrics: () => void;
+  setActiveLyricLine: (line: LyricLine) => void;
 
   toggleExpression: (value: DynamicMark) => void;
   toggleBreathMark: () => void;
@@ -162,6 +165,23 @@ function generateStableId(): string {
   return `id-${idCounter}`;
 }
 
+function normalizeLyricLine(line?: LyricLine): LyricLine {
+  return line === 2 ? 2 : 1;
+}
+
+function createLyricPositionKey(measureIndex: number, noteIndex: number, line?: LyricLine): string {
+  return `${measureIndex}:${noteIndex}:${normalizeLyricLine(line)}`;
+}
+
+function normalizeLyrics(lyrics: Lyric[] | undefined): Lyric[] {
+  return (lyrics || []).map((lyric) => ({
+    measureIndex: lyric.measureIndex,
+    noteIndex: lyric.noteIndex,
+    line: normalizeLyricLine(lyric.line),
+    text: lyric.text,
+  }));
+}
+
 /**
  * 创建初始文档（使用稳定ID避免hydration错误）
  */
@@ -185,7 +205,7 @@ function createInitialDocument(override?: Partial<ScoreDocument>): ScoreDocument
     ties: override?.ties || [],
     beams: override?.beams || [],
     expressions: override?.expressions || [],
-    lyrics: override?.lyrics || [],
+    lyrics: normalizeLyrics(override?.lyrics),
     settings: {
       ...DEFAULT_SETTINGS,
       ...override?.settings,
@@ -610,6 +630,7 @@ export const useScoreStore = create<ScoreStore>()(
   isExporting: false,
   isSaving: false,
   isInsertMode: false,
+  activeLyricLine: 1,
   isTieMode: false,
   tieStartPosition: null,
   isBeamMode: false,
@@ -649,6 +670,7 @@ export const useScoreStore = create<ScoreStore>()(
       };
       state.canUndo = false;
       state.canRedo = false;
+      state.activeLyricLine = 1;
       
       // 初始化时保存第一个状态
       saveToHistory(state);
@@ -1389,14 +1411,19 @@ export const useScoreStore = create<ScoreStore>()(
   },
   
   // ============ 歌词操作 ============
-  updateLyrics: (measureIndex, noteIndex, text) => {
+  updateLyrics: (measureIndex, noteIndex, text, line = 1) => {
     set((state) => {
       const { lyrics } = state.document;
       const trimmedText = text.trim();
+      const targetLine = normalizeLyricLine(line);
       
       // 移除该位置的现有歌词
       const filteredLyrics = lyrics.filter(
-        l => !(l.measureIndex === measureIndex && l.noteIndex === noteIndex)
+        l => !(
+          l.measureIndex === measureIndex &&
+          l.noteIndex === noteIndex &&
+          normalizeLyricLine(l.line) === targetLine
+        )
       );
       
       // 如果有新歌词，添加它
@@ -1404,6 +1431,7 @@ export const useScoreStore = create<ScoreStore>()(
         filteredLyrics.push({
           measureIndex,
           noteIndex,
+          line: targetLine,
           text: trimmedText,
         });
       }
@@ -1419,14 +1447,17 @@ export const useScoreStore = create<ScoreStore>()(
     set((state) => {
       if (entries.length === 0) return;
 
-      const touchedKeys = new Set(entries.map((entry) => `${entry.measureIndex}:${entry.noteIndex}`));
+      const touchedKeys = new Set(
+        entries.map((entry) => createLyricPositionKey(entry.measureIndex, entry.noteIndex, entry.line))
+      );
       const filteredLyrics = state.document.lyrics.filter(
-        (lyric) => !touchedKeys.has(`${lyric.measureIndex}:${lyric.noteIndex}`)
+        (lyric) => !touchedKeys.has(createLyricPositionKey(lyric.measureIndex, lyric.noteIndex, lyric.line))
       );
       const nextEntries = entries
         .map((entry) => ({
           measureIndex: entry.measureIndex,
           noteIndex: entry.noteIndex,
+          line: normalizeLyricLine(entry.line),
           text: entry.text.trim(),
         }))
         .filter((entry) => entry.text);
@@ -1440,9 +1471,16 @@ export const useScoreStore = create<ScoreStore>()(
   clearAllLyrics: () => {
     set((state) => {
       state.document.lyrics = [];
+      state.activeLyricLine = 1;
       state.document.updatedAt = new Date().toISOString();
       state.isDirty = true;
       saveToHistory(state);
+    });
+  },
+
+  setActiveLyricLine: (line) => {
+    set((state) => {
+      state.activeLyricLine = normalizeLyricLine(line);
     });
   },
 

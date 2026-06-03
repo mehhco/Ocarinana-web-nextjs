@@ -22,7 +22,7 @@ import { DEFAULT_PRODUCER, getInstrumentLabel } from '../lib/constants';
 import { getNormalizedScoreDisplayScale } from '../hooks/useScoreDisplayScale';
 import { getFingeringUrl } from '../lib/fingeringMap';
 import { LyricsInput } from '../overlay/LyricsInput';
-import type { Beam, Duration, ExpressionMark, InstrumentType, KeySignature, Lyric, Measure, ScoreElement, Tie } from '@/lib/editor/types';
+import type { Beam, Duration, ExpressionMark, InstrumentType, KeySignature, Lyric, LyricLine, Measure, ScoreElement, Tie } from '@/lib/editor/types';
 
 interface NotePosition {
   measureIndex: number;
@@ -94,6 +94,14 @@ function createPositionKey(measureIndex: number, noteIndex: number): string {
   return `${measureIndex}:${noteIndex}`;
 }
 
+function normalizeLyricLine(line?: LyricLine): LyricLine {
+  return line === 2 ? 2 : 1;
+}
+
+function createLyricKey(measureIndex: number, noteIndex: number, line: LyricLine): string {
+  return `${measureIndex}:${noteIndex}:${line}`;
+}
+
 function tokenizeLyricText(text: string): string[] {
   const normalized = text.replace(/\s+/g, ' ').trim();
 
@@ -102,6 +110,14 @@ function tokenizeLyricText(text: string): string[] {
   }
 
   return normalized.match(/[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*|[\u3400-\u9FFF]|[^\s]/g) ?? [];
+}
+
+function splitPastedLyricLines(text: string): string[] {
+  return text
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
 function getDurationLineCount(duration: Duration): number {
@@ -425,6 +441,7 @@ function DurationLines({
 }
 
 interface LyricFieldProps {
+  line: LyricLine;
   value: string;
   active: boolean;
   disabled: boolean;
@@ -462,7 +479,8 @@ interface NoteElementProps {
   expressions: ExpressionMark[];
   showOrnamentRow: boolean;
   showExpressionRow: boolean;
-  lyricField?: LyricFieldProps;
+  lyricLines: LyricLine[];
+  lyricFields?: LyricFieldProps[];
   onClick: () => void;
 }
 
@@ -489,7 +507,8 @@ const NoteElementComponent = memo(function NoteElementComponent({
   expressions,
   showOrnamentRow,
   showExpressionRow,
-  lyricField,
+  lyricLines,
+  lyricFields,
   onClick,
 }: NoteElementProps) {
   if (element.type === 'note') {
@@ -608,8 +627,8 @@ const NoteElementComponent = memo(function NoteElementComponent({
           </div>
         )}
 
-        {showLyrics && lyricField && (
-          <div className={LYRIC_ROW_CLASS}>
+        {showLyrics && lyricFields?.map((lyricField) => (
+          <div key={lyricField.line} className={LYRIC_ROW_CLASS}>
             {isExporting ? (
               <span className="flex h-[var(--score-lyric-row-height)] w-[var(--score-lyric-text-width)] items-center justify-center px-1 text-center text-[length:var(--score-lyric-text-font)] leading-none text-slate-700">
                 {lyricField.value}
@@ -631,7 +650,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
               />
             )}
           </div>
-        )}
+        ))}
       </div>
     );
   }
@@ -703,7 +722,9 @@ const NoteElementComponent = memo(function NoteElementComponent({
       ) : null}
       <div className="h-[var(--score-low-dot-row-height)] flex-shrink-0" />
       {showExpressionRow && <div className={EXPRESSION_ROW_CLASS} />}
-      {showLyrics && <div className={LYRIC_ROW_CLASS} />}
+      {showLyrics && lyricLines.map((line) => (
+        <div key={line} className={LYRIC_ROW_CLASS} />
+      ))}
     </div>
   );
 });
@@ -716,6 +737,7 @@ interface MeasureProps {
   keySignature: KeySignature;
   showFingering: boolean;
   showLyrics: boolean;
+  showSecondLyricLine: boolean;
   durationSlotLineCount: number;
   beams: Beam[];
   ties: Tie[];
@@ -734,21 +756,23 @@ interface MeasureProps {
   readOnly: boolean;
   lyricDrafts: Record<string, string>;
   activeLyricKey: string | null;
-  registerLyricInput: (measureIndex: number, noteIndex: number, node: HTMLInputElement | null) => void;
+  registerLyricInput: (measureIndex: number, noteIndex: number, line: LyricLine, node: HTMLInputElement | null) => void;
   onSelectNote: (noteIndex: number) => void;
-  onLyricChange: (measureIndex: number, noteIndex: number, text: string) => void;
-  onLyricFocus: (measureIndex: number, noteIndex: number) => void;
-  onLyricBlur: (measureIndex: number, noteIndex: number) => void;
-  onLyricKeyDown: (measureIndex: number, noteIndex: number, event: KeyboardEvent<HTMLInputElement>) => void;
-  onLyricPaste: (measureIndex: number, noteIndex: number, event: ClipboardEvent<HTMLInputElement>) => void;
+  onLyricChange: (measureIndex: number, noteIndex: number, line: LyricLine, text: string) => void;
+  onLyricFocus: (measureIndex: number, noteIndex: number, line: LyricLine) => void;
+  onLyricBlur: (measureIndex: number, noteIndex: number, line: LyricLine) => void;
+  onLyricKeyDown: (measureIndex: number, noteIndex: number, line: LyricLine, event: KeyboardEvent<HTMLInputElement>) => void;
+  onLyricPaste: (measureIndex: number, noteIndex: number, line: LyricLine, event: ClipboardEvent<HTMLInputElement>) => void;
   onLyricCompositionStart: (
     measureIndex: number,
     noteIndex: number,
+    line: LyricLine,
     event: CompositionEvent<HTMLInputElement>
   ) => void;
   onLyricCompositionEnd: (
     measureIndex: number,
     noteIndex: number,
+    line: LyricLine,
     event: CompositionEvent<HTMLInputElement>
   ) => void;
 }
@@ -761,6 +785,7 @@ const MeasureComponent = memo(function MeasureComponent({
   keySignature,
   showFingering,
   showLyrics,
+  showSecondLyricLine,
   durationSlotLineCount,
   beams,
   ties,
@@ -789,6 +814,8 @@ const MeasureComponent = memo(function MeasureComponent({
   onLyricCompositionStart,
   onLyricCompositionEnd,
 }: MeasureProps) {
+  const lyricLines: LyricLine[] = showSecondLyricLine ? [1, 2] : [1];
+
   return (
     <div className="flex w-full flex-wrap items-start px-[var(--score-measure-px)] py-[var(--score-measure-py)]">
       {measure.elements.map((element, noteIndex) => {
@@ -845,22 +872,28 @@ const MeasureComponent = memo(function MeasureComponent({
             expressions={expressionsByKey.get(positionKey) ?? []}
             showOrnamentRow={showOrnamentRow}
             showExpressionRow={showExpressionRow}
-            lyricField={
+            lyricLines={lyricLines}
+            lyricFields={
               element.type === 'note' && showLyrics
-                ? {
-                    value: lyricDrafts[positionKey] ?? lyricsByKey.get(positionKey) ?? '',
-                    active: activeLyricKey === positionKey,
+                ? lyricLines.map((line) => {
+                  const lyricKey = createLyricKey(measureIndex, noteIndex, line);
+
+                  return {
+                    line,
+                    value: lyricDrafts[lyricKey] ?? lyricsByKey.get(lyricKey) ?? '',
+                    active: activeLyricKey === lyricKey,
                     disabled: lyricsDisabled,
-                    placeholder: isExporting || readOnly ? '' : undefined,
-                    inputRef: (node) => registerLyricInput(measureIndex, noteIndex, node),
-                    onChange: (text) => onLyricChange(measureIndex, noteIndex, text),
-                    onFocus: () => onLyricFocus(measureIndex, noteIndex),
-                    onBlur: () => onLyricBlur(measureIndex, noteIndex),
-                    onKeyDown: (event) => onLyricKeyDown(measureIndex, noteIndex, event),
-                    onPaste: (event) => onLyricPaste(measureIndex, noteIndex, event),
-                    onCompositionStart: (event) => onLyricCompositionStart(measureIndex, noteIndex, event),
-                    onCompositionEnd: (event) => onLyricCompositionEnd(measureIndex, noteIndex, event),
-                  }
+                    placeholder: isExporting || readOnly ? '' : line === 2 ? '二行' : undefined,
+                    inputRef: (node) => registerLyricInput(measureIndex, noteIndex, line, node),
+                    onChange: (text) => onLyricChange(measureIndex, noteIndex, line, text),
+                    onFocus: () => onLyricFocus(measureIndex, noteIndex, line),
+                    onBlur: () => onLyricBlur(measureIndex, noteIndex, line),
+                    onKeyDown: (event) => onLyricKeyDown(measureIndex, noteIndex, line, event),
+                    onPaste: (event) => onLyricPaste(measureIndex, noteIndex, line, event),
+                    onCompositionStart: (event) => onLyricCompositionStart(measureIndex, noteIndex, line, event),
+                    onCompositionEnd: (event) => onLyricCompositionEnd(measureIndex, noteIndex, line, event),
+                  };
+                })
                 : undefined
             }
             onClick={() => onSelectNote(noteIndex)}
@@ -897,6 +930,8 @@ export function ScoreCanvas({
     cancelTieMode,
     updateLyrics,
     updateLyricsBatch,
+    activeLyricLine,
+    setActiveLyricLine,
     isExporting,
   } = useScoreStore();
 
@@ -918,10 +953,21 @@ export function ScoreCanvas({
     const map = new Map<string, string>();
 
     scoreDoc.lyrics.forEach((lyric) => {
-      map.set(createPositionKey(lyric.measureIndex, lyric.noteIndex), lyric.text);
+      map.set(createLyricKey(lyric.measureIndex, lyric.noteIndex, normalizeLyricLine(lyric.line)), lyric.text);
     });
 
     return map;
+  }, [scoreDoc.lyrics]);
+  const secondLyricMeasureIndexes = useMemo(() => {
+    const indexes = new Set<number>();
+
+    scoreDoc.lyrics.forEach((lyric) => {
+      if (normalizeLyricLine(lyric.line) === 2 && lyric.text.trim()) {
+        indexes.add(lyric.measureIndex);
+      }
+    });
+
+    return indexes;
   }, [scoreDoc.lyrics]);
   const expressionsByKey = useMemo(() => {
     const map = new Map<string, ExpressionMark[]>();
@@ -951,7 +997,7 @@ export function ScoreCanvas({
   const showExpressionRow = (scoreDoc.expressions || []).some((expression) => expression.type === 'dynamic');
   const activeLyricKey =
     !readOnly && !isExporting && selectedMeasureIndex !== null && selectedNoteIndex !== null
-      ? createPositionKey(selectedMeasureIndex, selectedNoteIndex)
+      ? createLyricKey(selectedMeasureIndex, selectedNoteIndex, activeLyricLine)
       : null;
 
   useEffect(() => {
@@ -967,8 +1013,8 @@ export function ScoreCanvas({
     }
   }, [scoreDoc.lyrics.length]);
 
-  const registerLyricInput = useCallback((measureIndex: number, noteIndex: number, node: HTMLInputElement | null) => {
-    const positionKey = createPositionKey(measureIndex, noteIndex);
+  const registerLyricInput = useCallback((measureIndex: number, noteIndex: number, line: LyricLine, node: HTMLInputElement | null) => {
+    const positionKey = createLyricKey(measureIndex, noteIndex, line);
 
     if (node) {
       lyricInputRefs.current[positionKey] = node;
@@ -978,14 +1024,20 @@ export function ScoreCanvas({
     delete lyricInputRefs.current[positionKey];
   }, []);
 
-  const clearLyricDrafts = useCallback((positions: NotePosition[]) => {
+  const clearLyricDrafts = useCallback((positions: NotePosition[], line?: LyricLine) => {
     if (positions.length === 0) return;
 
     setLyricDrafts((previous) => {
       const next = { ...previous };
 
       positions.forEach((position) => {
-        delete next[createPositionKey(position.measureIndex, position.noteIndex)];
+        if (line) {
+          delete next[createLyricKey(position.measureIndex, position.noteIndex, line)];
+          return;
+        }
+
+        delete next[createLyricKey(position.measureIndex, position.noteIndex, 1)];
+        delete next[createLyricKey(position.measureIndex, position.noteIndex, 2)];
       });
 
       return next;
@@ -993,15 +1045,16 @@ export function ScoreCanvas({
   }, []);
 
   const focusLyricPosition = useCallback(
-    (position: NotePosition | null) => {
+    (position: NotePosition | null, line: LyricLine = activeLyricLine) => {
       if (!position) return;
 
+      setActiveLyricLine(line);
       selectElement(position.measureIndex, position.noteIndex);
 
       if (typeof window === 'undefined') return;
 
       window.requestAnimationFrame(() => {
-        const input = lyricInputRefs.current[createPositionKey(position.measureIndex, position.noteIndex)];
+        const input = lyricInputRefs.current[createLyricKey(position.measureIndex, position.noteIndex, line)];
 
         if (input) {
           input.focus();
@@ -1009,7 +1062,7 @@ export function ScoreCanvas({
         }
       });
     },
-    [selectElement]
+    [activeLyricLine, selectElement, setActiveLyricLine]
   );
 
   const getRelativeNotePosition = useCallback(
@@ -1026,7 +1079,7 @@ export function ScoreCanvas({
   );
 
   const applyLyricTokens = useCallback(
-    (measureIndex: number, noteIndex: number, tokens: string[], advanceAfterApply: boolean) => {
+    (measureIndex: number, noteIndex: number, line: LyricLine, tokens: string[], advanceAfterApply: boolean) => {
       const startIndex = notePositionIndexMap.get(createPositionKey(measureIndex, noteIndex));
 
       if (startIndex === undefined || tokens.length === 0) {
@@ -1042,31 +1095,76 @@ export function ScoreCanvas({
       const entries: Lyric[] = targetPositions.map((position, index) => ({
         measureIndex: position.measureIndex,
         noteIndex: position.noteIndex,
+        line,
         text: tokens[index] ?? '',
       }));
 
       updateLyricsBatch(entries);
-      clearLyricDrafts(targetPositions);
+      clearLyricDrafts(targetPositions, line);
 
       if (advanceAfterApply) {
-        focusLyricPosition(notePositions[startIndex + targetPositions.length] ?? null);
+        focusLyricPosition(notePositions[startIndex + targetPositions.length] ?? null, line);
       }
     },
     [clearLyricDrafts, focusLyricPosition, notePositionIndexMap, notePositions, updateLyricsBatch]
   );
 
+  const applyPastedLyricLines = useCallback(
+    (measureIndex: number, noteIndex: number, lineTexts: string[], advanceAfterApply: boolean) => {
+      const firstLineTokens = tokenizeLyricText(lineTexts[0] ?? '');
+      const secondLineTokens = tokenizeLyricText(lineTexts[1] ?? '');
+      const tokenCount = Math.max(firstLineTokens.length, secondLineTokens.length);
+      const startIndex = notePositionIndexMap.get(createPositionKey(measureIndex, noteIndex));
+
+      if (startIndex === undefined || tokenCount === 0) {
+        return;
+      }
+
+      const targetPositions = notePositions.slice(startIndex, startIndex + tokenCount);
+
+      if (targetPositions.length === 0) {
+        return;
+      }
+
+      const entries: Lyric[] = [];
+
+      targetPositions.forEach((position, index) => {
+        entries.push({
+          measureIndex: position.measureIndex,
+          noteIndex: position.noteIndex,
+          line: 1,
+          text: firstLineTokens[index] ?? '',
+        });
+        entries.push({
+          measureIndex: position.measureIndex,
+          noteIndex: position.noteIndex,
+          line: 2,
+          text: secondLineTokens[index] ?? '',
+        });
+      });
+
+      updateLyricsBatch(entries);
+      clearLyricDrafts(targetPositions);
+
+      if (advanceAfterApply) {
+        focusLyricPosition(notePositions[startIndex + targetPositions.length] ?? null, activeLyricLine);
+      }
+    },
+    [activeLyricLine, clearLyricDrafts, focusLyricPosition, notePositionIndexMap, notePositions, updateLyricsBatch]
+  );
+
   const commitLyricValue = useCallback(
-    (measureIndex: number, noteIndex: number, rawText: string, advanceAfterApply: boolean) => {
+    (measureIndex: number, noteIndex: number, line: LyricLine, rawText: string, advanceAfterApply: boolean) => {
       const tokens = tokenizeLyricText(rawText);
       const currentPosition = { measureIndex, noteIndex };
 
       if (tokens.length === 0) {
-        updateLyrics(measureIndex, noteIndex, '');
-        clearLyricDrafts([currentPosition]);
+        updateLyrics(measureIndex, noteIndex, '', line);
+        clearLyricDrafts([currentPosition], line);
         return;
       }
 
-      applyLyricTokens(measureIndex, noteIndex, tokens, advanceAfterApply);
+      applyLyricTokens(measureIndex, noteIndex, line, tokens, advanceAfterApply);
     },
     [applyLyricTokens, clearLyricDrafts, updateLyrics]
   );
@@ -1141,8 +1239,8 @@ export function ScoreCanvas({
     ]
   );
 
-  const handleLyricChange = useCallback((measureIndex: number, noteIndex: number, text: string) => {
-    const positionKey = createPositionKey(measureIndex, noteIndex);
+  const handleLyricChange = useCallback((measureIndex: number, noteIndex: number, line: LyricLine, text: string) => {
+    const positionKey = createLyricKey(measureIndex, noteIndex, line);
 
     setLyricDrafts((previous) => ({
       ...previous,
@@ -1151,44 +1249,45 @@ export function ScoreCanvas({
   }, []);
 
   const handleLyricFocus = useCallback(
-    (measureIndex: number, noteIndex: number) => {
+    (measureIndex: number, noteIndex: number, line: LyricLine) => {
+      setActiveLyricLine(line);
       selectElement(measureIndex, noteIndex);
     },
-    [selectElement]
+    [selectElement, setActiveLyricLine]
   );
 
   const handleLyricBlur = useCallback(
-    (measureIndex: number, noteIndex: number) => {
-      const positionKey = createPositionKey(measureIndex, noteIndex);
+    (measureIndex: number, noteIndex: number, line: LyricLine) => {
+      const positionKey = createLyricKey(measureIndex, noteIndex, line);
       const draftValue = lyricDrafts[positionKey];
 
       if (draftValue === undefined) {
         return;
       }
 
-      commitLyricValue(measureIndex, noteIndex, draftValue, false);
+      commitLyricValue(measureIndex, noteIndex, line, draftValue, false);
     },
     [commitLyricValue, lyricDrafts]
   );
 
   const handleLyricKeyDown = useCallback(
-    (measureIndex: number, noteIndex: number, event: KeyboardEvent<HTMLInputElement>) => {
+    (measureIndex: number, noteIndex: number, line: LyricLine, event: KeyboardEvent<HTMLInputElement>) => {
       event.stopPropagation();
 
-      const positionKey = createPositionKey(measureIndex, noteIndex);
+      const positionKey = createLyricKey(measureIndex, noteIndex, line);
       const currentValue = lyricDrafts[positionKey] ?? lyricsByKey.get(positionKey) ?? '';
 
       if ((event.key === 'Enter' || event.key === ' ') && composingLyricKey !== positionKey) {
         event.preventDefault();
-        commitLyricValue(measureIndex, noteIndex, currentValue, true);
+        commitLyricValue(measureIndex, noteIndex, line, currentValue, true);
         return;
       }
 
       if (event.key === 'Backspace' && currentValue === '') {
         event.preventDefault();
-        updateLyrics(measureIndex, noteIndex, '');
-        clearLyricDrafts([{ measureIndex, noteIndex }]);
-        focusLyricPosition(getRelativeNotePosition(measureIndex, noteIndex, -1));
+        updateLyrics(measureIndex, noteIndex, '', line);
+        clearLyricDrafts([{ measureIndex, noteIndex }], line);
+        focusLyricPosition(getRelativeNotePosition(measureIndex, noteIndex, -1), line);
       }
     },
     [
@@ -1204,7 +1303,7 @@ export function ScoreCanvas({
   );
 
   const handleLyricPaste = useCallback(
-    (measureIndex: number, noteIndex: number, event: ClipboardEvent<HTMLInputElement>) => {
+    (measureIndex: number, noteIndex: number, line: LyricLine, event: ClipboardEvent<HTMLInputElement>) => {
       event.preventDefault();
       event.stopPropagation();
 
@@ -1214,18 +1313,25 @@ export function ScoreCanvas({
         return;
       }
 
-      commitLyricValue(measureIndex, noteIndex, pastedText, true);
+      const pastedLines = splitPastedLyricLines(pastedText);
+
+      if (pastedLines.length > 1) {
+        applyPastedLyricLines(measureIndex, noteIndex, pastedLines.slice(0, 2), true);
+        return;
+      }
+
+      commitLyricValue(measureIndex, noteIndex, line, pastedText, true);
     },
-    [commitLyricValue]
+    [applyPastedLyricLines, commitLyricValue]
   );
 
-  const handleLyricCompositionStart = useCallback((measureIndex: number, noteIndex: number) => {
-    setComposingLyricKey(createPositionKey(measureIndex, noteIndex));
+  const handleLyricCompositionStart = useCallback((measureIndex: number, noteIndex: number, line: LyricLine) => {
+    setComposingLyricKey(createLyricKey(measureIndex, noteIndex, line));
   }, []);
 
   const handleLyricCompositionEnd = useCallback(
-    (measureIndex: number, noteIndex: number, event: CompositionEvent<HTMLInputElement>) => {
-      const positionKey = createPositionKey(measureIndex, noteIndex);
+    (measureIndex: number, noteIndex: number, line: LyricLine, event: CompositionEvent<HTMLInputElement>) => {
+      const positionKey = createLyricKey(measureIndex, noteIndex, line);
       const composedValue = event.currentTarget.value;
 
       setComposingLyricKey((current) => (current === positionKey ? null : current));
@@ -1313,6 +1419,9 @@ export function ScoreCanvas({
           <div className="w-full space-y-1.5">
             {scoreDoc.measures.map((measure, measureIndex) => {
               const isSelected = !readOnly && !isExporting && selectedMeasureIndex === measureIndex;
+              const showSecondLyricLine =
+                secondLyricMeasureIndexes.has(measureIndex) ||
+                (!readOnly && !isExporting && activeLyricLine === 2 && selectedMeasureIndex === measureIndex);
               const durationSlotLineCount = getMeasureDurationLineCount(measure);
               const showTieRow =
                 tieMeasureIndexes.has(measureIndex) ||
@@ -1333,6 +1442,7 @@ export function ScoreCanvas({
                     keySignature={scoreDoc.settings.keySignature}
                     showFingering={showFingering}
                     showLyrics={showLyrics}
+                    showSecondLyricLine={showSecondLyricLine}
                     durationSlotLineCount={durationSlotLineCount}
                     beams={scoreDoc.beams || []}
                     ties={scoreDoc.ties || []}
