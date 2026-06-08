@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { AuthButton } from "@/components/auth-button";
 import { AppNavTabs, type AppNavItem } from "@/components/app-nav-tabs";
+import { isAdminUserId } from "@/lib/admin/access";
 
 interface AppNavProps {
   currentPath?: string;
@@ -18,6 +19,7 @@ export async function AppNav({
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   const userEmail = typeof data?.claims?.email === "string" ? data.claims.email : null;
+  const isAdmin = await isAdminUserId(userId);
 
   const navItems: AppNavItem[] = [
     ...(userId
@@ -26,6 +28,15 @@ export async function AppNav({
             href: "/protected/me/scores",
             label: "我的",
             activeWhen: ["/protected/me", "/notes"],
+          },
+        ]
+      : []),
+    ...(isAdmin
+      ? [
+          {
+            href: "/protected/admin",
+            label: "后台",
+            activeWhen: ["/protected/admin"],
           },
         ]
       : []),
