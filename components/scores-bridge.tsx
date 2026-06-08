@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { showSuccess, showError } from "@/lib/toast";
+import { shouldCreateNewScoreInCloud } from "@/lib/editor/cloud-save-policy";
 
 type ScoreDocument = {
   version: string;
@@ -93,6 +94,15 @@ export default function ScoresBridge({ iframeId }: ScoresBridgeProps) {
       // 首次创建记录（用户手动保存并确认）
       if (msg.type === "score:create" && msg.payload) {
         const doc: ScoreDocument = msg.payload;
+        if (!shouldCreateNewScoreInCloud(doc)) {
+          iframeWindowRef.current?.postMessage({
+            type: 'score:created',
+            success: false,
+            error: 'empty-default-draft',
+          }, window.location.origin);
+          return;
+        }
+
         try {
           const res = await fetch('/api/scores', {
             method: 'POST',

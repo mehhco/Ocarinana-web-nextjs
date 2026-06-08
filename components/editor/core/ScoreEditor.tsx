@@ -1,14 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, memo, useRef } from 'react';
+import { useCallback, useEffect, memo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useScoreStore } from '../hooks/useScoreStore';
 import { Toolbar } from './Toolbar';
 import { ElementPanel } from './ElementPanel';
 import { ScoreCanvas } from './ScoreCanvas';
-import { exportAsImage } from '../lib/exportUtils';
+import { createScoreInCloud, exportAsImage } from '../lib/exportUtils';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { EDITOR_SCORE_DISPLAY_SCALE_STORAGE_KEY, useScoreDisplayScale } from '../hooks/useScoreDisplayScale';
+import { shouldCreateNewScoreInCloud } from '@/lib/editor/cloud-save-policy';
 import {
   BARLINE_SHORTCUTS,
   DURATION_SHORTCUTS,
@@ -22,6 +23,7 @@ import type { BarlineType, Duration, ScoreDocument } from '@/lib/editor/types';
 interface ScoreEditorProps {
   initialDocument?: Partial<ScoreDocument>;
   scoreId?: string;
+  allowCloudCreate?: boolean;
   backHref?: string;
 }
 
@@ -30,11 +32,16 @@ const DURATION_SHORTCUT_ENTRIES = Object.entries(DURATION_SHORTCUTS) as Array<
 >;
 const BARLINE_SHORTCUT_ENTRIES = Object.entries(BARLINE_SHORTCUTS) as Array<[BarlineType, string]>;
 
-export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId, backHref }: ScoreEditorProps) {
+export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId, allowCloudCreate = false, backHref }: ScoreEditorProps) {
   const router = useRouter();
+  const [currentScoreId, setCurrentScoreId] = useState(scoreId);
   const initialize = useScoreStore((state) => state.initialize);
   const documentTitle = useScoreStore((state) => state.document.title);
   const setExporting = useScoreStore((state) => state.setExporting);
+  const setSaving = useScoreStore((state) => state.setSaving);
+  const setCloudScoreId = useScoreStore((state) => state.setCloudScoreId);
+  const markAsSaved = useScoreStore((state) => state.markAsSaved);
+  const getDocumentSnapshot = useScoreStore((state) => state.getDocumentSnapshot);
   const isExporting = useScoreStore((state) => state.isExporting);
   const deleteSelectedElement = useScoreStore((state) => state.deleteSelectedElement);
   const updateNoteDuration = useScoreStore((state) => state.updateNoteDuration);
@@ -44,12 +51,16 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
   const toggleTieMode = useScoreStore((state) => state.toggleTieMode);
   const toggleBeamMode = useScoreStore((state) => state.toggleBeamMode);
   const scoreExportRef = useRef<HTMLDivElement>(null);
-  const { isDirty, isSaving, saveNow } = useAutoSave(scoreId);
+  const { isDirty, isSaving, saveNow } = useAutoSave(currentScoreId);
   const [displayScale, setDisplayScale] = useScoreDisplayScale(EDITOR_SCORE_DISPLAY_SCALE_STORAGE_KEY);
 
   useEffect(() => {
     initialize(initialDocument);
   }, [initialize, initialDocument]);
+
+  useEffect(() => {
+    setCurrentScoreId(scoreId);
+  }, [scoreId]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -142,30 +153,96 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
     }
   }, [documentTitle, isExporting, reserveExport, setExporting]);
 
+  const createCurrentDraftInCloud = useCallback(async () => {
+    const document = getDocumentSnapshot();
+
+    if (!shouldCreateNewScoreInCloud(document)) {
+      return { success: true, skipped: true };
+    }
+
+    setSaving(true);
+
+    try {
+      const result = await createScoreInCloud(document);
+
+      if (result.success && result.scoreId) {
+        setCloudScoreId(result.scoreId);
+        setCurrentScoreId(result.scoreId);
+        router.replace(`/protected/editor/v2?scoreId=${encodeURIComponent(result.scoreId)}`, { scroll: false });
+      }
+
+      return result;
+    } finally {
+      setSaving(false);
+    }
+  }, [getDocumentSnapshot, router, setCloudScoreId, setSaving]);
+
   const handleManualSave = useCallback(async () => {
-    if (!scoreId) {
+    if (!currentScoreId && !allowCloudCreate) {
       router.push('/auth/login');
       return;
     }
 
-    const result = await saveNow();
+    const result = currentScoreId ? await saveNow() : await createCurrentDraftInCloud();
 
     if (result.success) {
-      showSuccess(result.skipped ? '没有需要保存的更改' : '乐谱已保存');
+      showSuccess(result.skipped ? '请先修改标题，或填写作词/作曲后再保存到云端' : '乐谱已保存');
       return;
     }
 
     showError(result.error || '保存失败');
-  }, [router, saveNow, scoreId]);
+  }, [allowCloudCreate, createCurrentDraftInCloud, currentScoreId, router, saveNow]);
+
+  const handleBack = useCallback(async () => {
+    if (!backHref) return;
+
+    if (!currentScoreId) {
+      if (allowCloudCreate && shouldCreateNewScoreInCloud(getDocumentSnapshot())) {
+        const result = await createCurrentDraftInCloud();
+
+        if (!result.success || !result.scoreId) {
+          showError(result.error || '保存失败，请稍后重试');
+          return;
+        }
+      } else {
+        markAsSaved();
+      }
+
+      router.push(backHref);
+      return;
+    }
+
+    if (isDirty) {
+      const result = await saveNow();
+
+      if (!result.success) {
+        showError(result.error || '保存失败，请稍后重试');
+        return;
+      }
+    }
+
+    router.push(backHref);
+  }, [
+    allowCloudCreate,
+    backHref,
+    createCurrentDraftInCloud,
+    currentScoreId,
+    getDocumentSnapshot,
+    isDirty,
+    markAsSaved,
+    router,
+    saveNow,
+  ]);
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-slate-50">
       <Toolbar
         isDirty={isDirty}
         isSaving={isSaving}
-        cloudSaveAvailable={Boolean(scoreId)}
+        cloudSaveAvailable={Boolean(currentScoreId) || allowCloudCreate}
         backHref={backHref}
         displayScale={displayScale}
+        onBack={handleBack}
         onExportImage={handleExportImage}
         onSave={handleManualSave}
         onDisplayScaleChange={setDisplayScale}

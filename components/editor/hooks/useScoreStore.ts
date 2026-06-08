@@ -69,6 +69,7 @@ interface ScoreStoreActions {
   // 初始化
   initialize: (doc?: Partial<ScoreDocument>) => void;
   setDocument: (doc: ScoreDocument) => void;
+  setCloudScoreId: (scoreId: string) => void;
   
   // 文档元数据
   updateTitle: (title: string) => void;
@@ -681,6 +682,14 @@ export const useScoreStore = create<ScoreStore>()(
     set((state) => {
       state.document = doc;
       state.isDirty = true;
+    });
+  },
+
+  setCloudScoreId: (scoreId) => {
+    set((state) => {
+      state.document.scoreId = scoreId;
+      state.document.updatedAt = new Date().toISOString();
+      state.isDirty = false;
     });
   },
 

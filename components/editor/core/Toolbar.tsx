@@ -59,6 +59,7 @@ interface ToolbarProps {
   cloudSaveAvailable?: boolean;
   backHref?: string;
   displayScale: number;
+  onBack?: () => void;
   onExportImage: () => void;
   onSave: () => void;
   onDisplayScaleChange: (value: number) => void;
@@ -119,6 +120,7 @@ export const Toolbar = memo(function Toolbar({
   cloudSaveAvailable = true,
   backHref,
   displayScale,
+  onBack,
   onExportImage,
   onSave,
   onDisplayScaleChange,
@@ -206,6 +208,10 @@ export const Toolbar = memo(function Toolbar({
     onSave();
   }, [onSave]);
 
+  const handleBack = useCallback(() => {
+    onBack?.();
+  }, [onBack]);
+
   return (
     <header className="shrink-0 border-b border-slate-200 bg-white px-3 py-2">
       <TooltipProvider delayDuration={1000} skipDelayDuration={0}>
@@ -213,12 +219,19 @@ export const Toolbar = memo(function Toolbar({
           <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
             <div className="flex items-center gap-1.5">
               {backHref && (
-                <Button asChild variant="ghost" size="sm" className={TOOL_BUTTON_CLASS}>
-                  <Link href={backHref} prefetch={false}>
+                onBack ? (
+                  <Button variant="ghost" size="sm" className={TOOL_BUTTON_CLASS} onClick={handleBack} disabled={isSaving}>
                     <ArrowLeftIcon className="h-4 w-4" />
                     <span className="hidden sm:inline">我的乐谱</span>
-                  </Link>
-                </Button>
+                  </Button>
+                ) : (
+                  <Button asChild variant="ghost" size="sm" className={TOOL_BUTTON_CLASS}>
+                    <Link href={backHref} prefetch={false}>
+                      <ArrowLeftIcon className="h-4 w-4" />
+                      <span className="hidden sm:inline">我的乐谱</span>
+                    </Link>
+                  </Button>
+                )
               )}
 
               <Button

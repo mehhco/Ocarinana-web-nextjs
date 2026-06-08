@@ -273,11 +273,46 @@ export async function saveToCloud(
     });
 
     if (!res.ok) {
-      const error = await res.json();
-      return { success: false, error: error.message || '保存失败' };
+      const error = await res.json().catch(() => null);
+      return { success: false, error: error?.message || error?.error || '保存失败' };
     }
 
     return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '网络错误',
+    };
+  }
+}
+
+export async function createScoreInCloud(
+  scoreDoc: ScoreDocument
+): Promise<{ success: boolean; scoreId?: string; error?: string; skipped?: boolean }> {
+  try {
+    const res = await fetch('/api/scores', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(scoreDoc),
+    });
+
+    const payload = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      return { success: false, error: payload?.message || payload?.error || '保存失败' };
+    }
+
+    if (payload?.skipped) {
+      return { success: true, skipped: true };
+    }
+
+    if (!payload?.scoreId) {
+      return { success: false, error: '保存失败：缺少乐谱 ID' };
+    }
+
+    return { success: true, scoreId: payload.scoreId };
   } catch (error) {
     return {
       success: false,

@@ -1,13 +1,9 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import {
-  getPrivateScoreLimitStatus,
-  isPrivateScoreLimitError,
-} from '@/lib/billing/entitlements';
-import { BillingRedirectNotice } from '@/components/billing/billing-redirect-notice';
 import { PendingLink } from '@/components/pending-link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScoreEditor } from '@/components/editor/core/ScoreEditor';
 import {
   DEFAULT_PRODUCER,
   DEFAULT_SETTINGS,
@@ -104,64 +100,11 @@ export default async function NewScoreV2Page({ searchParams }: NewScoreV2PagePro
     );
   }
 
-  const limitStatus = await getPrivateScoreLimitStatus(user.id, supabase);
-  if (limitStatus.limitReached) {
-    return (
-      <BillingRedirectNotice
-        title="暂时无法继续创建乐谱"
-        description={`当前账号已保存 ${limitStatus.privateScoreCount} 首私有乐谱，免费版最多可保存 ${limitStatus.entitlements.privateScoreLimit} 首。公开乐谱不计入限制；需要充值或升级 Plus 后，才能继续创建新的私有乐谱。`}
-        billingHref="/protected/me/plus?reason=score-limit"
-        backHref="/protected/me/scores"
-        backLabel="返回我的乐谱"
-      />
-    );
-  }
-
-  const document = createInitialDocument(instrumentType);
-  let createdScoreId: string | null = null;
-
-  try {
-    const { data, error: createError } = await supabase
-      .from('scores')
-      .insert({
-        owner_user_id: user.id,
-        title: document.title,
-        document,
-      })
-      .select('score_id')
-      .single();
-
-    if (!createError && data?.score_id) {
-      createdScoreId = data.score_id;
-    } else if (createError && isPrivateScoreLimitError(createError)) {
-      return (
-        <BillingRedirectNotice
-          title="暂时无法继续创建乐谱"
-          description={`当前账号最多可保存 ${limitStatus.entitlements.privateScoreLimit} 首私有乐谱，公开乐谱不计入限制；需要充值或升级 Plus 后，才能继续创建新的私有乐谱。`}
-          billingHref="/protected/me/plus?reason=score-limit"
-          backHref="/protected/me/scores"
-          backLabel="返回我的乐谱"
-        />
-      );
-    }
-  } catch (error) {
-    if (isPrivateScoreLimitError(error)) {
-      return (
-        <BillingRedirectNotice
-          title="暂时无法继续创建乐谱"
-          description={`当前账号最多可保存 ${limitStatus.entitlements.privateScoreLimit} 首私有乐谱，公开乐谱不计入限制；需要充值或升级 Plus 后，才能继续创建新的私有乐谱。`}
-          billingHref="/protected/me/plus?reason=score-limit"
-          backHref="/protected/me/scores"
-          backLabel="返回我的乐谱"
-        />
-      );
-    }
-    console.error('Failed to create v2 score:', error);
-  }
-
-  if (createdScoreId) {
-    redirect(`/protected/editor/v2?scoreId=${encodeURIComponent(createdScoreId)}`);
-  }
-
-  redirect('/protected/editor/v2');
+  return (
+    <ScoreEditor
+      initialDocument={createInitialDocument(instrumentType)}
+      allowCloudCreate
+      backHref="/protected/me/scores"
+    />
+  );
 }

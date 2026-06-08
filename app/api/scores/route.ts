@@ -7,6 +7,7 @@ import {
   isPrivateScoreLimitError,
   privateScoreLimitError,
 } from "@/lib/billing/entitlements";
+import { shouldCreateNewScoreInCloud } from "@/lib/editor/cloud-save-policy";
 
 interface ScoreListRow {
   score_id: string;
@@ -91,7 +92,7 @@ export async function GET(req: Request) {
   return response;
 }
 
-// 创建一个空白乐谱，返回 scoreId
+// 创建一首用户确认需要保存到云端的乐谱，返回 scoreId
 export async function POST(req: Request) {
   // Rate Limiting - 写入操作使用中等限制
   const identifier = getIdentifier(req);
@@ -107,51 +108,16 @@ export async function POST(req: Request) {
   } = await supabase.auth.getUser();
   if (userErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const limitStatus = await getPrivateScoreLimitStatus(user.id, supabase);
-  if (limitStatus.limitReached) {
-    return NextResponse.json(
-      privateScoreLimitError(limitStatus),
-      { status: 403 }
-    );
-  }
-
   // 解析并验证请求体
   let body = null;
   try {
     body = await req.json();
   } catch {
-    // 如果没有请求体，使用默认值
+    return NextResponse.json({ error: "缺少乐谱数据" }, { status: 400 });
   }
 
-  // 使用默认值或传入的数据
-  const defaultDocument = {
-    version: "1.0",
-    title: "未命名简谱",
-    producer: "www.ocarinana.com",
-    lyricist: "",
-    composer: "",
-    additionalInfo: "",
-    measures: [[]],
-    ties: [],
-    beams: [],
-    expressions: [],
-    lyrics: [],
-    settings: {
-      instrumentType: "12-hole" as const,
-      keySignature: "C" as const,
-      timeSignature: "4/4" as const,
-      tempo: 120,
-      showTempo: true,
-      skin: "white" as const,
-      showLyrics: false,
-      showFingering: false,
-    },
-  };
-
-  const documentInput = body || defaultDocument;
-
   // 验证数据
-  const validationResult = createScoreSchema.safeParse(documentInput);
+  const validationResult = createScoreSchema.safeParse(body);
   if (!validationResult.success) {
     return NextResponse.json(
       { error: "数据验证失败", details: validationResult.error.issues },
@@ -160,6 +126,18 @@ export async function POST(req: Request) {
   }
 
   const document = validationResult.data;
+  if (!shouldCreateNewScoreInCloud(document)) {
+    return NextResponse.json({ skipped: true, reason: "empty-default-draft" });
+  }
+
+  const limitStatus = await getPrivateScoreLimitStatus(user.id, supabase);
+  if (limitStatus.limitReached) {
+    return NextResponse.json(
+      privateScoreLimitError(limitStatus),
+      { status: 403 }
+    );
+  }
+
   const title = document.title;
 
   const { data, error } = await supabase
