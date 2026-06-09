@@ -8,9 +8,9 @@ import {
   MusicIcon,
   SparklesIcon,
 } from '@/components/ui/icons';
-import { requireAdminUser } from '@/lib/admin/access';
 import {
   getAdminDashboardData,
+  type AdminDailyTrendPoint,
   type AdminDashboardSummary,
 } from '@/lib/admin/dashboard';
 import { formatCnyFromCents } from '@/lib/billing/plans';
@@ -33,6 +33,24 @@ function formatInteger(value: number) {
 
 function formatMoney(amountCents: number) {
   return `¥${formatCnyFromCents(amountCents)}`;
+}
+
+function formatCompact(value: number) {
+  return new Intl.NumberFormat('zh-CN', {
+    notation: value >= 10000 ? 'compact' : 'standard',
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+function formatMonthDay(value: string) {
+  if (!value) return '';
+
+  const date = new Date(`${value}T00:00:00`);
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: 'numeric',
+    day: 'numeric',
+    timeZone: 'Asia/Shanghai',
+  }).format(date);
 }
 
 function formatUserLabel(email: string | null, userId: string) {
@@ -99,6 +117,193 @@ function MetricCard({
       <div className="mt-4 text-3xl font-bold tracking-normal text-zinc-950">{value}</div>
       <p className="mt-2 text-sm leading-6 text-zinc-500">{description}</p>
     </article>
+  );
+}
+
+function getTrendStats(values: number[]) {
+  const total = values.reduce((sum, value) => sum + value, 0);
+  const latest = values.at(-1) || 0;
+  const peak = values.length > 0 ? Math.max(...values) : 0;
+
+  return { latest, peak, total };
+}
+
+function getLinePath(values: number[], width: number, height: number) {
+  if (values.length === 0) {
+    return '';
+  }
+
+  const maxValue = Math.max(...values, 1);
+  const step = values.length > 1 ? width / (values.length - 1) : width;
+
+  return values
+    .map((value, index) => {
+      const x = index * step;
+      const y = height - (value / maxValue) * height;
+      return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    })
+    .join(' ');
+}
+
+function TrendLineChart({
+  accentClassName,
+  description,
+  formatValue = formatInteger,
+  title,
+  values,
+}: {
+  accentClassName: string;
+  description: string;
+  formatValue?: (value: number) => string;
+  title: string;
+  values: number[];
+}) {
+  const chartWidth = 320;
+  const chartHeight = 112;
+  const stats = getTrendStats(values);
+  const path = getLinePath(values, chartWidth, chartHeight);
+  const areaPath = path ? `${path} L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z` : '';
+
+  return (
+    <article className="rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold text-zinc-950">{title}</p>
+          <p className="mt-1 text-sm leading-6 text-zinc-500">{description}</p>
+        </div>
+        <div className="text-right">
+          <div className="text-2xl font-bold text-zinc-950">{formatValue(stats.total)}</div>
+          <div className="mt-1 text-xs text-zinc-500">30 天合计</div>
+        </div>
+      </div>
+
+      <div className="mt-5 h-36 rounded-md border border-zinc-100 bg-zinc-50 px-3 py-3">
+        <svg className="h-full w-full overflow-visible" viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img">
+          <title>{title}</title>
+          <path d={areaPath} className="fill-emerald-100/70" />
+          <path d={path} className={accentClassName} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+          {values.map((value, index) => {
+            const maxValue = Math.max(...values, 1);
+            const x = values.length > 1 ? (index * chartWidth) / (values.length - 1) : chartWidth;
+            const y = chartHeight - (value / maxValue) * chartHeight;
+
+            return index === values.length - 1 ? (
+              <circle key={`${index}-${value}`} cx={x} cy={y} r="4" className={accentClassName.replace('stroke-', 'fill-')} />
+            ) : null;
+          })}
+        </svg>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+        <div className="rounded-md border border-zinc-100 bg-zinc-50 px-3 py-2">
+          <div className="text-xs text-zinc-500">最近一天</div>
+          <div className="mt-1 font-semibold text-zinc-950">{formatValue(stats.latest)}</div>
+        </div>
+        <div className="rounded-md border border-zinc-100 bg-zinc-50 px-3 py-2">
+          <div className="text-xs text-zinc-500">单日峰值</div>
+          <div className="mt-1 font-semibold text-zinc-950">{formatValue(stats.peak)}</div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function TrendBarChart({
+  description,
+  formatValue = formatInteger,
+  title,
+  values,
+}: {
+  description: string;
+  formatValue?: (value: number) => string;
+  title: string;
+  values: number[];
+}) {
+  const stats = getTrendStats(values);
+  const maxValue = Math.max(...values, 1);
+
+  return (
+    <article className="rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold text-zinc-950">{title}</p>
+          <p className="mt-1 text-sm leading-6 text-zinc-500">{description}</p>
+        </div>
+        <div className="text-right">
+          <div className="text-2xl font-bold text-zinc-950">{formatValue(stats.total)}</div>
+          <div className="mt-1 text-xs text-zinc-500">30 天合计</div>
+        </div>
+      </div>
+
+      <div className="mt-5 flex h-36 items-end gap-1 rounded-md border border-zinc-100 bg-zinc-50 px-3 py-3">
+        {values.map((value, index) => {
+          const height = Math.max((value / maxValue) * 100, value > 0 ? 8 : 2);
+
+          return (
+            <div
+              key={`${index}-${value}`}
+              className="min-w-0 flex-1 rounded-t-sm bg-emerald-600/80"
+              style={{ height: `${height}%` }}
+              title={`${formatValue(value)}`}
+            />
+          );
+        })}
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+        <div className="rounded-md border border-zinc-100 bg-zinc-50 px-3 py-2">
+          <div className="text-xs text-zinc-500">最近一天</div>
+          <div className="mt-1 font-semibold text-zinc-950">{formatValue(stats.latest)}</div>
+        </div>
+        <div className="rounded-md border border-zinc-100 bg-zinc-50 px-3 py-2">
+          <div className="text-xs text-zinc-500">单日峰值</div>
+          <div className="mt-1 font-semibold text-zinc-950">{formatValue(stats.peak)}</div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function TrendOverview({ trends }: { trends: AdminDailyTrendPoint[] }) {
+  const labels = trends.map((point) => formatMonthDay(point.date));
+  const startLabel = labels[0] || '最近';
+  const endLabel = labels.at(-1) || '今天';
+
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-emerald-800">趋势</p>
+          <h2 className="mt-1 text-xl font-bold text-zinc-950">最近 30 天变化</h2>
+        </div>
+        <p className="text-sm text-zinc-500">{startLabel} - {endLabel}</p>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <TrendLineChart
+          accentClassName="stroke-emerald-700"
+          description="按注册日期统计，用于判断新增用户节奏。"
+          title="新增用户"
+          values={trends.map((point) => point.newUsers)}
+        />
+        <TrendLineChart
+          accentClassName="stroke-sky-700"
+          description="按乐谱创建日期统计，反映创作活跃度。"
+          title="新建乐谱"
+          values={trends.map((point) => point.newScores)}
+        />
+        <TrendBarChart
+          description="按 published_at 统计，观察乐谱广场内容供给。"
+          title="公开乐谱"
+          values={trends.map((point) => point.publishedScores)}
+        />
+        <TrendBarChart
+          description="按 paid_at 统计 paid 订单金额，单位为元。"
+          formatValue={(value) => `¥${formatCompact(value / 100)}`}
+          title="支付收入"
+          values={trends.map((point) => point.paidAmountCents)}
+        />
+      </div>
+    </section>
   );
 }
 
@@ -185,9 +390,8 @@ function OrderStatusStrip({ summary }: { summary: AdminDashboardSummary }) {
 }
 
 export default async function AdminDashboardPage() {
-  const adminUser = await requireAdminUser();
   const data = await getAdminDashboardData();
-  const { activeSubscriptions, recentOrders, recentScores, recentUsers, summary } = data;
+  const { activeSubscriptions, dailyTrends, recentOrders, recentScores, recentUsers, summary } = data;
 
   const metrics = [
     {
@@ -217,25 +421,7 @@ export default async function AdminDashboardPage() {
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 py-4">
-      <header className="rounded-md border border-zinc-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-emerald-800">后台</p>
-            <h1 className="mt-2 text-3xl font-bold tracking-normal text-zinc-950">管理 Dashboard</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-zinc-600">
-              只读查看当前项目的用户、乐谱、会员、订单和支付关键数据。
-            </p>
-          </div>
-          <div className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
-            当前管理员：
-            <span className="ml-1 font-medium text-zinc-950">
-              {adminUser.email || adminUser.id}
-            </span>
-          </div>
-        </div>
-      </header>
-
+    <>
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => (
           <MetricCard key={metric.label} {...metric} />
@@ -243,6 +429,8 @@ export default async function AdminDashboardPage() {
       </section>
 
       <OrderStatusStrip summary={summary} />
+
+      <TrendOverview trends={dailyTrends} />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <DataSection title="最近用户" description="来自 Supabase Auth 的最近注册账号。">
@@ -381,6 +569,6 @@ export default async function AdminDashboardPage() {
           )}
         </tbody>
       </DataSection>
-    </div>
+    </>
   );
 }

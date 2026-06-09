@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { redeemTrialCardAction } from '@/app/protected/me/plus/actions';
 import { CheckoutButton } from '@/components/billing/checkout-button';
+import { PendingSubmitButton } from '@/components/pending-submit-button';
 import { PlanStatusCard } from '@/components/personal/PlanStatusCard';
 import { UsageMeter } from '@/components/personal/UsageMeter';
 import { Button } from '@/components/ui/button';
 import { CheckIcon, InfoIcon } from '@/components/ui/icons';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { formatCnyFromCents, getBillingPlans } from '@/lib/billing/plans';
 import { getPersonalCenterData } from '@/lib/personal-center';
 import { createClient } from '@/lib/supabase/server';
@@ -60,6 +64,30 @@ function getReasonNotice(reason: string | undefined) {
   return null;
 }
 
+function MessageBanner({
+  message,
+  type,
+}: {
+  message: string | undefined;
+  type: 'error' | 'success';
+}) {
+  if (!message) {
+    return null;
+  }
+
+  return (
+    <div
+      className={
+        type === 'success'
+          ? 'rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800'
+          : 'rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800'
+      }
+    >
+      {message}
+    </div>
+  );
+}
+
 export default async function MePlusPage({ searchParams }: PlusPageProps) {
   const supabase = await createClient();
   const {
@@ -73,6 +101,8 @@ export default async function MePlusPage({ searchParams }: PlusPageProps) {
 
   const resolvedSearchParams = await searchParams;
   const reasonNotice = getReasonNotice(getSingleParam(resolvedSearchParams.reason));
+  const trialSuccessMessage = getSingleParam(resolvedSearchParams.trialSuccess);
+  const trialErrorMessage = getSingleParam(resolvedSearchParams.trialError);
   const { access, entitlements, scoreStats, usage, rewardProgress } =
     await getPersonalCenterData(user.id, { supabase, user });
   const plans = getBillingPlans();
@@ -112,6 +142,38 @@ export default async function MePlusPage({ searchParams }: PlusPageProps) {
           <p className="text-xs leading-5 text-zinc-500 md:border-l md:border-zinc-200 md:pl-3">
             免费版保留完整入门体验和无限公开。Plus 适合需要更多保存空间、无水印导出和高频导出的用户。
           </p>
+        </div>
+      </section>
+
+      <section className="rounded-md border border-emerald-200 bg-white p-5 shadow-sm">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
+          <div>
+            <p className="text-sm font-semibold text-emerald-800">体验卡兑换</p>
+            <h2 className="mt-2 text-xl font-bold text-zinc-950">输入体验卡编号，领取 Plus 体验</h2>
+            <p className="mt-2 text-sm leading-7 text-zinc-600">
+              体验卡兑换成功后会自动顺延你的会员有效期。同一张体验卡每个账号只能兑换一次。
+            </p>
+            <div className="mt-4 space-y-3">
+              <MessageBanner type="success" message={trialSuccessMessage} />
+              <MessageBanner type="error" message={trialErrorMessage} />
+            </div>
+          </div>
+
+          <form action={redeemTrialCardAction} className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="trialCardCode">体验卡编号</Label>
+              <Input
+                id="trialCardCode"
+                name="trialCardCode"
+                placeholder="00000000-0000-0000-0000-000000000000"
+                className="font-mono text-sm"
+                required
+              />
+            </div>
+            <PendingSubmitButton loadingText="兑换中..." className="w-full">
+              兑换体验卡
+            </PendingSubmitButton>
+          </form>
         </div>
       </section>
 

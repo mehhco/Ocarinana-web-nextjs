@@ -59,8 +59,18 @@ export type AdminActiveSubscription = {
   latestOrderId: string | null;
 };
 
+export type AdminDailyTrendPoint = {
+  date: string;
+  newUsers: number;
+  newScores: number;
+  publishedScores: number;
+  paidOrders: number;
+  paidAmountCents: number;
+};
+
 export type AdminDashboardData = {
   summary: AdminDashboardSummary;
+  dailyTrends: AdminDailyTrendPoint[];
   recentUsers: AdminRecentUser[];
   recentScores: AdminRecentScore[];
   recentOrders: AdminRecentOrder[];
@@ -80,6 +90,15 @@ type AdminDashboardSummaryRow = {
   closed_orders: number | string | null;
   paid_amount_cents: number | string | null;
   paid_orders_7d: number | string | null;
+};
+
+type AdminDailyTrendRow = {
+  trend_date: string | null;
+  new_users: number | string | null;
+  new_scores: number | string | null;
+  published_scores: number | string | null;
+  paid_orders: number | string | null;
+  paid_amount_cents: number | string | null;
 };
 
 type RecentScoreRow = {
@@ -146,6 +165,17 @@ function normalizeSummary(row: AdminDashboardSummaryRow | null | undefined): Adm
   };
 }
 
+function normalizeDailyTrends(rows: AdminDailyTrendRow[] | null | undefined): AdminDailyTrendPoint[] {
+  return (rows || []).map((row) => ({
+    date: row.trend_date || '',
+    newUsers: toNumber(row.new_users),
+    newScores: toNumber(row.new_scores),
+    publishedScores: toNumber(row.published_scores),
+    paidOrders: toNumber(row.paid_orders),
+    paidAmountCents: toNumber(row.paid_amount_cents),
+  }));
+}
+
 async function getUserEmailMap(
   supabase: ReturnType<typeof createAdminClient>,
   userIds: string[],
@@ -170,9 +200,10 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   const supabase = createAdminClient();
   const nowIso = new Date().toISOString();
 
-  const [summaryResult, usersResult, scoresResult, ordersResult, subscriptionsResult] =
+  const [summaryResult, trendsResult, usersResult, scoresResult, ordersResult, subscriptionsResult] =
     await Promise.all([
       supabase.rpc('get_admin_dashboard_summary').single(),
+      supabase.rpc('get_admin_dashboard_daily_trends', { p_days: 30 }),
       supabase.auth.admin.listUsers({ page: 1, perPage: 50 }),
       supabase
         .from('scores')
@@ -197,6 +228,10 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
 
   if (summaryResult.error) {
     throw summaryResult.error;
+  }
+
+  if (trendsResult.error) {
+    throw trendsResult.error;
   }
 
   if (usersResult.error) {
@@ -236,6 +271,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
 
   return {
     summary: normalizeSummary(summaryResult.data as AdminDashboardSummaryRow | null),
+    dailyTrends: normalizeDailyTrends(trendsResult.data as AdminDailyTrendRow[] | null),
     recentUsers,
     recentScores: scores.map((score) => ({
       scoreId: score.score_id,
