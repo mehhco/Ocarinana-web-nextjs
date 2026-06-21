@@ -114,6 +114,15 @@ export interface Measure {
   elements: ScoreElement[];
 }
 
+export interface ScoreSection {
+  id: string;
+  label: string;
+  anchor: {
+    measureId: string;
+    beforeElementId: string | null;
+  };
+}
+
 export interface ScoreDocument {
   version: string;
   scoreId: string;
@@ -128,6 +137,8 @@ export interface ScoreDocument {
   ties?: Tie[];
   expressions?: ExpressionMark[];
   lyrics: Lyric[];
+  sections: ScoreSection[];
+  playbackOrder: string[];
   settings: ScoreSettings;
   createdAt?: string;
   updatedAt?: string;

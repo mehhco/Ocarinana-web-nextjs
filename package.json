@@ -4,6 +4,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test lib/editor/sections.test.ts",
     "lint": "next lint",
     "analyze": "ANALYZE=true npm run build"
   },

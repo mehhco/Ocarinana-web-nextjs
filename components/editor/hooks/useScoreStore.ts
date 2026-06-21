@@ -34,6 +34,13 @@ import type {
   ScoreElement
 } from '@/lib/editor/types';
 import { DEFAULT_PRODUCER, DEFAULT_SETTINGS, DEFAULT_TITLE, HISTORY_CONFIG } from '../lib/constants';
+import {
+  getNextSectionLabel,
+  normalizeSectionData,
+  normalizeSectionLabel,
+  preserveAnchoredElementId,
+  relocateSectionsBeforeElementDelete,
+} from '@/lib/editor/sections';
 
 // ============ 状态接口 ============
 interface ScoreStoreState {
@@ -75,6 +82,16 @@ interface ScoreStoreActions {
   updateTitle: (title: string) => void;
   updateScoreInfo: (info: Partial<Pick<ScoreDocument, 'producer' | 'lyricist' | 'composer' | 'additionalInfo'>>) => void;
   updateSettings: (settings: Partial<ScoreSettings>) => void;
+
+  // 段落结构与演奏顺序
+  addSectionAtSelection: () => void;
+  renameSection: (sectionId: string, label: string) => void;
+  deleteSection: (sectionId: string) => void;
+  appendPlaybackSection: (sectionId: string) => void;
+  movePlaybackOrderItem: (index: number, direction: -1 | 1) => void;
+  duplicatePlaybackOrderItem: (index: number) => void;
+  removePlaybackOrderItem: (index: number) => void;
+  clearPlaybackOrder: () => void;
   
   // 音符操作
   addNote: (noteValue: NoteValue, duration?: Duration, options?: { hasHighDot?: boolean; hasLowDot?: boolean }) => void;
@@ -187,6 +204,15 @@ function normalizeLyrics(lyrics: Lyric[] | undefined): Lyric[] {
  * 创建初始文档（使用稳定ID避免hydration错误）
  */
 function createInitialDocument(override?: Partial<ScoreDocument>): ScoreDocument {
+  const measures = override?.measures?.map(m => ({
+    id: m.id || generateStableId(),
+    elements: (m.elements || []).map(e => ({
+      ...e,
+      id: e.id || generateStableId()
+    }))
+  })) || [{ id: 'measure-1', elements: [] }];
+  const sectionData = normalizeSectionData(override?.sections, override?.playbackOrder, measures);
+
   return {
     version: override?.version || '2.0',
     scoreId: override?.scoreId || 'draft-new',
@@ -196,17 +222,13 @@ function createInitialDocument(override?: Partial<ScoreDocument>): ScoreDocument
     lyricist: override?.lyricist || '',
     composer: override?.composer || '',
     additionalInfo: override?.additionalInfo || '',
-    measures: override?.measures?.map(m => ({
-      id: m.id || generateStableId(),
-      elements: (m.elements || []).map(e => ({
-        ...e,
-        id: e.id || generateStableId()
-      }))
-    })) || [{ id: 'measure-1', elements: [] }],
+    measures,
     ties: override?.ties || [],
     beams: override?.beams || [],
     expressions: override?.expressions || [],
     lyrics: normalizeLyrics(override?.lyrics),
+    sections: sectionData.sections,
+    playbackOrder: sectionData.playbackOrder,
     settings: {
       ...DEFAULT_SETTINGS,
       ...override?.settings,
@@ -719,6 +741,135 @@ export const useScoreStore = create<ScoreStore>()(
     });
   },
 
+  // ============ 段落结构与演奏顺序 ============
+  addSectionAtSelection: () => {
+    set((state) => {
+      const { selectedMeasureIndex, selectedNoteIndex } = state;
+      if (selectedMeasureIndex === null || selectedNoteIndex === null) return;
+
+      const measure = state.document.measures[selectedMeasureIndex];
+      const element = measure?.elements[selectedNoteIndex];
+      if (!measure || !element) return;
+
+      const anchorExists = state.document.sections.some(
+        (section) =>
+          section.anchor.measureId === measure.id &&
+          section.anchor.beforeElementId === element.id
+      );
+      if (anchorExists) return;
+
+      state.document.sections.push({
+        id: nanoid(),
+        label: getNextSectionLabel(state.document.sections.map((section) => section.label)),
+        anchor: {
+          measureId: measure.id,
+          beforeElementId: element.id,
+        },
+      });
+      state.document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
+  renameSection: (sectionId, label) => {
+    set((state) => {
+      const normalizedLabel = normalizeSectionLabel(label);
+      if (!normalizedLabel || normalizedLabel.length > 12) return;
+
+      const duplicateLabel = state.document.sections.some(
+        (section) =>
+          section.id !== sectionId &&
+          section.label.toLocaleLowerCase() === normalizedLabel.toLocaleLowerCase()
+      );
+      if (duplicateLabel) return;
+
+      const section = state.document.sections.find((item) => item.id === sectionId);
+      if (!section || section.label === normalizedLabel) return;
+
+      section.label = normalizedLabel;
+      state.document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
+  deleteSection: (sectionId) => {
+    set((state) => {
+      if (!state.document.sections.some((section) => section.id === sectionId)) return;
+
+      state.document.sections = state.document.sections.filter((section) => section.id !== sectionId);
+      state.document.playbackOrder = state.document.playbackOrder.filter((id) => id !== sectionId);
+      state.document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
+  appendPlaybackSection: (sectionId) => {
+    set((state) => {
+      if (!state.document.sections.some((section) => section.id === sectionId)) return;
+
+      state.document.playbackOrder.push(sectionId);
+      state.document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
+  movePlaybackOrderItem: (index, direction) => {
+    set((state) => {
+      const targetIndex = index + direction;
+      if (
+        index < 0 ||
+        index >= state.document.playbackOrder.length ||
+        targetIndex < 0 ||
+        targetIndex >= state.document.playbackOrder.length
+      ) return;
+
+      const currentId = state.document.playbackOrder[index];
+      state.document.playbackOrder[index] = state.document.playbackOrder[targetIndex];
+      state.document.playbackOrder[targetIndex] = currentId;
+      state.document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
+  duplicatePlaybackOrderItem: (index) => {
+    set((state) => {
+      const sectionId = state.document.playbackOrder[index];
+      if (!sectionId) return;
+
+      state.document.playbackOrder.splice(index + 1, 0, sectionId);
+      state.document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
+  removePlaybackOrderItem: (index) => {
+    set((state) => {
+      if (index < 0 || index >= state.document.playbackOrder.length) return;
+
+      state.document.playbackOrder.splice(index, 1);
+      state.document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
+  clearPlaybackOrder: () => {
+    set((state) => {
+      if (state.document.playbackOrder.length === 0) return;
+
+      state.document.playbackOrder = [];
+      state.document.updatedAt = new Date().toISOString();
+      state.isDirty = true;
+      saveToHistory(state);
+    });
+  },
+
   // ============ 音符操作 ============
   addNote: (noteValue, duration = '1/4', options = {}) => {
     set((state) => {
@@ -758,7 +909,7 @@ export const useScoreStore = create<ScoreStore>()(
             };
           } else {
             // 替换为新的音符
-            measure.elements[selectedNoteIndex] = newNote;
+            measure.elements[selectedNoteIndex] = preserveAnchoredElementId(element, newNote);
           }
         }
       } else {
@@ -809,7 +960,10 @@ export const useScoreStore = create<ScoreStore>()(
 
         if (selectedMeasureIndex !== null && selectedNoteIndex !== null) {
           const measure = document.measures[selectedMeasureIndex];
-          measure.elements[selectedNoteIndex] = newRest;
+          const existingElement = measure.elements[selectedNoteIndex];
+          if (existingElement) {
+            measure.elements[selectedNoteIndex] = preserveAnchoredElementId(existingElement, newRest);
+          }
         } else {
           // 不再限制小节内音符数量，依靠 flex-wrap 自动换行显示
           const lastMeasure = document.measures[document.measures.length - 1];
@@ -838,14 +992,14 @@ export const useScoreStore = create<ScoreStore>()(
         element.value = noteValue;
       } else {
         // 替换为新的音符
-        measure.elements[selectedNoteIndex] = {
+        measure.elements[selectedNoteIndex] = preserveAnchoredElementId(element, {
           id: nanoid(),
           type: 'note',
           value: noteValue,
           duration: element.type === 'rest' 
             ? element.duration 
             : '1/4',
-        };
+        });
       }
       
       document.updatedAt = new Date().toISOString();
@@ -1036,6 +1190,12 @@ export const useScoreStore = create<ScoreStore>()(
       if (!element) return;
 
       const deleteCount = 1;
+      document.sections = relocateSectionsBeforeElementDelete(
+        document.sections,
+        measure,
+        selectedNoteIndex,
+        deleteCount
+      );
       measure.elements.splice(selectedNoteIndex, deleteCount);
       
       // 删除相关的连音线
@@ -1110,8 +1270,23 @@ export const useScoreStore = create<ScoreStore>()(
   deleteMeasure: (index) => {
     set((state) => {
       if (state.document.measures.length <= 1) return; // 至少保留一个小节
-      
+
+      const deletedMeasureId = state.document.measures[index]?.id;
       state.document.measures.splice(index, 1);
+
+      if (deletedMeasureId) {
+        const deletedSectionIds = new Set(
+          state.document.sections
+            .filter((section) => section.anchor.measureId === deletedMeasureId)
+            .map((section) => section.id)
+        );
+        state.document.sections = state.document.sections.filter(
+          (section) => section.anchor.measureId !== deletedMeasureId
+        );
+        state.document.playbackOrder = state.document.playbackOrder.filter(
+          (sectionId) => !deletedSectionIds.has(sectionId)
+        );
+      }
       
       // 删除相关的连音线
       state.document.ties = state.document.ties?.filter(

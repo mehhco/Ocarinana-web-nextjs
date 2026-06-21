@@ -45,6 +45,8 @@ function createGuestDocument(instrumentType: InstrumentType) {
     beams: [],
     expressions: [],
     lyrics: [],
+    sections: [],
+    playbackOrder: [],
     settings: {
       ...DEFAULT_SETTINGS,
       instrumentType,

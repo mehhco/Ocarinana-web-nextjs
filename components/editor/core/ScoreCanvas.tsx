@@ -22,7 +22,7 @@ import { DEFAULT_PRODUCER, getInstrumentLabel } from '../lib/constants';
 import { getNormalizedScoreDisplayScale } from '../hooks/useScoreDisplayScale';
 import { getFingeringUrl } from '../lib/fingeringMap';
 import { LyricsInput } from '../overlay/LyricsInput';
-import type { Beam, Duration, ExpressionMark, InstrumentType, KeySignature, Lyric, LyricLine, Measure, ScoreElement, Tie } from '@/lib/editor/types';
+import type { Beam, Duration, ExpressionMark, InstrumentType, KeySignature, Lyric, LyricLine, Measure, ScoreElement, ScoreSection, Tie } from '@/lib/editor/types';
 
 interface NotePosition {
   measureIndex: number;
@@ -731,6 +731,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
 
 interface MeasureProps {
   measure: Measure;
+  sections: ScoreSection[];
   measureIndex: number;
   selectedNoteIndex: number | null;
   instrumentType: InstrumentType;
@@ -813,18 +814,54 @@ const MeasureComponent = memo(function MeasureComponent({
   onLyricPaste,
   onLyricCompositionStart,
   onLyricCompositionEnd,
+  sections,
 }: MeasureProps) {
   const lyricLines: LyricLine[] = showSecondLyricLine ? [1, 2] : [1];
+  const sectionByElementId = new Map(
+    sections
+      .filter((section) => section.anchor.beforeElementId !== null)
+      .map((section) => [section.anchor.beforeElementId, section])
+  );
+  const lineEndSection = sections.find((section) => section.anchor.beforeElementId === null);
+
+  const renderSectionMarker = (section: ScoreSection, noteIndex: number) => (
+    <button
+      key={section.id}
+      type="button"
+      disabled={readOnly || isExporting || isBeamMode || isTieMode || measure.elements.length === 0}
+      onClick={() => onSelectNote(noteIndex)}
+      className="flex flex-shrink-0 cursor-pointer flex-col items-center py-[var(--score-element-py)] disabled:cursor-default"
+      aria-label={`段落 ${section.label}`}
+    >
+      <div className={cn('w-1 flex-shrink-0 transition-[height]', showFingering ? 'h-[var(--score-fingering-height)]' : 'h-0')} />
+      {showOrnamentRow && <div className={ORNAMENT_ROW_CLASS} />}
+      {showTieRow && <div className={TIE_SLOT_CLASS} />}
+      <div className="h-[var(--score-high-dot-row-height)] flex-shrink-0" />
+      <div className="flex h-[var(--score-main-row-height)] items-center justify-center px-1">
+        <span
+          className={cn(
+            'inline-flex min-w-5 max-w-24 items-center justify-center truncate rounded-[2px] border border-slate-500 bg-white px-1 py-0.5 font-serif text-[10px] font-bold leading-none text-slate-700 shadow-[0_1px_0_rgba(15,23,42,0.08)]',
+            !readOnly && !isExporting && selectedNoteIndex === noteIndex && 'border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-200'
+          )}
+          title={section.label}
+        >
+          {section.label}
+        </span>
+      </div>
+    </button>
+  );
 
   return (
     <div className="flex w-full flex-wrap items-start px-[var(--score-measure-px)] py-[var(--score-measure-py)]">
       {measure.elements.map((element, noteIndex) => {
         const positionKey = createPositionKey(measureIndex, noteIndex);
+        const section = sectionByElementId.get(element.id);
 
         return (
-          <NoteElementComponent
-            key={element.id}
-            element={element}
+          <div key={element.id} className="flex flex-shrink-0 items-start">
+            {section && renderSectionMarker(section, noteIndex)}
+            <NoteElementComponent
+              element={element}
             measureIndex={measureIndex}
             noteIndex={noteIndex}
             isSelected={selectedNoteIndex === noteIndex}
@@ -896,10 +933,12 @@ const MeasureComponent = memo(function MeasureComponent({
                 })
                 : undefined
             }
-            onClick={() => onSelectNote(noteIndex)}
-          />
+              onClick={() => onSelectNote(noteIndex)}
+            />
+          </div>
         );
       })}
+      {lineEndSection && renderSectionMarker(lineEndSection, Math.max(0, measure.elements.length - 1))}
     </div>
   );
 });
@@ -981,6 +1020,24 @@ export function ScoreCanvas({
 
     return map;
   }, [scoreDoc.expressions]);
+  const sectionsByMeasureId = useMemo(() => {
+    const map = new Map<string, ScoreSection[]>();
+
+    scoreDoc.sections.forEach((section) => {
+      const sections = map.get(section.anchor.measureId) ?? [];
+      sections.push(section);
+      map.set(section.anchor.measureId, sections);
+    });
+
+    return map;
+  }, [scoreDoc.sections]);
+  const playbackSectionLabels = useMemo(() => {
+    const sectionById = new Map(scoreDoc.sections.map((section) => [section.id, section]));
+    return scoreDoc.playbackOrder.flatMap((sectionId) => {
+      const section = sectionById.get(sectionId);
+      return section ? [section.label] : [];
+    });
+  }, [scoreDoc.playbackOrder, scoreDoc.sections]);
   const tieMeasureIndexes = useMemo(() => {
     const indexes = new Set<number>();
 
@@ -1395,6 +1452,19 @@ export function ScoreCanvas({
               <span className="w-full font-medium text-slate-700">
                 {getInstrumentLabel(scoreDoc.settings.instrumentType)}{scoreDoc.settings.keySignature}调指法
               </span>
+              {playbackSectionLabels.length > 0 && (
+                <div className="mt-0.5 flex w-full flex-wrap items-center gap-1 text-slate-500">
+                  <span className="mr-0.5">演奏顺序:</span>
+                  {playbackSectionLabels.map((label, index) => (
+                    <span key={`${label}-${index}`} className="inline-flex items-center gap-1">
+                      {index > 0 && <span className="text-slate-300">→</span>}
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-[2px] border border-slate-400 bg-white px-1 font-serif text-[9px] font-semibold leading-4 text-slate-700">
+                        {label}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="text-right text-[11px] leading-5 text-slate-500">
@@ -1436,6 +1506,7 @@ export function ScoreCanvas({
                 >
                   <MeasureComponent
                     measure={measure}
+                    sections={sectionsByMeasureId.get(measure.id) ?? []}
                     measureIndex={measureIndex}
                     selectedNoteIndex={isSelected ? selectedNoteIndex : null}
                     instrumentType={scoreDoc.settings.instrumentType}

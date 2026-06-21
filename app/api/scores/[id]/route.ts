@@ -52,6 +52,8 @@ export async function GET(
     beams: data.document?.beams ?? [],
     expressions: data.document?.expressions ?? [],
     lyrics: data.document?.lyrics ?? [],
+    sections: data.document?.sections ?? [],
+    playbackOrder: data.document?.playbackOrder ?? [],
     settings: {
       instrumentType: "12-hole",
       keySignature: "C",

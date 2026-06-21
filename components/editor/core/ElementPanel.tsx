@@ -8,6 +8,7 @@ import { useScoreStore } from '../hooks/useScoreStore';
 import { getAvailableNoteRange, getInstrumentLabel } from '../lib/constants';
 import { BARLINE_SHORTCUTS, DURATION_SHORTCUTS, EDITOR_SHORTCUT_LABELS } from '../lib/keyboardShortcuts';
 import type { BarlineType, Duration, DynamicMark, NoteValue, OrnamentMark } from '@/lib/editor/types';
+import { SectionStructurePanel } from './SectionStructurePanel';
 
 interface HelpContent {
   title: string;
@@ -1110,6 +1111,8 @@ export const ElementPanel = memo(function ElementPanel() {
               </div>
             </div>
           </div>
+
+          <SectionStructurePanel />
         </div>
       </aside>
     </TooltipProvider>
