@@ -101,7 +101,7 @@ export default async function PublicEditorPage({ searchParams }: PublicEditorPag
   }
 
   return (
-    <main className="flex h-screen min-h-0 w-full flex-col overflow-hidden bg-slate-50">
+    <main className="flex h-screen h-dvh min-h-0 w-full flex-col overflow-hidden bg-slate-50">
       <div className="flex h-12 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4">
         <Link href="/" className="text-sm font-semibold text-emerald-700">
           Ocarinana

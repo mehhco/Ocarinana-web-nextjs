@@ -21,7 +21,7 @@ export function ProtectedShell({ children, footer, nav }: ProtectedShellProps) {
       className={cn(
         "w-full",
         isImmersiveEditor
-          ? "flex h-screen min-h-0 overflow-hidden bg-slate-50"
+          ? "flex h-screen h-dvh min-h-0 overflow-hidden bg-slate-50"
           : "flex min-h-screen flex-col items-center",
       )}
     >

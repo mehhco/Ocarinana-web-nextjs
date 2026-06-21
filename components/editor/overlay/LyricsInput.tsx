@@ -40,6 +40,7 @@ export function LyricsInput({
     <input
       ref={inputRef}
       type="text"
+      enterKeyHint="next"
       value={value}
       disabled={disabled}
       placeholder={placeholder}
@@ -53,7 +54,7 @@ export function LyricsInput({
       onClick={stopPointerPropagation}
       onMouseDown={stopPointerPropagation}
       className={cn(
-        'h-6 w-16 rounded-md border px-1 text-center text-sm leading-none transition-all',
+        'h-11 w-16 rounded-md border px-1 text-center text-base leading-none transition-all lg:h-6 lg:text-sm',
         'bg-transparent text-slate-700 placeholder:text-slate-300',
         active
           ? 'border-indigo-400 bg-white shadow-sm ring-1 ring-indigo-300'

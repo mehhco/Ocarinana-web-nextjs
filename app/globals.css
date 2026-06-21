@@ -226,3 +226,43 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* 移动端编辑器：处理浏览器安全区、触控命中与软键盘后的可视区域。 */
+.editor-safe-top {
+  padding-top: max(0.375rem, env(safe-area-inset-top));
+}
+
+.editor-safe-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 1023px) {
+  .mobile-editor {
+    overscroll-behavior: none;
+  }
+
+  .mobile-editor [data-score-exporting="false"] {
+    --score-lyric-row-height: 2.75rem !important;
+  }
+
+  .mobile-editor .score-element-hit::before {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2.75rem;
+    height: 2.75rem;
+    content: "";
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-editor *,
+  .mobile-editor *::before,
+  .mobile-editor *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

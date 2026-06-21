@@ -6,6 +6,10 @@ import { useScoreStore } from '../hooks/useScoreStore';
 import { Toolbar } from './Toolbar';
 import { ElementPanel } from './ElementPanel';
 import { ScoreCanvas } from './ScoreCanvas';
+import { MobileEditorHeader } from '../mobile/MobileEditorHeader';
+import { MobileNoteBar } from '../mobile/MobileNoteBar';
+import { MobileToolSheet } from '../mobile/MobileToolSheet';
+import { ScoreSettingsSheet } from '../mobile/ScoreSettingsSheet';
 import { createScoreInCloud, exportAsImage } from '../lib/exportUtils';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { EDITOR_SCORE_DISPLAY_SCALE_STORAGE_KEY, useScoreDisplayScale } from '../hooks/useScoreDisplayScale';
@@ -53,6 +57,8 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
   const scoreExportRef = useRef<HTMLDivElement>(null);
   const { isDirty, isSaving, saveNow } = useAutoSave(currentScoreId);
   const [displayScale, setDisplayScale] = useScoreDisplayScale(EDITOR_SCORE_DISPLAY_SCALE_STORAGE_KEY);
+  const [isMobileToolSheetOpen, setMobileToolSheetOpen] = useState(false);
+  const [isScoreSettingsOpen, setScoreSettingsOpen] = useState(false);
 
   useEffect(() => {
     initialize(initialDocument);
@@ -235,28 +241,46 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
   ]);
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-slate-50">
-      <Toolbar
+    <div className="mobile-editor flex h-full min-h-0 w-full flex-col overflow-hidden bg-slate-50">
+      <MobileEditorHeader
         isDirty={isDirty}
         isSaving={isSaving}
-        cloudSaveAvailable={Boolean(currentScoreId) || allowCloudCreate}
+        isExporting={isExporting}
         backHref={backHref}
-        displayScale={displayScale}
         onBack={handleBack}
-        onExportImage={handleExportImage}
         onSave={handleManualSave}
-        onDisplayScaleChange={setDisplayScale}
+        onExport={handleExportImage}
+        onOpenSettings={() => setScoreSettingsOpen(true)}
       />
-      <div className="flex flex-1 justify-center overflow-hidden px-3 pb-3 pt-1.5">
-        <div className="flex h-full min-h-0 w-[80vw] min-w-[1000px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-md">
-          <div className="h-full min-h-0 w-1/3 overflow-hidden border-r border-slate-200 bg-slate-50/50">
+
+      <div className="hidden lg:block">
+        <Toolbar
+          isDirty={isDirty}
+          isSaving={isSaving}
+          cloudSaveAvailable={Boolean(currentScoreId) || allowCloudCreate}
+          backHref={backHref}
+          displayScale={displayScale}
+          onBack={handleBack}
+          onExportImage={handleExportImage}
+          onSave={handleManualSave}
+          onDisplayScaleChange={setDisplayScale}
+        />
+      </div>
+
+      <div className="flex min-h-0 flex-1 justify-center overflow-hidden lg:px-3 lg:pb-3 lg:pt-1.5">
+        <div className="flex h-full min-h-0 w-full overflow-hidden bg-white lg:w-[80vw] lg:min-w-[1000px] lg:rounded-lg lg:border lg:border-slate-200 lg:shadow-md">
+          <div className="hidden h-full min-h-0 w-1/3 overflow-hidden border-r border-slate-200 bg-slate-50/50 lg:block">
             <ElementPanel />
           </div>
-          <div className="h-full min-h-0 w-2/3 overflow-hidden bg-white">
+          <div className="h-full min-h-0 w-full overflow-hidden bg-white lg:w-2/3">
             <ScoreCanvas exportRef={scoreExportRef} displayScale={displayScale} />
           </div>
         </div>
       </div>
+
+      <MobileNoteBar onOpenTools={() => setMobileToolSheetOpen(true)} />
+      <MobileToolSheet open={isMobileToolSheetOpen} onClose={() => setMobileToolSheetOpen(false)} />
+      <ScoreSettingsSheet open={isScoreSettingsOpen} onClose={() => setScoreSettingsOpen(false)} />
     </div>
   );
 });

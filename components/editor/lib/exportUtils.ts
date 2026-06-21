@@ -24,6 +24,37 @@ type Html2Canvas = (
 const MAX_EXPORT_SCALE = 3;
 const MIN_EXPORT_SCALE = 2;
 const EXPORT_RENDER_DELAY_FRAMES = 2;
+const HTML2CANVAS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+let html2CanvasPromise: Promise<Html2Canvas> | null = null;
+
+function loadHtml2Canvas(): Promise<Html2Canvas> {
+  const existing = (window as Window & { html2canvas?: Html2Canvas }).html2canvas;
+  if (existing) return Promise.resolve(existing);
+  if (html2CanvasPromise) return html2CanvasPromise;
+
+  html2CanvasPromise = new Promise<Html2Canvas>((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = HTML2CANVAS_URL;
+    script.async = true;
+    script.dataset.editorExportDependency = 'html2canvas';
+    script.addEventListener('load', () => {
+      const loaded = (window as Window & { html2canvas?: Html2Canvas }).html2canvas;
+      if (loaded) {
+        resolve(loaded);
+        return;
+      }
+      reject(new Error('导出组件加载失败，请重试'));
+    }, { once: true });
+    script.addEventListener('error', () => reject(new Error('导出组件加载失败，请检查网络后重试')), { once: true });
+    document.head.appendChild(script);
+  }).catch((error) => {
+    html2CanvasPromise = null;
+    document.querySelector('script[data-editor-export-dependency="html2canvas"]')?.remove();
+    throw error;
+  });
+
+  return html2CanvasPromise;
+}
 
 function nextFrame(): Promise<void> {
   return new Promise((resolve) => {
@@ -203,19 +234,13 @@ function downloadCanvas(canvas: HTMLCanvasElement, title: string): Promise<void>
 }
 
 /**
- * 导出为 PNG 图片（使用全局 html2canvas）
- * 注意：需要在页面中先加载 html2canvas 脚本
+ * 导出为 PNG 图片（首次导出时按需加载 html2canvas）
  */
 export async function exportAsImage(
   containerRef: RefObject<HTMLDivElement | null>,
   title: string
 ): Promise<void> {
-  // 使用全局 html2canvas（通过 CDN 加载）
-  const html2canvas = (window as Window & { html2canvas?: Html2Canvas }).html2canvas;
-  
-  if (!html2canvas) {
-    throw new Error('html2canvas 未加载，请确保页面已加载该脚本');
-  }
+  const html2canvas = await loadHtml2Canvas();
 
   if (!containerRef.current) {
     throw new Error('乐谱容器不存在');

@@ -49,7 +49,7 @@ const NoteButton = memo(function NoteButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'flex h-9 items-center justify-center rounded-md border text-sm font-semibold transition-all',
+        'flex h-11 items-center justify-center rounded-md border text-sm font-semibold transition-all lg:h-9',
         'border-slate-200 bg-white text-slate-700',
         'hover:border-indigo-400 hover:text-indigo-600 hover:shadow-sm',
         'active:scale-95 active:bg-indigo-50',
@@ -127,7 +127,7 @@ const ActionButton = memo(function ActionButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'w-full rounded-md border px-2.5 py-2 text-xs font-medium transition-all',
+        'min-h-11 w-full rounded-md border px-2.5 py-2 text-xs font-medium transition-all lg:min-h-0',
         'hover:shadow-sm active:scale-95',
         active
           ? 'border-indigo-600 bg-indigo-50 text-indigo-700'

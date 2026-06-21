@@ -524,7 +524,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
     return (
       <div
         className={cn(
-          'flex w-[var(--score-note-width)] cursor-pointer flex-col items-center py-[var(--score-element-py)] transition-all',
+          'score-element-hit relative flex w-[var(--score-note-width)] cursor-pointer flex-col items-center py-[var(--score-element-py)] transition-all',
           isInsertTarget
             ? 'relative rounded-md bg-emerald-50 ring-2 ring-emerald-500 after:absolute after:-right-1 after:top-1 after:h-[calc(100%-0.5rem)] after:w-0.5 after:rounded-full after:bg-emerald-500'
             : isBeamStart || isBeamPreview
@@ -670,7 +670,7 @@ const NoteElementComponent = memo(function NoteElementComponent({
   return (
     <div
       className={cn(
-        'flex cursor-pointer flex-col items-center py-[var(--score-element-py)] transition-all',
+        'score-element-hit relative flex cursor-pointer flex-col items-center py-[var(--score-element-py)] transition-all',
         widthClass,
         isInsertTarget
           ? 'relative rounded-md bg-emerald-50 ring-2 ring-emerald-500 after:absolute after:-right-1 after:top-1 after:h-[calc(100%-0.5rem)] after:w-0.5 after:rounded-full after:bg-emerald-500'
@@ -830,7 +830,7 @@ const MeasureComponent = memo(function MeasureComponent({
       type="button"
       disabled={readOnly || isExporting || isBeamMode || isTieMode || measure.elements.length === 0}
       onClick={() => onSelectNote(noteIndex)}
-      className="flex flex-shrink-0 cursor-pointer flex-col items-center py-[var(--score-element-py)] disabled:cursor-default"
+      className="score-element-hit relative flex flex-shrink-0 cursor-pointer flex-col items-center py-[var(--score-element-py)] disabled:cursor-default"
       aria-label={`段落 ${section.label}`}
     >
       <div className={cn('w-1 flex-shrink-0 transition-[height]', showFingering ? 'h-[var(--score-fingering-height)]' : 'h-0')} />
@@ -950,29 +950,27 @@ export function ScoreCanvas({
   showLyricsOverride,
   showFingeringOverride,
 }: ScoreCanvasProps) {
-  const {
-    document: scoreDoc,
-    selectedMeasureIndex,
-    selectedNoteIndex,
-    selectElement,
-    addMeasure,
-    clearSelection,
-    isInsertMode,
-    isBeamMode,
-    beamStartPosition,
-    startBeam,
-    cancelBeamMode,
-    isTieMode,
-    tieStartPosition,
-    startTie,
-    endTie,
-    cancelTieMode,
-    updateLyrics,
-    updateLyricsBatch,
-    activeLyricLine,
-    setActiveLyricLine,
-    isExporting,
-  } = useScoreStore();
+  const scoreDoc = useScoreStore((state) => state.document);
+  const selectedMeasureIndex = useScoreStore((state) => state.selectedMeasureIndex);
+  const selectedNoteIndex = useScoreStore((state) => state.selectedNoteIndex);
+  const selectElement = useScoreStore((state) => state.selectElement);
+  const addMeasure = useScoreStore((state) => state.addMeasure);
+  const clearSelection = useScoreStore((state) => state.clearSelection);
+  const isInsertMode = useScoreStore((state) => state.isInsertMode);
+  const isBeamMode = useScoreStore((state) => state.isBeamMode);
+  const beamStartPosition = useScoreStore((state) => state.beamStartPosition);
+  const startBeam = useScoreStore((state) => state.startBeam);
+  const cancelBeamMode = useScoreStore((state) => state.cancelBeamMode);
+  const isTieMode = useScoreStore((state) => state.isTieMode);
+  const tieStartPosition = useScoreStore((state) => state.tieStartPosition);
+  const startTie = useScoreStore((state) => state.startTie);
+  const endTie = useScoreStore((state) => state.endTie);
+  const cancelTieMode = useScoreStore((state) => state.cancelTieMode);
+  const updateLyrics = useScoreStore((state) => state.updateLyrics);
+  const updateLyricsBatch = useScoreStore((state) => state.updateLyricsBatch);
+  const activeLyricLine = useScoreStore((state) => state.activeLyricLine);
+  const setActiveLyricLine = useScoreStore((state) => state.setActiveLyricLine);
+  const isExporting = useScoreStore((state) => state.isExporting);
 
   const [lyricDrafts, setLyricDrafts] = useState<Record<string, string>>({});
   const [composingLyricKey, setComposingLyricKey] = useState<string | null>(null);
@@ -1422,8 +1420,8 @@ export function ScoreCanvas({
   const scoreScaleStyle = useMemo(() => createScoreScaleStyle(displayScale), [displayScale]);
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-white">
-      <div ref={exportRef} className="bg-white" style={scoreScaleStyle}>
+    <div className="h-full w-full touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain bg-white">
+      <div ref={exportRef} className="bg-white" style={scoreScaleStyle} data-score-exporting={isExporting}>
         <div className="border-b border-slate-200 bg-slate-50/50 px-5 py-4">
           <div className="min-w-0 text-center">
             <h1 className="mx-auto mb-1 max-w-[70%] break-words px-2 pb-0.5 text-lg font-bold leading-8 tracking-normal text-slate-800">
@@ -1551,6 +1549,7 @@ export function ScoreCanvas({
 
       {!isExporting && !readOnly && (
         <button
+          type="button"
           onClick={addMeasure}
           className="mx-4 mb-3 mt-2 flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 py-1.5 text-sm font-medium text-slate-400 transition-all hover:border-indigo-400 hover:text-indigo-600"
         >

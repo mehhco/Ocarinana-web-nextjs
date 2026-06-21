@@ -119,10 +119,6 @@ export default function RootLayout({
 
         <ServiceWorkerRegister />
         <ResourceHints {...COMMON_RESOURCE_HINTS} />
-        <script
-          async
-          src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
-        />
       </body>
     </html>
   );
