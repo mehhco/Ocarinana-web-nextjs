@@ -192,7 +192,7 @@ export function PublicScoreViewer({ document }: PublicScoreViewerProps) {
         </div>
       </div>
       <div className="h-[70vh] min-h-[520px] overflow-x-auto bg-white">
-        <div className="mx-auto h-full w-[760px] max-w-none">
+        <div className="h-full w-full">
           <ScoreCanvas
             exportRef={exportRef}
             readOnly

@@ -824,32 +824,48 @@ const MeasureComponent = memo(function MeasureComponent({
   );
   const lineEndSection = sections.find((section) => section.anchor.beforeElementId === null);
 
-  const renderSectionMarker = (section: ScoreSection, noteIndex: number) => (
-    <button
-      key={section.id}
-      type="button"
-      disabled={readOnly || isExporting || isBeamMode || isTieMode || measure.elements.length === 0}
-      onClick={() => onSelectNote(noteIndex)}
-      className="score-element-hit relative flex flex-shrink-0 cursor-pointer flex-col items-center py-[var(--score-element-py)] disabled:cursor-default"
-      aria-label={`段落 ${section.label}`}
-    >
-      <div className={cn('w-1 flex-shrink-0 transition-[height]', showFingering ? 'h-[var(--score-fingering-height)]' : 'h-0')} />
-      {showOrnamentRow && <div className={ORNAMENT_ROW_CLASS} />}
-      {showTieRow && <div className={TIE_SLOT_CLASS} />}
-      <div className="h-[var(--score-high-dot-row-height)] flex-shrink-0" />
-      <div className="flex h-[var(--score-main-row-height)] items-center justify-center px-1">
-        <span
-          className={cn(
-            'inline-flex min-w-5 max-w-24 items-center justify-center truncate rounded-[2px] border border-slate-500 bg-white px-1 py-0.5 font-serif text-[10px] font-bold leading-none text-slate-700 shadow-[0_1px_0_rgba(15,23,42,0.08)]',
-            !readOnly && !isExporting && selectedNoteIndex === noteIndex && 'border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-200'
-          )}
-          title={section.label}
-        >
-          {section.label}
-        </span>
+  const renderSectionMarker = (section: ScoreSection, noteIndex: number) => {
+    const sectionMarkerClassName =
+      'score-element-hit relative flex flex-shrink-0 flex-col items-center py-[var(--score-element-py)]';
+    const sectionMarkerContent = (
+      <>
+        <div className={cn('w-1 flex-shrink-0 transition-[height]', showFingering ? 'h-[var(--score-fingering-height)]' : 'h-0')} />
+        {showOrnamentRow && <div className={ORNAMENT_ROW_CLASS} />}
+        {showTieRow && <div className={TIE_SLOT_CLASS} />}
+        <div className="h-[var(--score-high-dot-row-height)] flex-shrink-0" />
+        <div className="flex h-[var(--score-main-row-height)] items-center justify-center px-1">
+          <span
+            className={cn(
+              'inline-flex min-w-5 max-w-24 items-center justify-center truncate rounded-[2px] border border-slate-500 bg-white px-1 py-0.5 font-serif text-[10px] font-bold leading-none text-slate-700 shadow-[0_1px_0_rgba(15,23,42,0.08)]',
+              !readOnly && !isExporting && selectedNoteIndex === noteIndex && 'border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-200'
+            )}
+            title={section.label}
+          >
+            <span className="relative" style={isExporting ? { top: '-0.5em' } : undefined}>
+              {section.label}
+            </span>
+          </span>
+        </div>
+      </>
+    );
+
+    return isExporting ? (
+      <div key={section.id} className={sectionMarkerClassName}>
+        {sectionMarkerContent}
       </div>
-    </button>
-  );
+    ) : (
+      <button
+        key={section.id}
+        type="button"
+        disabled={readOnly || isBeamMode || isTieMode || measure.elements.length === 0}
+        onClick={() => onSelectNote(noteIndex)}
+        className={cn(sectionMarkerClassName, 'cursor-pointer disabled:cursor-default')}
+        aria-label={`段落 ${section.label}`}
+      >
+        {sectionMarkerContent}
+      </button>
+    );
+  };
 
   return (
     <div className="flex w-full flex-wrap items-start px-[var(--score-measure-px)] py-[var(--score-measure-py)]">
@@ -1457,7 +1473,9 @@ export function ScoreCanvas({
                     <span key={`${label}-${index}`} className="inline-flex items-center gap-1">
                       {index > 0 && <span className="text-slate-300">→</span>}
                       <span className="inline-flex min-w-5 items-center justify-center rounded-[2px] border border-slate-400 bg-white px-1 font-serif text-[9px] font-semibold leading-4 text-slate-700">
-                        {label}
+                        <span className="relative" style={isExporting ? { top: '-0.5em' } : undefined}>
+                          {label}
+                        </span>
                       </span>
                     </span>
                   ))}
