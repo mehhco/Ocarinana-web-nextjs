@@ -16,6 +16,7 @@ import {
   type RefObject,
 } from 'react';
 import { PlusIcon } from '@/components/ui/icons';
+import { showToast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
 import { DEFAULT_PRODUCER, getInstrumentLabel } from '../lib/constants';
@@ -685,15 +686,20 @@ const NoteElementComponent = memo(function NoteElementComponent({
       <div className={cn('w-[var(--score-fingering-width)] flex-shrink-0 overflow-hidden transition-[height]', showFingering ? 'h-[var(--score-fingering-height)]' : 'h-0')} />
       {showOrnamentRow && (
         <div className={ORNAMENT_ROW_CLASS}>
-          {element.type === 'extension' && <OrnamentRow expressions={expressions} />}
+          {(element.type === 'extension' || element.type === 'rest') && <OrnamentRow expressions={expressions} />}
         </div>
       )}
       {showTieRow && <TieSegment positions={tieSegmentPositions} />}
       <div className="h-[var(--score-high-dot-row-height)] flex-shrink-0" />
       <div className="flex h-[var(--score-main-row-height)] flex-shrink-0 items-center justify-center">
-        <span className={cn('text-[length:var(--score-note-font)] font-bold', symbolColor)}>
-          {element.type === 'barline' ? renderBarlineSymbol(element) : symbol}
-        </span>
+        <div className="relative flex h-[var(--score-main-row-height)] w-[var(--score-note-body-width)] items-end justify-center">
+          <span className={cn('text-[length:var(--score-note-font)] font-bold leading-none', symbolColor)}>
+            {element.type === 'barline' ? renderBarlineSymbol(element) : symbol}
+          </span>
+          {element.type === 'rest' && element.hasAugmentationDot && (
+            <span className="absolute bottom-0 right-0 text-[length:var(--score-augmentation-dot-font)] font-bold leading-none text-slate-800">•</span>
+          )}
+        </div>
       </div>
       {restDurationLineCount > 0 ? (
         <DurationLines
@@ -976,6 +982,7 @@ export function ScoreCanvas({
   const isBeamMode = useScoreStore((state) => state.isBeamMode);
   const beamStartPosition = useScoreStore((state) => state.beamStartPosition);
   const startBeam = useScoreStore((state) => state.startBeam);
+  const endBeam = useScoreStore((state) => state.endBeam);
   const cancelBeamMode = useScoreStore((state) => state.cancelBeamMode);
   const isTieMode = useScoreStore((state) => state.isTieMode);
   const tieStartPosition = useScoreStore((state) => state.tieStartPosition);
@@ -1247,7 +1254,13 @@ export function ScoreCanvas({
       if (isBeamMode) {
         const element = scoreDoc.measures[measureIndex]?.elements[noteIndex];
 
-        if (!isBeamableElement(element)) return;
+        if (!isBeamableElement(element)) {
+          if (beamStartPosition) {
+            cancelBeamMode();
+          }
+          showToast('无法合并：请选择八分或更短时值的音符、休止符', { duration: 2000 });
+          return;
+        }
 
         if (!beamStartPosition) {
           startBeam(measureIndex, noteIndex);
@@ -1256,11 +1269,19 @@ export function ScoreCanvas({
         }
 
         if (beamStartPosition.measureIndex !== measureIndex || noteIndex <= beamStartPosition.noteIndex) {
-          startBeam(measureIndex, noteIndex);
-          selectElement(measureIndex, noteIndex);
+          cancelBeamMode();
+          showToast('无法合并：请在同一小节内从左到右选择', { duration: 2000 });
           return;
         }
 
+        const rangeElements = scoreDoc.measures[measureIndex]?.elements.slice(beamStartPosition.noteIndex, noteIndex + 1) ?? [];
+        if (rangeElements.length < 2 || !rangeElements.every(isBeamableElement)) {
+          cancelBeamMode();
+          showToast('无法合并：所选范围包含不能合并的元素', { duration: 2000 });
+          return;
+        }
+
+        endBeam(measureIndex, noteIndex);
         selectElement(measureIndex, noteIndex);
         return;
       }
@@ -1296,6 +1317,8 @@ export function ScoreCanvas({
     [
       beamStartPosition,
       clearSelection,
+      cancelBeamMode,
+      endBeam,
       endTie,
       isBeamMode,
       isTieMode,

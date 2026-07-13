@@ -570,6 +570,7 @@ function createRestElement(duration: Duration, restGroup?: Rest['restGroup']): R
     type: 'rest',
     value: '0',
     duration,
+    hasAugmentationDot: false,
     ...(restGroup ? { restGroup } : {}),
   };
 }
@@ -1088,7 +1089,7 @@ export const useScoreStore = create<ScoreStore>()(
       const measure = document.measures[selectedMeasureIndex];
       const element = measure.elements[selectedNoteIndex];
 
-      if (!element || element.type !== 'note') return;
+      if (!element || (element.type !== 'note' && element.type !== 'rest')) return;
 
       element.hasAugmentationDot = !element.hasAugmentationDot;
 
@@ -1723,7 +1724,7 @@ export const useScoreStore = create<ScoreStore>()(
 
       const element = document.measures[selectedMeasureIndex]?.elements[selectedNoteIndex];
 
-      if (!element || (element.type !== 'note' && element.type !== 'extension')) return;
+      if (!element || (element.type !== 'note' && element.type !== 'rest' && element.type !== 'extension')) return;
 
       const expressions = document.expressions || [];
       const existing = expressions.find(

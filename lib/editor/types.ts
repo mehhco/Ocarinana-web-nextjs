@@ -40,6 +40,7 @@ export interface Rest {
   type: 'rest';
   value: '0';
   duration: Duration;
+  hasAugmentationDot?: boolean;
   restGroup?: 'full' | 'half';
 }
 

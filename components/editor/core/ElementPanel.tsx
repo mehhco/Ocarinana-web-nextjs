@@ -423,7 +423,7 @@ const MODIFIER_HELP = {
   dot: {
     title: '附点',
     meaning: '写在数字右下角，表示音符时值延长一半。',
-    usage: '先选中一个数字音符，再点附点；再次点击可取消。',
+    usage: '先选中一个数字音符或休止符 0，再点附点；再次点击可取消。',
     preview: <TextPreview>5·</TextPreview>,
     summary: '让选中音符延长一半。',
     shortcut: EDITOR_SHORTCUT_LABELS.augmentationDot,
@@ -447,7 +447,7 @@ const MODIFIER_HELP = {
   beam: {
     title: '合并时值线',
     meaning: '把相邻短时值音符下方同一水平线连接起来。',
-    usage: '先点击合并时值线，再点起始音符和结束音符，最后确认合并。',
+    usage: '先点击合并时值线，再依次点起始音符和结束音符；选完后会立即合并。',
     preview: <BeamPreview />,
     summary: '连接相邻音符的短横线。',
     shortcut: EDITOR_SHORTCUT_LABELS.beamMode,
@@ -531,7 +531,7 @@ const DYNAMIC_HELP: Record<DynamicMark, HelpContent> = {
 const BREATH_HELP: HelpContent = {
   title: '换气记号',
   meaning: '提示歌唱或管乐在此处快速换气，其他乐器可理解为极短停顿。',
-  usage: '先选中音符或延长线，再点换气；再次点击可取消。记号显示在元素上方。',
+  usage: '先选中音符、休止符 0 或延长线，再点换气；再次点击可取消。记号显示在元素上方。',
   preview: <BreathPreview />,
   summary: '在选中元素上方添加换气提示。',
 };
@@ -596,30 +596,6 @@ function getBasicNoteOptions(instrumentType: string, keySignature: string): { va
   return BASIC_NOTES;
 }
 
-function getBeamDurationLevel(duration: Duration): number {
-  switch (duration) {
-    case '1/8':
-      return 1;
-    case '1/16':
-      return 2;
-    case '1/32':
-      return 3;
-    default:
-      return 0;
-  }
-}
-
-function isBeamableElement(element: unknown): element is { type: 'note' | 'rest'; duration: Duration } {
-  return (
-    !!element &&
-    typeof element === 'object' &&
-    'type' in element &&
-    'duration' in element &&
-    ((element as { type?: string }).type === 'note' || (element as { type?: string }).type === 'rest') &&
-    getBeamDurationLevel((element as { duration: Duration }).duration) > 0
-  );
-}
-
 export const ElementPanel = memo(function ElementPanel() {
   const [showHelp, setShowHelp] = useState(false);
   const addNote = useScoreStore((state) => state.addNote);
@@ -631,7 +607,6 @@ export const ElementPanel = memo(function ElementPanel() {
   const toggleInsertMode = useScoreStore((state) => state.toggleInsertMode);
   const toggleTieMode = useScoreStore((state) => state.toggleTieMode);
   const toggleBeamMode = useScoreStore((state) => state.toggleBeamMode);
-  const endBeam = useScoreStore((state) => state.endBeam);
   const cancelBeamMode = useScoreStore((state) => state.cancelBeamMode);
   const clearAllLyrics = useScoreStore((state) => state.clearAllLyrics);
   const activeLyricLine = useScoreStore((state) => state.activeLyricLine);
@@ -643,7 +618,6 @@ export const ElementPanel = memo(function ElementPanel() {
   const isTieMode = useScoreStore((state) => state.isTieMode);
   const isInsertMode = useScoreStore((state) => state.isInsertMode);
   const isBeamMode = useScoreStore((state) => state.isBeamMode);
-  const beamStartPosition = useScoreStore((state) => state.beamStartPosition);
   const selectedMeasureIndex = useScoreStore((state) => state.selectedMeasureIndex);
   const selectedNoteIndex = useScoreStore((state) => state.selectedNoteIndex);
   const document = useScoreStore((state) => state.document);
@@ -660,12 +634,15 @@ export const ElementPanel = memo(function ElementPanel() {
   const availableNotes = getAvailableNoteRange(settings.instrumentType, settings.keySignature);
   const basicNotes = getBasicNoteOptions(settings.instrumentType, settings.keySignature);
   const hasSelection = selectedMeasureIndex !== null && selectedNoteIndex !== null;
-  const canToggleBreathMark = selectedElement?.type === 'note' || selectedElement?.type === 'extension';
+  const canToggleBreathMark = selectedElement?.type === 'note' || selectedElement?.type === 'rest' || selectedElement?.type === 'extension';
   const selectedDuration =
     selectedElement && (selectedElement.type === 'note' || selectedElement.type === 'rest')
       ? selectedElement.duration
       : null;
-  const hasAugmentationDot = selectedElement?.type === 'note' ? !!selectedElement.hasAugmentationDot : false;
+  const hasAugmentationDot =
+    selectedElement?.type === 'note' || selectedElement?.type === 'rest'
+      ? !!selectedElement.hasAugmentationDot
+      : false;
   const selectedExpressions =
     selectedMeasureIndex !== null && selectedNoteIndex !== null
       ? document.expressions?.filter(
@@ -682,27 +659,6 @@ export const ElementPanel = memo(function ElementPanel() {
     document.lyrics.some(
       (lyric) => lyric.measureIndex === selectedMeasureIndex && (lyric.line ?? 1) === 2 && lyric.text.trim()
     );
-
-  const canConfirmBeam = (() => {
-    if (
-      !isBeamMode ||
-      !beamStartPosition ||
-      selectedMeasureIndex === null ||
-      selectedNoteIndex === null ||
-      beamStartPosition.measureIndex !== selectedMeasureIndex ||
-      selectedNoteIndex <= beamStartPosition.noteIndex
-    ) {
-      return false;
-    }
-
-    const measure = document.measures[selectedMeasureIndex];
-    const rangeElements = measure?.elements.slice(beamStartPosition.noteIndex, selectedNoteIndex + 1) ?? [];
-
-    return (
-      rangeElements.length >= 2 &&
-      rangeElements.every(isBeamableElement)
-    );
-  })();
 
   const handleHighNoteClick = useCallback(
     (noteValue: NoteValue) => {
@@ -777,19 +733,10 @@ export const ElementPanel = memo(function ElementPanel() {
       return;
     }
 
-    if (canConfirmBeam && selectedMeasureIndex !== null && selectedNoteIndex !== null) {
-      endBeam(selectedMeasureIndex, selectedNoteIndex);
-      return;
-    }
-
     cancelBeamMode();
   }, [
     cancelBeamMode,
-    canConfirmBeam,
-    endBeam,
     isBeamMode,
-    selectedMeasureIndex,
-    selectedNoteIndex,
     toggleBeamMode,
   ]);
 
@@ -1023,7 +970,7 @@ export const ElementPanel = memo(function ElementPanel() {
                 help={MODIFIER_HELP.beam}
                 showInlineHelp={showHelp}
               >
-                {!isBeamMode ? '合并时值线' : canConfirmBeam ? '确认合并' : '取消合并'}
+                {!isBeamMode ? '合并时值线' : '取消合并'}
               </ActionButton>
             </div>
           </div>

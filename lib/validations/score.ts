@@ -37,6 +37,7 @@ const restSchema = z.object({
   type: z.literal("rest"),
   value: z.literal("0"),
   duration: durationSchema,
+  hasAugmentationDot: z.boolean().optional(),
   restGroup: z.enum(["full", "half"]).optional(),
 });
 

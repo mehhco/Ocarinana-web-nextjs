@@ -29,3 +29,7 @@ Recent commit subjects are short Chinese summaries such as `体验优化` and `�
 ## Security & Configuration Tips
 
 Do not commit `.env.local` or secrets. Use `env.example` for documented variable names only. Keep database changes in `supabase/migrations/`, and validate request payloads through schemas in `lib/validations/` before persisting user data.
+
+## Agent Skill Preference
+
+Unless the user explicitly requests it, do not use the `superpower` skill.
