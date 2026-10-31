@@ -1,8 +1,10 @@
 import { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { musicClassroomTopics } from '@/lib/music-classroom/topics';
 import { siteUrl } from '@/lib/seo/site';
 
 const siteLastModified = new Date('2026-05-13');
+const classroomLastModified = new Date('2026-10-30');
 const legalLastModified = new Date('2025-10-12');
 
 export const revalidate = 3600;
@@ -73,10 +75,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${siteUrl}/music-classroom`,
-      lastModified: siteLastModified,
+      lastModified: classroomLastModified,
       changeFrequency: 'weekly',
       priority: 0.85,
     },
+    ...musicClassroomTopics.map((topic) => ({
+      url: `${siteUrl}/music-classroom/${topic.slug}`,
+      lastModified: classroomLastModified,
+      changeFrequency: 'monthly' as const,
+      priority: 0.78,
+    })),
     {
       url: `${siteUrl}/shop`,
       lastModified: siteLastModified,

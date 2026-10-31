@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { applyDevelopmentDocumentCacheReset } from "@/lib/cache/static-asset-cache";
 import { hasEnvVars } from "../utils";
 
 const PUBLIC_PATH_PREFIXES = [
@@ -30,9 +31,15 @@ export async function updateSession(request: NextRequest) {
   const isApiPath = request.nextUrl.pathname.startsWith("/api/");
 
   if (request.nextUrl.pathname.includes("baidu_verify_") && request.nextUrl.pathname.endsWith(".html")) {
-    return NextResponse.next({
+    const response = NextResponse.next({
       request,
     });
+    applyDevelopmentDocumentCacheReset(
+      response.headers,
+      process.env.NODE_ENV === "production",
+      request.headers.get("accept")
+    );
+    return response;
   }
 
   let supabaseResponse = NextResponse.next({
@@ -40,6 +47,11 @@ export async function updateSession(request: NextRequest) {
   });
 
   if (!hasEnvVars) {
+    applyDevelopmentDocumentCacheReset(
+      supabaseResponse.headers,
+      process.env.NODE_ENV === "production",
+      request.headers.get("accept")
+    );
     return supabaseResponse;
   }
 
@@ -77,5 +89,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  applyDevelopmentDocumentCacheReset(
+    supabaseResponse.headers,
+    process.env.NODE_ENV === "production",
+    request.headers.get("accept")
+  );
   return supabaseResponse;
 }

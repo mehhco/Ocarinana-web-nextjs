@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { getStaticAssetCacheHeaders } from "./lib/cache/static-asset-cache";
 
 // Bundle Analyzer 配置
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
@@ -198,16 +199,7 @@ const nextConfig: NextConfig = {
       // CSS/JS 文件缓存
       {
         source: '/:all*(css|js)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-          {
-            key: 'Vary',
-            value: 'Accept-Encoding',
-          },
-        ],
+        headers: getStaticAssetCacheHeaders(process.env.NODE_ENV === 'production'),
       },
     ];
   },

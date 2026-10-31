@@ -4,17 +4,42 @@ import { useEffect } from 'react';
 
 export function ServiceWorkerRegister() {
   useEffect(() => {
-    // 只在生产环境和支持 Service Worker 的浏览器中注册
-    if (
-      typeof window !== 'undefined' &&
-      'serviceWorker' in navigator &&
-      process.env.NODE_ENV === 'production'
-    ) {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+      return;
+    }
+
+    if (process.env.NODE_ENV === 'production') {
       registerServiceWorker();
+    } else {
+      clearDevelopmentServiceWorkerState();
     }
   }, []);
 
   return null; // 这个组件不渲染任何内容
+}
+
+/**
+ * 开发环境清理旧版 Service Worker 和本项目缓存，
+ * 防止生产环境留下的缓存优先策略继续返回过期的开发 chunk。
+ */
+async function clearDevelopmentServiceWorkerState() {
+  try {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      registrations.map((registration) => registration.unregister())
+    );
+
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames
+          .filter((cacheName) => cacheName.startsWith('ocarinana-'))
+          .map((cacheName) => caches.delete(cacheName))
+      );
+    }
+  } catch (error) {
+    console.warn('Development Service Worker cleanup failed:', error);
+  }
 }
 
 async function registerServiceWorker() {

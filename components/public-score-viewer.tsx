@@ -8,6 +8,7 @@ import { ScoreScaleControl } from "@/components/editor/core/ScoreScaleControl";
 import { useScoreStore } from "@/components/editor/hooks/useScoreStore";
 import { useScoreDisplayScale } from "@/components/editor/hooks/useScoreDisplayScale";
 import { exportAsImage } from "@/components/editor/lib/exportUtils";
+import { sendGAEvent } from "@/components/analytics/google-analytics";
 import { showError, showSuccess, showToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { ScoreDocument } from "@/lib/editor/types";
@@ -128,6 +129,7 @@ export function PublicScoreViewer({ document }: PublicScoreViewerProps) {
       });
 
       await exportAsImage(exportRef, title);
+      sendGAEvent("score_export", "public_score", title);
       showSuccess("图片已导出");
     } catch (error) {
       console.error("Failed to export public score", error);
