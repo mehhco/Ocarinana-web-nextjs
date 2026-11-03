@@ -143,7 +143,8 @@ export default function EnglishFingeringChartPage() {
             <div className="flex items-center gap-3 text-sm">
               <Link
                 href="/tools/ocarina-fingering"
-                className="text-zinc-600 underline-offset-4 hover:underline dark:text-zinc-300"
+                hrefLang="zh-CN"
+                className="rounded-full border border-emerald-900/25 px-3 py-1 text-xs font-semibold text-emerald-900 transition-colors hover:bg-white dark:border-white/25 dark:text-emerald-100"
               >
                 中文
               </Link>
