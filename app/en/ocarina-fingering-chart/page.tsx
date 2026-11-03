@@ -149,7 +149,7 @@ export default function EnglishFingeringChartPage() {
                 title="切换到中文指法表"
               />
               <Button asChild className="h-9 bg-emerald-700 px-4 text-white hover:bg-emerald-800">
-                <Link href="/editor">Open editor</Link>
+                <Link href="/en/editor">Open editor</Link>
               </Button>
             </div>
           </div>
@@ -174,7 +174,7 @@ export default function EnglishFingeringChartPage() {
             <div className="mt-6 flex flex-wrap items-center gap-3 print:hidden">
               <PrintFingeringButton label="Print this chart" preparingLabel="Preparing…" />
               <Button asChild className="h-11 bg-emerald-700 px-5 text-white hover:bg-emerald-800">
-                <Link href="/editor">
+                <Link href="/en/editor">
                   Open the editor
                   <ArrowUpRight className="h-4 w-4" />
                 </Link>

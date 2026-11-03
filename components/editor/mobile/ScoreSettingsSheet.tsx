@@ -3,6 +3,7 @@
 import { useScoreStore } from '../hooks/useScoreStore';
 import { KEY_SIGNATURE_OPTIONS, TIME_SIGNATURE_OPTIONS, getInstrumentLabel } from '../lib/constants';
 import { MobileSheet } from './MobileSheet';
+import { useEditorLocale, useEditorT } from '../i18n/editor-locale';
 import type { KeySignature, TimeSignature } from '@/lib/editor/types';
 
 interface ScoreSettingsSheetProps {
@@ -27,16 +28,25 @@ export function ScoreSettingsSheet({ open, onClose }: ScoreSettingsSheetProps) {
   const updateTitle = useScoreStore((state) => state.updateTitle);
   const updateScoreInfo = useScoreStore((state) => state.updateScoreInfo);
   const updateSettings = useScoreStore((state) => state.updateSettings);
+  const locale = useEditorLocale();
+  const t = useEditorT();
+
+  const instrumentLabel =
+    locale === 'en'
+      ? document.settings.instrumentType === '6-hole'
+        ? '6-hole ocarina'
+        : '12-hole ocarina'
+      : getInstrumentLabel(document.settings.instrumentType);
 
   return (
-    <MobileSheet open={open} onClose={onClose} title="乐谱设置" description={getInstrumentLabel(document.settings.instrumentType)}>
+    <MobileSheet open={open} onClose={onClose} title={t('乐谱设置', 'Score settings')} description={instrumentLabel}>
       <div className="space-y-5 p-4">
-        <Field label="乐谱标题">
+        <Field label={t('乐谱标题', 'Score title')}>
           <input className={INPUT_CLASS} value={document.title} onChange={(event) => updateTitle(event.target.value)} />
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="调号">
+          <Field label={t('调号', 'Key')}>
             <select
               className={INPUT_CLASS}
               value={document.settings.keySignature}
@@ -45,7 +55,7 @@ export function ScoreSettingsSheet({ open, onClose }: ScoreSettingsSheetProps) {
               {KEY_SIGNATURE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </Field>
-          <Field label="拍号">
+          <Field label={t('拍号', 'Time')}>
             <select
               className={INPUT_CLASS}
               value={document.settings.timeSignature}
@@ -57,7 +67,7 @@ export function ScoreSettingsSheet({ open, onClose }: ScoreSettingsSheetProps) {
         </div>
 
         <div className="grid grid-cols-[1fr_auto] items-end gap-3">
-          <Field label="速度">
+          <Field label={t('速度', 'Tempo')}>
             <input
               type="number"
               min={40}
@@ -77,21 +87,21 @@ export function ScoreSettingsSheet({ open, onClose }: ScoreSettingsSheetProps) {
               onChange={(event) => updateSettings({ showTempo: event.target.checked })}
               className="h-5 w-5 accent-indigo-600"
             />
-            显示
+            {t('显示', 'Show')}
           </label>
         </div>
 
         <div className="grid gap-4 border-t border-slate-200 pt-5 sm:grid-cols-2">
-          <Field label="制谱">
+          <Field label={t('制谱', 'Transcribed by')}>
             <input className={INPUT_CLASS} value={document.producer} onChange={(event) => updateScoreInfo({ producer: event.target.value })} />
           </Field>
-          <Field label="作词">
+          <Field label={t('作词', 'Lyrics by')}>
             <input className={INPUT_CLASS} value={document.lyricist || ''} onChange={(event) => updateScoreInfo({ lyricist: event.target.value })} />
           </Field>
-          <Field label="作曲">
+          <Field label={t('作曲', 'Music by')}>
             <input className={INPUT_CLASS} value={document.composer || ''} onChange={(event) => updateScoreInfo({ composer: event.target.value })} />
           </Field>
-          <Field label="其他信息">
+          <Field label={t('其他信息', 'Notes')}>
             <input className={INPUT_CLASS} value={document.additionalInfo || ''} onChange={(event) => updateScoreInfo({ additionalInfo: event.target.value })} />
           </Field>
         </div>
@@ -99,4 +109,3 @@ export function ScoreSettingsSheet({ open, onClose }: ScoreSettingsSheetProps) {
     </MobileSheet>
   );
 }
-

@@ -10,6 +10,7 @@ import { getAvailableNoteRange, getInstrumentLabel } from '../lib/constants';
 import { BARLINE_SHORTCUTS, DURATION_SHORTCUTS, EDITOR_SHORTCUT_LABELS } from '../lib/keyboardShortcuts';
 import type { BarlineType, Duration, DynamicMark, NoteValue, OrnamentMark } from '@/lib/editor/types';
 import { SectionStructurePanel } from './SectionStructurePanel';
+import { useEditorLocale, useEditorT } from '../i18n/editor-locale';
 
 interface HelpContent {
   title: string;
@@ -125,6 +126,9 @@ const ActionButton = memo(function ActionButton({
   showInlineHelp?: boolean;
   className?: string;
 }) {
+  const locale = useEditorLocale();
+  // 英文界面的帮助文案暂时还没翻译，直接不显示，避免英文界面里冒出中文提示。
+  const effectiveHelp = locale === 'zh' ? help : undefined;
   const button = (
     <button
       onClick={onClick}
@@ -145,7 +149,7 @@ const ActionButton = memo(function ActionButton({
 
   return (
     <div className="min-w-0">
-      <HelpTooltip help={help}>
+      <HelpTooltip help={effectiveHelp}>
         <span
           className="block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           tabIndex={disabled ? 0 : undefined}
@@ -154,10 +158,10 @@ const ActionButton = memo(function ActionButton({
           {button}
         </span>
       </HelpTooltip>
-      {showInlineHelp && help && (
+      {showInlineHelp && effectiveHelp && (
         <div className="mt-1 rounded-md bg-slate-100 px-2 py-1 text-[10px] leading-snug text-slate-600">
-          {help.summary}
-          {help.shortcut && <span className="ml-1 font-mono text-slate-500">({help.shortcut})</span>}
+          {effectiveHelp.summary}
+          {effectiveHelp.shortcut && <span className="ml-1 font-mono text-slate-500">({effectiveHelp.shortcut})</span>}
         </div>
       )}
     </div>
@@ -299,35 +303,35 @@ const LOW_NOTES: { value: NoteValue; degree: string }[] = [
   { value: '7', degree: '7' },
 ];
 
-const DURATION_OPTIONS: { value: PanelDuration; label: string }[] = [
-  { value: '1/4', label: '（1/4）四分音符' },
-  { value: '1/8', label: '（1/8）八分音符' },
-  { value: '1/16', label: '（1/16）十六分音符' },
-  { value: '1/32', label: '（1/32）三十二分音符' },
+const DURATION_OPTIONS: { value: PanelDuration; zh: string; en: string }[] = [
+  { value: '1/4', zh: '（1/4）四分音符', en: '(1/4) Quarter note' },
+  { value: '1/8', zh: '（1/8）八分音符', en: '(1/8) Eighth note' },
+  { value: '1/16', zh: '（1/16）十六分音符', en: '(1/16) Sixteenth note' },
+  { value: '1/32', zh: '（1/32）三十二分音符', en: '(1/32) Thirty-second note' },
 ];
 
-const REST_OPTIONS: { value: Duration; label: string }[] = [
-  { value: '1', label: '全休止符' },
-  { value: '1/2', label: '二分休止' },
-  { value: '1/4', label: '四分休止' },
-  { value: '1/8', label: '八分休止' },
-  { value: '1/16', label: '十六分休止' },
-  { value: '1/32', label: '三十二分休止' },
+const REST_OPTIONS: { value: Duration; zh: string; en: string }[] = [
+  { value: '1', zh: '全休止符', en: 'Whole rest' },
+  { value: '1/2', zh: '二分休止', en: 'Half rest' },
+  { value: '1/4', zh: '四分休止', en: 'Quarter rest' },
+  { value: '1/8', zh: '八分休止', en: 'Eighth rest' },
+  { value: '1/16', zh: '十六分休止', en: 'Sixteenth rest' },
+  { value: '1/32', zh: '三十二分休止', en: 'Thirty-second rest' },
 ];
 
-const BARLINE_OPTIONS: { value: BarlineType; label: string }[] = [
-  { value: 'single', label: '小节线' },
-  { value: 'double', label: '双线' },
-  { value: 'final', label: '终止线' },
-  { value: 'repeat-start', label: '反复起' },
-  { value: 'repeat-end', label: '反复止' },
+const BARLINE_OPTIONS: { value: BarlineType; zh: string; en: string }[] = [
+  { value: 'single', zh: '小节线', en: 'Barline' },
+  { value: 'double', zh: '双线', en: 'Double barline' },
+  { value: 'final', zh: '终止线', en: 'Final barline' },
+  { value: 'repeat-start', zh: '反复起', en: 'Repeat start' },
+  { value: 'repeat-end', zh: '反复止', en: 'Repeat end' },
 ];
 
 const DYNAMIC_OPTIONS: DynamicMark[] = ['p', 'mp', 'mf', 'f'];
 
-const ORNAMENT_OPTIONS: { value: OrnamentMark; label: string; direction: 'upper' | 'lower' }[] = [
-  { value: 'upper-mordent', label: '上波音', direction: 'upper' },
-  { value: 'lower-mordent', label: '下波音', direction: 'lower' },
+const ORNAMENT_OPTIONS: { value: OrnamentMark; zh: string; en: string; direction: 'upper' | 'lower' }[] = [
+  { value: 'upper-mordent', zh: '上波音', en: 'Upper mordent', direction: 'upper' },
+  { value: 'lower-mordent', zh: '下波音', en: 'Lower mordent', direction: 'lower' },
 ];
 
 const DURATION_HELP: Record<PanelDuration, HelpContent> = {
@@ -601,6 +605,8 @@ function getBasicNoteOptions(instrumentType: string, keySignature: string): { va
 
 export const ElementPanel = memo(function ElementPanel() {
   const [showHelp, setShowHelp] = useState(false);
+  const locale = useEditorLocale();
+  const t = useEditorT();
   const addNote = useScoreStore((state) => state.addNote);
   const addRest = useScoreStore((state) => state.addRest);
   const addExtension = useScoreStore((state) => state.addExtension);
@@ -747,35 +753,37 @@ export const ElementPanel = memo(function ElementPanel() {
     <TooltipProvider delayDuration={1000} skipDelayDuration={0}>
       <aside className="h-full w-full overflow-y-auto bg-slate-50/50">
         <div className="space-y-3 p-3">
-          <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <div className="text-xs font-semibold text-slate-700">使用帮助</div>
-                <div className="mt-0.5 text-[11px] text-slate-500">
-                  {getInstrumentLabel(settings.instrumentType)} · 1={settings.keySignature}
+          {locale === 'zh' && (
+            <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-xs font-semibold text-slate-700">使用帮助</div>
+                  <div className="mt-0.5 text-[11px] text-slate-500">
+                    {getInstrumentLabel(settings.instrumentType)} · 1={settings.keySignature}
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setShowHelp((value) => !value)}
+                  className={cn(
+                    'rounded-md border px-2.5 py-1.5 text-xs font-medium transition-all',
+                    showHelp
+                      ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'
+                  )}
+                >
+                  {showHelp ? '隐藏帮助' : '帮助'}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowHelp((value) => !value)}
-                className={cn(
-                  'rounded-md border px-2.5 py-1.5 text-xs font-medium transition-all',
-                  showHelp
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'
-                )}
-              >
-                {showHelp ? '隐藏帮助' : '帮助'}
-              </button>
             </div>
-          </div>
+          )}
 
           <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm">
             <div className="mb-2 flex items-center gap-2">
               <div className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-100">
                 <MusicIcon className="h-3 w-3 text-indigo-600" />
               </div>
-              <span className="text-xs font-semibold text-slate-700">指法图</span>
+              <span className="text-xs font-semibold text-slate-700">{t('指法图', 'Fingering')}</span>
             </div>
             <ActionButton
               onClick={toggleFingering}
@@ -790,13 +798,13 @@ export const ElementPanel = memo(function ElementPanel() {
               )}
             >
               {settings.showFingering ? <EyeOffIcon className="h-3 w-3" /> : <EyeIcon className="h-3 w-3" />}
-              {settings.showFingering ? '隐藏指法图' : '显示指法图'}
+              {settings.showFingering ? t('隐藏指法图', 'Hide fingering') : t('显示指法图', 'Show fingering')}
             </ActionButton>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm">
             <div className="mb-2 flex items-center gap-2">
-              <span className="text-xs font-semibold tracking-wider text-slate-500">编辑方式</span>
+              <span className="text-xs font-semibold tracking-wider text-slate-500">{t('编辑方式', 'Input mode')}</span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
             <div className="grid grid-cols-2 gap-1.5">
@@ -806,7 +814,7 @@ export const ElementPanel = memo(function ElementPanel() {
                 help={MODIFIER_HELP.replaceMode}
                 showInlineHelp={showHelp}
               >
-                替换
+                {t('替换', 'Replace')}
               </ActionButton>
               <ActionButton
                 onClick={handleInsertModeClick}
@@ -817,7 +825,7 @@ export const ElementPanel = memo(function ElementPanel() {
                   isInsertMode && 'border-emerald-600 bg-emerald-50 text-emerald-700 hover:border-emerald-600 hover:text-emerald-700'
                 )}
               >
-                插入
+                {t('插入', 'Insert')}
               </ActionButton>
             </div>
           </div>
@@ -827,7 +835,7 @@ export const ElementPanel = memo(function ElementPanel() {
               <div className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-100">
                 <Mic2Icon className="h-3 w-3 text-indigo-600" />
               </div>
-              <span className="text-xs font-semibold text-slate-700">歌词</span>
+              <span className="text-xs font-semibold text-slate-700">{t('歌词', 'Lyrics')}</span>
             </div>
             <div className="grid grid-cols-[1fr_auto] gap-2">
               <ActionButton
@@ -841,7 +849,7 @@ export const ElementPanel = memo(function ElementPanel() {
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 )}
               >
-                {settings.showLyrics ? '隐藏歌词' : '显示歌词'}
+                {settings.showLyrics ? t('隐藏歌词', 'Hide lyrics') : t('显示歌词', 'Show lyrics')}
               </ActionButton>
               <ActionButton
                 onClick={clearAllLyrics}
@@ -863,7 +871,7 @@ export const ElementPanel = memo(function ElementPanel() {
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 )}
               >
-                第二行歌词
+                {t('第二行歌词', 'Second lyric line')}
               </ActionButton>
             </div>
           </div>
@@ -871,7 +879,7 @@ export const ElementPanel = memo(function ElementPanel() {
           <div className="space-y-3">
             <div>
               <div className="mb-2 flex items-center gap-2">
-                <span className="text-xs font-semibold tracking-wider text-slate-500">高音</span>
+                <span className="text-xs font-semibold tracking-wider text-slate-500">{t('高音', 'High')}</span>
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
               <div className="grid grid-cols-7 gap-1.5">
@@ -889,7 +897,7 @@ export const ElementPanel = memo(function ElementPanel() {
 
             <div>
               <div className="mb-2 flex items-center gap-2">
-                <span className="text-xs font-semibold tracking-wider text-slate-500">中音</span>
+                <span className="text-xs font-semibold tracking-wider text-slate-500">{t('中音', 'Middle')}</span>
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
               <div className="grid grid-cols-7 gap-1.5">
@@ -907,7 +915,7 @@ export const ElementPanel = memo(function ElementPanel() {
 
             <div>
               <div className="mb-2 flex items-center gap-2">
-                <span className="text-xs font-semibold tracking-wider text-slate-500">低音</span>
+                <span className="text-xs font-semibold tracking-wider text-slate-500">{t('低音', 'Low')}</span>
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
               <div className="grid grid-cols-7 gap-1.5">
@@ -926,7 +934,7 @@ export const ElementPanel = memo(function ElementPanel() {
 
           <div>
             <div className="mb-2 flex items-center gap-2">
-              <span className="text-xs font-semibold tracking-wider text-slate-500">时值</span>
+              <span className="text-xs font-semibold tracking-wider text-slate-500">{t('时值', 'Note length')}</span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
             <div className="grid grid-cols-2 gap-1.5">
@@ -939,7 +947,7 @@ export const ElementPanel = memo(function ElementPanel() {
                   showInlineHelp={showHelp}
                   className="whitespace-nowrap px-1 text-[10px]"
                 >
-                  {option.label}
+                  {t(option.zh, option.en)}
                 </ActionButton>
               ))}
             </div>
@@ -947,7 +955,7 @@ export const ElementPanel = memo(function ElementPanel() {
 
           <div>
             <div className="mb-2 flex items-center gap-2">
-              <span className="text-xs font-semibold tracking-wider text-slate-500">音符修饰</span>
+              <span className="text-xs font-semibold tracking-wider text-slate-500">{t('音符修饰', 'Note marks')}</span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
             <div className="grid grid-cols-2 gap-1.5">
@@ -957,10 +965,10 @@ export const ElementPanel = memo(function ElementPanel() {
                 help={MODIFIER_HELP.dot}
                 showInlineHelp={showHelp}
               >
-                附点
+                {t('附点', 'Dot')}
               </ActionButton>
               <ActionButton onClick={addExtension} help={MODIFIER_HELP.extension} showInlineHelp={showHelp}>
-                延长线
+                {t('延长线', 'Hold line')}
               </ActionButton>
               <ActionButton
                 onClick={toggleTieMode}
@@ -968,7 +976,7 @@ export const ElementPanel = memo(function ElementPanel() {
                 help={MODIFIER_HELP.tie}
                 showInlineHelp={showHelp}
               >
-                {isTieMode ? '取消连音线' : '连音线'}
+                {isTieMode ? t('取消连音线', 'Cancel tie') : t('连音线', 'Tie')}
               </ActionButton>
               <ActionButton
                 onClick={handleBeamAction}
@@ -976,14 +984,14 @@ export const ElementPanel = memo(function ElementPanel() {
                 help={MODIFIER_HELP.beam}
                 showInlineHelp={showHelp}
               >
-                {!isBeamMode ? '合并时值线' : '取消合并'}
+                {!isBeamMode ? t('合并时值线', 'Beam notes') : t('取消合并', 'Cancel beam')}
               </ActionButton>
             </div>
           </div>
 
           <div>
             <div className="mb-2 flex items-center gap-2">
-              <span className="text-xs font-semibold tracking-wider text-slate-500">小节/反复</span>
+              <span className="text-xs font-semibold tracking-wider text-slate-500">{t('小节/反复', 'Barlines')}</span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
             <div className="grid grid-cols-2 gap-1.5">
@@ -994,7 +1002,7 @@ export const ElementPanel = memo(function ElementPanel() {
                   help={BARLINE_HELP[option.value]}
                   showInlineHelp={showHelp}
                 >
-                  {option.label}
+                  {t(option.zh, option.en)}
                 </ActionButton>
               ))}
             </div>
@@ -1002,7 +1010,7 @@ export const ElementPanel = memo(function ElementPanel() {
 
           <div>
             <div className="mb-2 flex items-center gap-2">
-              <span className="text-xs font-semibold tracking-wider text-slate-500">休止符</span>
+              <span className="text-xs font-semibold tracking-wider text-slate-500">{t('休止符', 'Rests')}</span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
             <div className="grid grid-cols-3 gap-1.5">
@@ -1013,7 +1021,7 @@ export const ElementPanel = memo(function ElementPanel() {
                   help={REST_HELP[option.value]}
                   showInlineHelp={showHelp}
                 >
-                  {option.label}
+                  {t(option.zh, option.en)}
                 </ActionButton>
               ))}
             </div>
@@ -1021,7 +1029,7 @@ export const ElementPanel = memo(function ElementPanel() {
 
           <div>
             <div className="mb-2 flex items-center gap-2">
-              <span className="text-xs font-semibold tracking-wider text-slate-500">演奏表达</span>
+              <span className="text-xs font-semibold tracking-wider text-slate-500">{t('演奏表达', 'Expression')}</span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
             <div className="space-y-1.5">
@@ -1047,7 +1055,7 @@ export const ElementPanel = memo(function ElementPanel() {
                   help={BREATH_HELP}
                   showInlineHelp={showHelp}
                 >
-                  换气
+                  {t('换气', 'Breath')}
                 </ActionButton>
                 {ORNAMENT_OPTIONS.map((option) => (
                   <ActionButton
@@ -1058,7 +1066,7 @@ export const ElementPanel = memo(function ElementPanel() {
                     help={ORNAMENT_HELP[option.value]}
                     showInlineHelp={showHelp}
                   >
-                    {option.label}
+                    {t(option.zh, option.en)}
                   </ActionButton>
                 ))}
               </div>

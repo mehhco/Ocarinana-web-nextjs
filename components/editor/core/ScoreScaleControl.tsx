@@ -8,11 +8,12 @@ import {
   SCORE_DISPLAY_SCALE_STEP,
   getNormalizedScoreDisplayScale,
 } from '../hooks/useScoreDisplayScale';
+import { useEditorT } from '../i18n/editor-locale';
 
 const SCALE_PRESETS = [
-  { label: '紧凑', value: 85 },
-  { label: '标准', value: 100 },
-  { label: '清晰', value: 120 },
+  { zh: '紧凑', en: 'Compact', value: 85 },
+  { zh: '标准', en: 'Normal', value: 100 },
+  { zh: '清晰', en: 'Large', value: 120 },
 ];
 
 interface ScoreScaleControlProps {
@@ -27,6 +28,7 @@ export const ScoreScaleControl = memo(function ScoreScaleControl({
   className,
 }: ScoreScaleControlProps) {
   const normalizedValue = getNormalizedScoreDisplayScale(value);
+  const t = useEditorT();
 
   const handleRangeChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,7 +44,7 @@ export const ScoreScaleControl = memo(function ScoreScaleControl({
         className
       )}
     >
-      <span className="shrink-0 font-medium text-slate-500">比例</span>
+      <span className="shrink-0 font-medium text-slate-500">{t('比例', 'Zoom')}</span>
       <div className="flex overflow-hidden rounded-md border border-slate-200 bg-white">
         {SCALE_PRESETS.map((preset) => (
           <button
@@ -55,7 +57,7 @@ export const ScoreScaleControl = memo(function ScoreScaleControl({
             )}
             onClick={() => onChange(preset.value)}
           >
-            {preset.label}
+            {t(preset.zh, preset.en)}
           </button>
         ))}
       </div>
@@ -66,7 +68,7 @@ export const ScoreScaleControl = memo(function ScoreScaleControl({
         step={SCORE_DISPLAY_SCALE_STEP}
         value={normalizedValue}
         onChange={handleRangeChange}
-        aria-label="乐谱显示比例"
+        aria-label={t('乐谱显示比例', 'Score display zoom')}
         className="h-5 w-20 accent-indigo-600"
       />
       <span className="w-9 shrink-0 text-right font-semibold text-slate-700">{normalizedValue}%</span>

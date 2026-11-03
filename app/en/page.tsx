@@ -26,7 +26,7 @@ const faqs = [
   {
     question: 'Is the editor interface in English?',
     answer:
-      'The editing interface is currently in Chinese. The notation itself, fingering charts and exported images are language independent. An English interface is on the roadmap.',
+      'Yes. Opening the editor from this site gives you an English interface — toolbar, note panel, score settings and messages. Notation and exported images look the same in either language.',
   },
 ];
 
@@ -110,7 +110,7 @@ export default function EnglishHomePage() {
                 title="切换到中文站"
               />
               <Button asChild className="h-9 bg-emerald-700 px-4 text-white hover:bg-emerald-800">
-                <Link href="/editor">Open editor</Link>
+                <Link href="/en/editor">Open editor</Link>
               </Button>
             </div>
           </div>
@@ -130,7 +130,7 @@ export default function EnglishHomePage() {
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Button asChild className="h-11 bg-emerald-700 px-5 text-white hover:bg-emerald-800">
-              <Link href="/editor">
+              <Link href="/en/editor">
                 Start a score
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -143,8 +143,7 @@ export default function EnglishHomePage() {
             </Button>
           </div>
           <p className="mt-4 text-xs text-zinc-500 dark:text-zinc-400">
-            No install. Free to start. The editing interface is currently in Chinese; notation and
-            exported images are language independent.
+            No install. Free to start. The editor interface is in English on this site.
           </p>
         </section>
 

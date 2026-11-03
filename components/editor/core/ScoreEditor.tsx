@@ -22,6 +22,7 @@ import {
   matchesEditorShortcut,
 } from '../lib/keyboardShortcuts';
 import { showError, showSuccess, showToast } from '@/lib/toast';
+import { EditorLocaleProvider, useEditorT, type EditorLocale } from '../i18n/editor-locale';
 import type { BarlineType, Duration, ScoreDocument } from '@/lib/editor/types';
 
 interface ScoreEditorProps {
@@ -29,6 +30,7 @@ interface ScoreEditorProps {
   scoreId?: string;
   allowCloudCreate?: boolean;
   backHref?: string;
+  locale?: EditorLocale;
 }
 
 const DURATION_SHORTCUT_ENTRIES = Object.entries(DURATION_SHORTCUTS) as Array<
@@ -36,7 +38,19 @@ const DURATION_SHORTCUT_ENTRIES = Object.entries(DURATION_SHORTCUTS) as Array<
 >;
 const BARLINE_SHORTCUT_ENTRIES = Object.entries(BARLINE_SHORTCUTS) as Array<[BarlineType, string]>;
 
-export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId, allowCloudCreate = false, backHref }: ScoreEditorProps) {
+export const ScoreEditor = memo(function ScoreEditor({
+  locale = 'zh',
+  ...props
+}: ScoreEditorProps) {
+  return (
+    <EditorLocaleProvider locale={locale}>
+      <ScoreEditorInner {...props} />
+    </EditorLocaleProvider>
+  );
+});
+
+const ScoreEditorInner = memo(function ScoreEditorInner({ initialDocument, scoreId, allowCloudCreate = false, backHref }: ScoreEditorProps) {
+  const t = useEditorT();
   const router = useRouter();
   const [currentScoreId, setCurrentScoreId] = useState(scoreId);
   const initialize = useScoreStore((state) => state.initialize);
@@ -123,18 +137,23 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
     const payload = await response.json().catch(() => null);
 
     if (!response.ok || !payload?.allowed) {
-      showError(payload?.error || '今日导出次数已用完，请稍后再试。');
+      showError(
+        t(
+          payload?.error || '今日导出次数已用完，请稍后再试。',
+          'Daily export limit reached. Please try again tomorrow.'
+        )
+      );
       return null;
     }
 
     if (typeof payload.remaining === 'number') {
-      showToast(`今日还可导出 ${payload.remaining} 次`);
+      showToast(t(`今日还可导出 ${payload.remaining} 次`, `${payload.remaining} exports left today`));
     }
 
     return {
       canExportWithoutWatermark: Boolean(payload.canExportWithoutWatermark),
     };
-  }, []);
+  }, [t]);
 
   const handleExportImage = useCallback(async () => {
     if (isExporting) return;
@@ -156,16 +175,19 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
       });
       showSuccess(
         reservation.canExportWithoutWatermark
-          ? '图片已导出'
-          : '图片已导出（含二维码页脚，Plus 可去除）'
+          ? t('图片已导出', 'Image exported')
+          : t(
+              '图片已导出（含二维码页脚，Plus 可去除）',
+              'Image exported (includes a QR footer — remove it with Plus)'
+            )
       );
     } catch (error) {
       console.error('Failed to export score image', error);
-      showError(error instanceof Error ? error.message : '图片导出失败');
+      showError(error instanceof Error ? error.message : t('图片导出失败', 'Export failed'));
     } finally {
       setExporting(false);
     }
-  }, [documentTitle, isExporting, reserveExport, setExporting]);
+  }, [documentTitle, isExporting, reserveExport, setExporting, t]);
 
   const createCurrentDraftInCloud = useCallback(async () => {
     const document = getDocumentSnapshot();
@@ -200,12 +222,19 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
     const result = currentScoreId ? await saveNow() : await createCurrentDraftInCloud();
 
     if (result.success) {
-      showSuccess(result.skipped ? '请先修改标题，或填写作词/作曲后再保存到云端' : '乐谱已保存');
+      showSuccess(
+        result.skipped
+          ? t(
+              '请先修改标题，或填写作词/作曲后再保存到云端',
+              'Edit the title, or fill in the lyricist/composer before saving to the cloud'
+            )
+          : t('乐谱已保存', 'Score saved')
+      );
       return;
     }
 
-    showError(result.error || '保存失败');
-  }, [allowCloudCreate, createCurrentDraftInCloud, currentScoreId, router, saveNow]);
+    showError(result.error || t('保存失败', 'Save failed'));
+  }, [allowCloudCreate, createCurrentDraftInCloud, currentScoreId, router, saveNow, t]);
 
   const handleBack = useCallback(async () => {
     if (!backHref) return;
@@ -215,7 +244,7 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
         const result = await createCurrentDraftInCloud();
 
         if (!result.success || !result.scoreId) {
-          showError(result.error || '保存失败，请稍后重试');
+          showError(result.error || t('保存失败，请稍后重试', 'Save failed, please try again'));
           return;
         }
       } else {
@@ -230,7 +259,7 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
       const result = await saveNow();
 
       if (!result.success) {
-        showError(result.error || '保存失败，请稍后重试');
+        showError(result.error || t('保存失败，请稍后重试', 'Save failed, please try again'));
         return;
       }
     }
@@ -246,6 +275,7 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
     markAsSaved,
     router,
     saveNow,
+    t,
   ]);
 
   return (

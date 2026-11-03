@@ -22,6 +22,7 @@ import { useScoreStore } from '../hooks/useScoreStore';
 import { DEFAULT_PRODUCER, getInstrumentLabel } from '../lib/constants';
 import { getNormalizedScoreDisplayScale } from '../hooks/useScoreDisplayScale';
 import { getFingeringUrl } from '../lib/fingeringMap';
+import { useEditorT } from '../i18n/editor-locale';
 import { LyricsInput } from '../overlay/LyricsInput';
 import type { Beam, Duration, ExpressionMark, InstrumentType, KeySignature, Lyric, LyricLine, Measure, ScoreElement, ScoreSection, Tie } from '@/lib/editor/types';
 
@@ -994,6 +995,7 @@ export function ScoreCanvas({
   const activeLyricLine = useScoreStore((state) => state.activeLyricLine);
   const setActiveLyricLine = useScoreStore((state) => state.setActiveLyricLine);
   const isExporting = useScoreStore((state) => state.isExporting);
+  const t = useEditorT();
 
   const [lyricDrafts, setLyricDrafts] = useState<Record<string, string>>({});
   const [composingLyricKey, setComposingLyricKey] = useState<string | null>(null);
@@ -1258,7 +1260,7 @@ export function ScoreCanvas({
           if (beamStartPosition) {
             cancelBeamMode();
           }
-          showToast('无法合并：请选择八分或更短时值的音符、休止符', { duration: 2000 });
+          showToast(t('无法合并：请选择八分或更短时值的音符、休止符', 'Cannot beam: select eighth notes or shorter'), { duration: 2000 });
           return;
         }
 
@@ -1270,14 +1272,14 @@ export function ScoreCanvas({
 
         if (beamStartPosition.measureIndex !== measureIndex || noteIndex <= beamStartPosition.noteIndex) {
           cancelBeamMode();
-          showToast('无法合并：请在同一小节内从左到右选择', { duration: 2000 });
+          showToast(t('无法合并：请在同一小节内从左到右选择', 'Cannot beam: select left to right within one measure'), { duration: 2000 });
           return;
         }
 
         const rangeElements = scoreDoc.measures[measureIndex]?.elements.slice(beamStartPosition.noteIndex, noteIndex + 1) ?? [];
         if (rangeElements.length < 2 || !rangeElements.every(isBeamableElement)) {
           cancelBeamMode();
-          showToast('无法合并：所选范围包含不能合并的元素', { duration: 2000 });
+          showToast(t('无法合并：所选范围包含不能合并的元素', 'Cannot beam: the selection contains elements that cannot be beamed'), { duration: 2000 });
           return;
         }
 
@@ -1330,6 +1332,7 @@ export function ScoreCanvas({
       startTie,
       tieStartPosition,
       readOnly,
+      t,
     ]
   );
 
@@ -1476,22 +1479,25 @@ export function ScoreCanvas({
           <div className="mt-3 grid grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)] gap-4">
             <div className="flex flex-wrap items-start gap-x-3 gap-y-1 text-left text-[11px] leading-5 text-slate-500">
               <span>
-                调号: <span className="font-medium text-slate-700">1={scoreDoc.settings.keySignature}</span>
+                {t('调号:', 'Key:')} <span className="font-medium text-slate-700">1={scoreDoc.settings.keySignature}</span>
               </span>
               <span>
-                拍号: <span className="font-medium text-slate-700">{scoreDoc.settings.timeSignature}</span>
+                {t('拍号:', 'Time:')} <span className="font-medium text-slate-700">{scoreDoc.settings.timeSignature}</span>
               </span>
               {scoreDoc.settings.showTempo !== false && (
                 <span>
-                  速度: <span className="font-medium text-slate-700">♩ {scoreDoc.settings.tempo}</span>
+                  {t('速度:', 'Tempo:')} <span className="font-medium text-slate-700">♩ {scoreDoc.settings.tempo}</span>
                 </span>
               )}
               <span className="w-full font-medium text-slate-700">
-                {getInstrumentLabel(scoreDoc.settings.instrumentType)}{scoreDoc.settings.keySignature}调指法
+                {t(
+                  `${getInstrumentLabel(scoreDoc.settings.instrumentType)}${scoreDoc.settings.keySignature}调指法`,
+                  `${scoreDoc.settings.instrumentType === '6-hole' ? '6-hole' : '12-hole'} ocarina fingering · key ${scoreDoc.settings.keySignature}`
+                )}
               </span>
               {playbackSectionLabels.length > 0 && (
                 <div className="mt-0.5 flex w-full flex-wrap items-center gap-1 text-slate-500">
-                  <span className="mr-0.5">演奏顺序:</span>
+                  <span className="mr-0.5">{t('演奏顺序:', 'Play order:')}</span>
                   {playbackSectionLabels.map((label, index) => (
                     <span key={`${label}-${index}`} className="inline-flex items-center gap-1">
                       {index > 0 && <span className="text-slate-300">→</span>}
@@ -1508,16 +1514,16 @@ export function ScoreCanvas({
 
             <div className="text-right text-[11px] leading-5 text-slate-500">
               <div>
-                制谱: <span className="font-medium text-slate-700">{producer}</span>
+                {t('制谱:', 'Transcribed by:')} <span className="font-medium text-slate-700">{producer}</span>
               </div>
               {lyricist && (
                 <div>
-                  作词: <span className="font-medium text-slate-700">{lyricist}</span>
+                  {t('作词:', 'Lyrics:')} <span className="font-medium text-slate-700">{lyricist}</span>
                 </div>
               )}
               {composer && (
                 <div>
-                  作曲: <span className="font-medium text-slate-700">{composer}</span>
+                  {t('作曲:', 'Music:')} <span className="font-medium text-slate-700">{composer}</span>
                 </div>
               )}
             </div>
@@ -1595,7 +1601,7 @@ export function ScoreCanvas({
           className="mx-4 mb-3 mt-2 flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 py-1.5 text-sm font-medium text-slate-400 transition-all hover:border-indigo-400 hover:text-indigo-600"
         >
           <PlusIcon className="h-4 w-4" />
-          添加小节
+          {t('添加小节', 'Add measure')}
         </button>
       )}
     </div>
