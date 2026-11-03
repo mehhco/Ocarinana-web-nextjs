@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { LazyThemeSwitcher } from "@/components/lazy-components";
+import { LanguageSwitch } from "@/components/language-switch";
 import { BreadcrumbSchema, FAQPageSchema } from "@/components/seo/structured-data";
 import { PrintFingeringButton } from "@/components/tools/print-fingering-button";
 import { Button } from "@/components/ui/button";
@@ -141,13 +142,12 @@ export default function EnglishFingeringChartPage() {
               Ocarinana
             </Link>
             <div className="flex items-center gap-3 text-sm">
-              <Link
+              <LanguageSwitch
                 href="/tools/ocarina-fingering"
                 hrefLang="zh-CN"
-                className="rounded-full border border-emerald-900/25 px-3 py-1 text-xs font-semibold text-emerald-900 transition-colors hover:bg-white dark:border-white/25 dark:text-emerald-100"
-              >
-                中文
-              </Link>
+                label="中文"
+                title="切换到中文指法表"
+              />
               <Button asChild className="h-9 bg-emerald-700 px-4 text-white hover:bg-emerald-800">
                 <Link href="/editor">Open editor</Link>
               </Button>

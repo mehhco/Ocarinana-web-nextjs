@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { AuthButton } from "@/components/auth-button";
 import { AppNavTabs, type AppNavItem } from "@/components/app-nav-tabs";
+import { LanguageSwitch } from "@/components/language-switch";
 import { isAdminUserId } from "@/lib/admin/access";
 
 interface AppNavProps {
@@ -44,14 +45,23 @@ export async function AppNav({
     { href: "/music-classroom", label: "音乐课堂" },
     { href: "/tools/ocarina-fingering", label: "指法表" },
     { href: "/shop", label: "陶笛推荐" },
-    { href: "/en", label: "EN" },
   ];
 
   return (
     <AppNavTabs
       items={navItems}
       currentPath={currentPath}
-      authSlot={authSlot ?? <AuthButton userEmail={userEmail} />}
+      authSlot={
+        <div className="flex items-center gap-2">
+          <LanguageSwitch
+            href="/en"
+            hrefLang="en"
+            label="EN"
+            title="Switch to English"
+          />
+          {authSlot ?? <AuthButton userEmail={userEmail} />}
+        </div>
+      }
       variant={variant}
     />
   );
