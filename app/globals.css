@@ -266,3 +266,13 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * 简谱高低音点是用背景色画的圆点。
+ * 打印时浏览器默认会丢弃背景色，圆点会整体消失，所以强制保留。
+ */
+.jianpu-dot {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Trash2Icon } from '@/components/ui/icons';
+import { JianpuNote } from '@/components/jianpu-note';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
 import { getMobileNoteOptions, type MobilePitchRegister } from '../lib/mobileEditor';
@@ -132,9 +133,9 @@ export function MobileNoteBar({ onOpenTools }: MobileNoteBarProps) {
               })
             }
             className="h-11 min-w-0 rounded-lg border border-slate-200 bg-[#fffdf8] text-base font-bold text-slate-800 shadow-sm active:scale-95 active:border-indigo-400 active:bg-indigo-50 disabled:bg-slate-50 disabled:text-slate-300 disabled:shadow-none"
-            aria-label={`${REGISTER_OPTIONS.find((item) => item.value === register)?.label}${option.display}`}
+            aria-label={`${REGISTER_OPTIONS.find((item) => item.value === register)?.label} ${option.degree}`}
           >
-            {option.display}
+            <JianpuNote degree={option.degree} octave={register} />
           </button>
         ))}
       </div>

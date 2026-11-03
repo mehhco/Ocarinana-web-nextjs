@@ -2,6 +2,7 @@
 
 import { memo, useCallback, useState, type ReactNode } from 'react';
 import { EyeIcon, EyeOffIcon, Mic2Icon, MusicIcon, Trash2Icon } from '@/components/ui/icons';
+import { JianpuNote } from '@/components/jianpu-note';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
@@ -36,11 +37,13 @@ function SegmentedHelpText({ text, className }: { text: string; className?: stri
 }
 
 const NoteButton = memo(function NoteButton({
-  display,
+  degree,
+  octave,
   onClick,
   disabled = false,
 }: {
-  display: string;
+  degree: string;
+  octave: 'low' | 'basic' | 'high';
   onClick: () => void;
   disabled?: boolean;
 }) {
@@ -56,7 +59,7 @@ const NoteButton = memo(function NoteButton({
         disabled && 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400 opacity-40'
       )}
     >
-      {display}
+      <JianpuNote degree={degree} octave={octave} />
     </button>
   );
 });
@@ -246,54 +249,54 @@ function BreathPreview() {
   );
 }
 
-const HIGH_NOTES: { value: NoteValue; display: string }[] = [
-  { value: '1', display: '↑1' },
-  { value: '2', display: '↑2' },
-  { value: '3', display: '↑3' },
-  { value: '4', display: '↑4' },
-  { value: '5', display: '↑5' },
-  { value: '6', display: '↑6' },
-  { value: '7', display: '↑7' },
+const HIGH_NOTES: { value: NoteValue; degree: string }[] = [
+  { value: '1', degree: '1' },
+  { value: '2', degree: '2' },
+  { value: '3', degree: '3' },
+  { value: '4', degree: '4' },
+  { value: '5', degree: '5' },
+  { value: '6', degree: '6' },
+  { value: '7', degree: '7' },
 ];
 
-const BASIC_NOTES: { value: NoteValue; display: string }[] = [
-  { value: '1', display: '1' },
-  { value: '2', display: '2' },
-  { value: '3', display: '3' },
-  { value: '4', display: '4' },
-  { value: '5', display: '5' },
-  { value: '6', display: '6' },
-  { value: '7', display: '7' },
+const BASIC_NOTES: { value: NoteValue; degree: string }[] = [
+  { value: '1', degree: '1' },
+  { value: '2', degree: '2' },
+  { value: '3', degree: '3' },
+  { value: '4', degree: '4' },
+  { value: '5', degree: '5' },
+  { value: '6', degree: '6' },
+  { value: '7', degree: '7' },
 ];
 
-const G_BASIC_NOTES: { value: NoteValue; display: string }[] = [
-  { value: '1', display: '1' },
-  { value: '2', display: '2' },
-  { value: '3', display: '3' },
-  { value: '4', display: '4' },
-  { value: '5', display: '5' },
-  { value: '6', display: '6' },
-  { value: 'b7', display: '♭7' },
+const G_BASIC_NOTES: { value: NoteValue; degree: string }[] = [
+  { value: '1', degree: '1' },
+  { value: '2', degree: '2' },
+  { value: '3', degree: '3' },
+  { value: '4', degree: '4' },
+  { value: '5', degree: '5' },
+  { value: '6', degree: '6' },
+  { value: 'b7', degree: '♭7' },
 ];
 
-const SIX_HOLE_G_BASIC_NOTES: { value: NoteValue; display: string }[] = [
-  { value: '1', display: '1' },
-  { value: '2', display: '2' },
-  { value: '3', display: '3' },
-  { value: '4', display: '4' },
-  { value: '5', display: '5' },
-  { value: '#6', display: '#6' },
+const SIX_HOLE_G_BASIC_NOTES: { value: NoteValue; degree: string }[] = [
+  { value: '1', degree: '1' },
+  { value: '2', degree: '2' },
+  { value: '3', degree: '3' },
+  { value: '4', degree: '4' },
+  { value: '5', degree: '5' },
+  { value: '#6', degree: '♯6' },
 ];
 
 
-const LOW_NOTES: { value: NoteValue; display: string }[] = [
-  { value: '1', display: '↓1' },
-  { value: '2', display: '↓2' },
-  { value: '3', display: '↓3' },
-  { value: '4', display: '↓4' },
-  { value: '5', display: '↓5' },
-  { value: '6', display: '↓6' },
-  { value: '7', display: '↓7' },
+const LOW_NOTES: { value: NoteValue; degree: string }[] = [
+  { value: '1', degree: '1' },
+  { value: '2', degree: '2' },
+  { value: '3', degree: '3' },
+  { value: '4', degree: '4' },
+  { value: '5', degree: '5' },
+  { value: '6', degree: '6' },
+  { value: '7', degree: '7' },
 ];
 
 const DURATION_OPTIONS: { value: PanelDuration; label: string }[] = [
@@ -584,7 +587,7 @@ const UTILITY_HELP = {
   },
 };
 
-function getBasicNoteOptions(instrumentType: string, keySignature: string): { value: NoteValue; display: string }[] {
+function getBasicNoteOptions(instrumentType: string, keySignature: string): { value: NoteValue; degree: string }[] {
   if (instrumentType === '6-hole' && keySignature === 'G') {
     return SIX_HOLE_G_BASIC_NOTES;
   }
@@ -875,7 +878,8 @@ export const ElementPanel = memo(function ElementPanel() {
                 {HIGH_NOTES.map((note) => (
                   <NoteButton
                     key={`high-${note.value}`}
-                    display={note.display}
+                    degree={note.degree}
+                    octave="high"
                     onClick={() => handleHighNoteClick(note.value)}
                     disabled={!availableNotes.high.includes(note.value)}
                   />
@@ -892,7 +896,8 @@ export const ElementPanel = memo(function ElementPanel() {
                 {basicNotes.map((note) => (
                   <NoteButton
                     key={`basic-${note.value}`}
-                    display={note.display}
+                    degree={note.degree}
+                    octave="basic"
                     onClick={() => handleBasicNoteClick(note.value)}
                     disabled={!availableNotes.basic.includes(note.value)}
                   />
@@ -909,7 +914,8 @@ export const ElementPanel = memo(function ElementPanel() {
                 {LOW_NOTES.map((note) => (
                   <NoteButton
                     key={`low-${note.value}`}
-                    display={note.display}
+                    degree={note.degree}
+                    octave="low"
                     onClick={() => handleLowNoteClick(note.value)}
                     disabled={!availableNotes.low.includes(note.value)}
                   />

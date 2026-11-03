@@ -5,7 +5,8 @@ export type MobilePitchRegister = 'low' | 'basic' | 'high';
 
 export interface MobileNoteOption {
   value: NoteValue;
-  display: string;
+  /** 简谱数字，含升降号；高低音点由界面按音区渲染 */
+  degree: string;
   disabled: boolean;
 }
 
@@ -21,12 +22,10 @@ function getBasicNoteValues(instrumentType: InstrumentType, keySignature: string
     : ['1', '2', '3', '4', '5', '6', 'b7'];
 }
 
-function getDisplay(value: NoteValue, register: MobilePitchRegister): string {
-  const symbol = value === 'b7' ? '♭7' : value === '#6' ? '♯6' : value;
-
-  if (register === 'high') return `${symbol}̇`;
-  if (register === 'low') return `${symbol}̣`;
-  return symbol;
+function getDegree(value: NoteValue): string {
+  if (value === 'b7') return '♭7';
+  if (value === '#6') return '♯6';
+  return value;
 }
 
 export function getMobileNoteOptions(
@@ -39,8 +38,7 @@ export function getMobileNoteOptions(
 
   return values.map((value) => ({
     value,
-    display: getDisplay(value, register),
+    degree: getDegree(value),
     disabled: !range[register].includes(value),
   }));
 }
-
