@@ -128,16 +128,23 @@ export function PublicScoreViewer({ document }: PublicScoreViewerProps) {
         });
       });
 
-      await exportAsImage(exportRef, title);
+      await exportAsImage(exportRef, title, {
+        watermark: !payload?.canExportWithoutWatermark,
+        scoreId: typeof document.scoreId === "string" ? document.scoreId : null,
+      });
       sendGAEvent("score_export", "public_score", title);
-      showSuccess("图片已导出");
+      showSuccess(
+        payload?.canExportWithoutWatermark
+          ? "图片已导出"
+          : "图片已导出（含二维码页脚，Plus 可去除）"
+      );
     } catch (error) {
       console.error("Failed to export public score", error);
       showError(error instanceof Error ? error.message : "图片导出失败");
     } finally {
       setExporting(false);
     }
-  }, [isExporting, setExporting, title]);
+  }, [document.scoreId, isExporting, setExporting, title]);
 
   if (!ready) {
     return (

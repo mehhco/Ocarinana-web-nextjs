@@ -1,6 +1,22 @@
 import type { RefObject } from 'react';
 import type { ScoreDocument } from '@/lib/editor/types';
+import {
+  EXPORT_BRAND_NAME,
+  EXPORT_FONT_STACK,
+  buildExportShareUrl,
+  getExportFooterCaption,
+  getExportFooterMetrics,
+} from '@/lib/share/export-watermark';
 import { EXPORT_CONFIG } from './constants';
+
+export interface ExportImageOptions {
+  /** 是否在图片底部附加品牌与二维码页脚，默认附加 */
+  watermark?: boolean;
+  /** 二维码指向的地址；不传时按站点首页生成 */
+  shareUrl?: string;
+  /** 公开乐谱 ID，用于生成默认链接和页脚文案 */
+  scoreId?: string | null;
+}
 
 type Html2Canvas = (
   element: HTMLElement,
@@ -234,11 +250,102 @@ function downloadCanvas(canvas: HTMLCanvasElement, title: string): Promise<void>
 }
 
 /**
+ * 生成二维码图片。失败时返回 null，导出仍然继续（只是页脚没有二维码）。
+ */
+async function loadQrImage(
+  url: string,
+  size: number
+): Promise<HTMLImageElement | null> {
+  try {
+    const { default: QRCode } = await import('qrcode');
+    const dataUrl = await QRCode.toDataURL(url, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      width: Math.max(64, Math.round(size)),
+      color: { dark: '#111827', light: '#ffffff' },
+    });
+    const image = new Image();
+
+    await new Promise<void>((resolve, reject) => {
+      image.addEventListener('load', () => resolve(), { once: true });
+      image.addEventListener('error', () => reject(new Error('二维码加载失败')), {
+        once: true,
+      });
+      image.src = dataUrl;
+    });
+
+    return image;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 在导出图片底部追加品牌页脚：左侧品牌与说明，右侧二维码。
+ */
+function composeWatermark(
+  source: HTMLCanvasElement,
+  qrImage: HTMLImageElement | null,
+  caption: string,
+  scale: number
+): HTMLCanvasElement {
+  const metrics = getExportFooterMetrics(scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = source.width;
+  canvas.height = source.height + metrics.height;
+
+  const context = canvas.getContext('2d');
+  if (!context) {
+    return source;
+  }
+
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(source, 0, 0);
+
+  const footerTop = source.height;
+  context.fillStyle = '#e5e7eb';
+  context.fillRect(0, footerTop, canvas.width, metrics.borderWidth);
+
+  const left = metrics.padding;
+  const brandBaseline = footerTop + metrics.padding + metrics.brandFontSize;
+  const textMaxWidth = canvas.width - metrics.padding * 3 - metrics.qrSize;
+
+  context.textBaseline = 'alphabetic';
+  context.fillStyle = '#065f46';
+  context.font = `700 ${metrics.brandFontSize}px ${EXPORT_FONT_STACK}`;
+  context.fillText(EXPORT_BRAND_NAME, left, brandBaseline, textMaxWidth);
+
+  context.fillStyle = '#6b7280';
+  context.font = `400 ${metrics.captionFontSize}px ${EXPORT_FONT_STACK}`;
+  context.fillText(
+    caption,
+    left,
+    brandBaseline + metrics.lineGap + metrics.captionFontSize,
+    textMaxWidth
+  );
+
+  if (qrImage) {
+    const qrSize = metrics.qrSize;
+    const qrX = canvas.width - metrics.padding - qrSize;
+    const qrY = footerTop + Math.round((metrics.height - qrSize) / 2);
+
+    context.imageSmoothingEnabled = false;
+    context.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
+  }
+
+  return canvas;
+}
+
+/**
  * 导出为 PNG 图片（首次导出时按需加载 html2canvas）
+ *
+ * 默认在图片底部加品牌二维码页脚，二维码带 utm 参数，图片被转发后仍能带回访问。
  */
 export async function exportAsImage(
   containerRef: RefObject<HTMLDivElement | null>,
-  title: string
+  title: string,
+  options: ExportImageOptions = {}
 ): Promise<void> {
   const html2canvas = await loadHtml2Canvas();
 
@@ -258,10 +365,11 @@ export async function exportAsImage(
     await waitForRenderFrames();
 
     const { height: exportHeight } = getElementExportSize(clone);
+    const scale = getExportScale();
 
     const canvas = await html2canvas(clone, {
       backgroundColor: EXPORT_CONFIG.BACKGROUND_COLOR,
-      scale: getExportScale(),
+      scale,
       useCORS: true,
       allowTaint: false,
       foreignObjectRendering: false,
@@ -275,7 +383,30 @@ export async function exportAsImage(
       scrollY: 0,
     });
 
-    await downloadCanvas(canvas, title);
+    if (options.watermark === false) {
+      await downloadCanvas(canvas, title);
+      return;
+    }
+
+    const shareUrl =
+      options.shareUrl ??
+      (typeof window === 'undefined'
+        ? ''
+        : buildExportShareUrl({
+            origin: window.location.origin,
+            scoreId: options.scoreId,
+          }));
+    const qrImage = shareUrl
+      ? await loadQrImage(shareUrl, getExportFooterMetrics(scale).qrSize)
+      : null;
+    const composed = composeWatermark(
+      canvas,
+      qrImage,
+      getExportFooterCaption(options.scoreId),
+      scale
+    );
+
+    await downloadCanvas(composed, title);
   } finally {
     sandbox.remove();
   }

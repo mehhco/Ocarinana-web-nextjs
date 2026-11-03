@@ -124,14 +124,16 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
 
     if (!response.ok || !payload?.allowed) {
       showError(payload?.error || '今日导出次数已用完，请稍后再试。');
-      return false;
+      return null;
     }
 
     if (typeof payload.remaining === 'number') {
       showToast(`今日还可导出 ${payload.remaining} 次`);
     }
 
-    return true;
+    return {
+      canExportWithoutWatermark: Boolean(payload.canExportWithoutWatermark),
+    };
   }, []);
 
   const handleExportImage = useCallback(async () => {
@@ -140,8 +142,8 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
     setExporting(true);
 
     try {
-      const canExport = await reserveExport();
-      if (!canExport) return;
+      const reservation = await reserveExport();
+      if (!reservation) return;
 
       await new Promise<void>((resolve) => {
         window.requestAnimationFrame(() => {
@@ -149,8 +151,14 @@ export const ScoreEditor = memo(function ScoreEditor({ initialDocument, scoreId,
         });
       });
 
-      await exportAsImage(scoreExportRef, documentTitle);
-      showSuccess('图片已导出');
+      await exportAsImage(scoreExportRef, documentTitle, {
+        watermark: !reservation.canExportWithoutWatermark,
+      });
+      showSuccess(
+        reservation.canExportWithoutWatermark
+          ? '图片已导出'
+          : '图片已导出（含二维码页脚，Plus 可去除）'
+      );
     } catch (error) {
       console.error('Failed to export score image', error);
       showError(error instanceof Error ? error.message : '图片导出失败');
