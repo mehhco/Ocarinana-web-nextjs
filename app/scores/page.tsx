@@ -20,46 +20,64 @@ import {
   siteUrl,
 } from "@/lib/seo/site";
 
-export const metadata: Metadata = {
-  title: "乐谱广场 - 陶笛数字简谱分享",
-  description: "浏览 Ocarinana 用户公开分享的六孔、十二孔陶笛数字简谱，按曲名、陶笛类型、调号和拍号筛选，在线预览谱面与指法图。",
-  keywords: [
-    "陶笛谱分享",
-    "陶笛乐谱",
-    "陶笛数字简谱",
-    "六孔陶笛谱",
-    "十二孔陶笛谱",
-    "陶笛曲谱",
-  ],
-  openGraph: {
-    title: "乐谱广场 - Ocarinana",
-    description: "浏览公开分享的陶笛数字简谱，按陶笛类型、调号和拍号快速筛选。",
-    type: "website",
-    url: absoluteUrl("/scores"),
-    siteName: SITE_NAME,
-    images: [
-      {
-        url: absoluteUrl(defaultOpenGraphImage),
-        width: 1200,
-        height: 630,
-        alt: "Ocarinana 乐谱广场",
-      },
+export async function generateMetadata({
+  searchParams,
+}: ScoresSquarePageProps): Promise<Metadata> {
+  const params = await searchParams;
+  const query = (params.q || "").trim();
+  const instrument = params.instrument;
+  const key = params.key;
+
+  // 带筛选条件的广场页是同一份内容的不同视图，把权重归并到对应的落地页。
+  let canonical = absoluteUrl("/scores");
+
+  if (!query && (instrument === "6-hole" || instrument === "12-hole")) {
+    canonical = absoluteUrl(`/scores/instrument/${instrument}`);
+  } else if (!query && key && ["C", "F", "G"].includes(key)) {
+    canonical = absoluteUrl(`/scores/key/${key.toLowerCase()}`);
+  }
+
+  return {
+    title: "乐谱广场 - 陶笛数字简谱分享",
+    description: "浏览 Ocarinana 用户公开分享的六孔、十二孔陶笛数字简谱，按曲名、陶笛类型、调号和拍号筛选，在线预览谱面与指法图。",
+    keywords: [
+      "陶笛谱分享",
+      "陶笛乐谱",
+      "陶笛数字简谱",
+      "六孔陶笛谱",
+      "十二孔陶笛谱",
+      "陶笛曲谱",
     ],
-  },
-  alternates: {
-    canonical: absoluteUrl("/scores"),
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+    openGraph: {
+      title: "乐谱广场 - Ocarinana",
+      description: "浏览公开分享的陶笛数字简谱，按陶笛类型、调号和拍号快速筛选。",
+      type: "website",
+      url: canonical,
+      siteName: SITE_NAME,
+      images: [
+        {
+          url: absoluteUrl(defaultOpenGraphImage),
+          width: 1200,
+          height: 630,
+          alt: "Ocarinana 乐谱广场",
+        },
+      ],
+    },
+    alternates: {
+      canonical,
+    },
+    robots: {
       index: true,
       follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
-  },
-};
+  };
+}
 
 interface ScoresSquarePageProps {
   searchParams: Promise<{
@@ -242,6 +260,25 @@ export default async function ScoresSquarePage({ searchParams }: ScoresSquarePag
           </Select>
           <PendingSubmitButton loadingText="筛选中...">筛选</PendingSubmitButton>
         </form>
+
+        <nav aria-label="常用分类" className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">常用分类</span>
+          {[
+            { href: "/scores/instrument/6-hole", label: "六孔陶笛谱" },
+            { href: "/scores/instrument/12-hole", label: "十二孔陶笛谱" },
+            { href: "/scores/key/c", label: "1=C 陶笛谱" },
+            { href: "/scores/key/f", label: "1=F 陶笛谱" },
+            { href: "/scores/key/g", label: "1=G 陶笛谱" },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-700 transition-colors hover:border-emerald-600 hover:text-emerald-800 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-200"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
 
         {error ? (
           <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">

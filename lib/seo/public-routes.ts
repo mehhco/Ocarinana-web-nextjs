@@ -14,6 +14,7 @@ export interface PublicRoute {
 const siteLastModified = new Date('2026-05-13');
 const classroomLastModified = new Date('2026-10-30');
 const toolsLastModified = new Date('2026-11-03');
+const landingLastModified = new Date('2026-11-03');
 const legalLastModified = new Date('2025-10-12');
 
 export const SITE_LAST_MODIFIED = siteLastModified;
@@ -37,6 +38,18 @@ export const publicStaticRoutes: PublicRoute[] = [
     changeFrequency: 'daily',
     priority: 0.9,
   },
+  ...[
+    '/scores/instrument/6-hole',
+    '/scores/instrument/12-hole',
+    '/scores/key/c',
+    '/scores/key/f',
+    '/scores/key/g',
+  ].map((path) => ({
+    path,
+    lastModified: landingLastModified,
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  })),
   {
     path: '/music-classroom',
     lastModified: classroomLastModified,
