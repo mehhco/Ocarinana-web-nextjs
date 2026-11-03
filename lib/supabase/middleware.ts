@@ -10,6 +10,7 @@ const PUBLIC_PATH_PREFIXES = [
   "/music-classroom",
   "/scores",
   "/shop",
+  "/tools",
 ];
 
 const PUBLIC_PATHS = new Set([

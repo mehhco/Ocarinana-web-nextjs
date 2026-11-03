@@ -4,29 +4,18 @@
  */
 
 import { getBaiduPushConfig, pushUrlsToBaidu } from './baidu-push';
+import { getPublicStaticUrls } from './public-routes';
 
 /**
- * 从sitemap获取所有URL
+ * 从与 sitemap 共用的静态路由清单获取待推送 URL。
+ *
+ * 不再硬编码 /home、/auth/login 这类已登录页或 robots 禁止抓取的路径，
+ * 避免浪费百度配额，也避免把不该收录的地址推给搜索引擎。
  */
-async function getSitemapUrls(): Promise<string[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ocarinana.com';
-  
-  // 静态页面列表（与sitemap.ts保持一致）
-  const staticPages = [
-    baseUrl,
-    `${baseUrl}/home`,
-    `${baseUrl}/shop`,
-    `${baseUrl}/auth/login`,
-    `${baseUrl}/auth/sign-up`,
-    `${baseUrl}/legal/privacy`,
-    `${baseUrl}/legal/terms`,
-    `${baseUrl}/legal/cookies`,
-  ];
-
-  // 如果需要，可以在这里添加动态页面
-  // 例如：从数据库获取公开的乐谱页面
-  
-  return staticPages;
+function getSitemapUrls(): string[] {
+  return getPublicStaticUrls(
+    process.env.NEXT_PUBLIC_APP_URL || 'https://www.ocarinana.com'
+  );
 }
 
 /**
@@ -59,7 +48,7 @@ export async function autoPushSitemap(options?: {
 
   try {
     // 获取要推送的URL列表
-    const urls = options?.urls || await getSitemapUrls();
+    const urls = options?.urls || getSitemapUrls();
     
     if (urls.length === 0) {
       return {

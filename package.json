@@ -4,7 +4,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test lib/editor/sections.test.ts components/editor/lib/mobileEditor.test.ts lib/share/public-score.test.ts lib/cache/static-asset-cache.test.ts lib/music-classroom/topics.test.ts",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test lib/editor/sections.test.ts components/editor/lib/mobileEditor.test.ts lib/share/public-score.test.ts lib/cache/static-asset-cache.test.ts lib/music-classroom/topics.test.ts lib/tools/fingering-chart.test.ts",
     "lint": "next lint",
     "analyze": "ANALYZE=true npm run build"
   },

@@ -436,12 +436,23 @@ export default async function ClassroomTopicPage({
                 短谱例更容易检查调号、节奏、换指和排版，也能马上形成可打印、可分享的成品。
               </p>
             </div>
-            <Button asChild className="h-11 bg-lime-800 px-5 text-white hover:bg-lime-900">
-              <Link href="/editor">
-                打开陶笛谱编辑器
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row md:flex-col md:items-stretch">
+              <Button asChild className="h-11 bg-lime-800 px-5 text-white hover:bg-lime-900">
+                <Link href="/editor">
+                  打开陶笛谱编辑器
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              {topic.slug === "ocarina-fingering" && (
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-11 border-lime-900/20 bg-white/70 px-5 text-lime-950 hover:bg-white"
+                >
+                  <Link href="/tools/ocarina-fingering">查完整指法表</Link>
+                </Button>
+              )}
+            </div>
           </section>
 
           <section className="mt-10">

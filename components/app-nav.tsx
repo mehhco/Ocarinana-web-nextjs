@@ -42,6 +42,7 @@ export async function AppNav({
       : []),
     { href: "/scores", label: "乐谱广场" },
     { href: "/music-classroom", label: "音乐课堂" },
+    { href: "/tools/ocarina-fingering", label: "指法表" },
     { href: "/shop", label: "陶笛推荐" },
   ];
 
