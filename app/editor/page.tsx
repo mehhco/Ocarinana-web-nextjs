@@ -74,19 +74,19 @@ export default async function PublicEditorPage({ searchParams }: PublicEditorPag
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
             {INSTRUMENT_OPTIONS.map((option) => (
-              <Card key={option.value} className="border-slate-200 bg-white shadow-sm">
+              <Card key={option.value} className="flex h-full flex-col border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-lg">{option.label}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="min-h-12 text-sm leading-6 text-slate-600">
+                <CardContent className="flex flex-1 flex-col gap-4">
+                  <p className="text-sm leading-6 text-slate-600">
                     {option.value === "6-hole"
                       ? "试用六孔陶笛谱制作，支持 C/F/G 调六孔指法图。"
                       : "试用十二孔陶笛谱制作，兼容现有 C/F/G 调十二孔指法图。"}
                   </p>
-                  <Button asChild className="w-full">
+                  <Button asChild className="mt-auto w-full">
                     <PendingLink href={`/editor?instrument=${option.value}`} pendingText="打开中..." showPendingSpinner>
                       选择{option.shortLabel}
                     </PendingLink>

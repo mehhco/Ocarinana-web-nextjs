@@ -96,17 +96,15 @@ export default async function EnglishEditorPage({ searchParams }: EnglishEditorP
               </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
               {INSTRUMENTS.map((option) => (
-                <Card key={option.value} className="border-slate-200 bg-white shadow-sm">
+                <Card key={option.value} className="flex h-full flex-col border-slate-200 bg-white shadow-sm">
                   <CardHeader>
                     <CardTitle className="text-lg">{option.title}</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="min-h-12 text-sm leading-6 text-slate-600">
-                      {option.description}
-                    </p>
-                    <Button asChild className="w-full">
+                  <CardContent className="flex flex-1 flex-col gap-4">
+                    <p className="text-sm leading-6 text-slate-600">{option.description}</p>
+                    <Button asChild className="mt-auto w-full">
                       <PendingLink
                         href={`/en/editor?instrument=${option.value}`}
                         pendingText="Opening…"
