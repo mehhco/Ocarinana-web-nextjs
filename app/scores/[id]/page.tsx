@@ -16,7 +16,6 @@ import { SiteOwnerContact } from "../../site-owner-contact";
 import {
   SITE_NAME,
   absoluteUrl,
-  defaultOpenGraphImage,
   siteUrl,
 } from "@/lib/seo/site";
 import type { ScoreDocument } from "@/lib/editor/types";
@@ -146,6 +145,7 @@ export async function generateMetadata({ params }: PublicScorePageProps): Promis
   const title = `${score.title} - ${instrumentLabel}陶笛谱`;
   const description = getScoreDescription(score);
   const url = absoluteUrl(`/scores/${score.score_id}`);
+  const ogImage = absoluteUrl(`/scores/${score.score_id}/og`);
 
   return {
     title,
@@ -169,7 +169,7 @@ export async function generateMetadata({ params }: PublicScorePageProps): Promis
       modifiedTime: score.updated_at || undefined,
       images: [
         {
-          url: absoluteUrl(defaultOpenGraphImage),
+          url: ogImage,
           width: 1200,
           height: 630,
           alt: `${score.title}陶笛谱`,
@@ -180,7 +180,7 @@ export async function generateMetadata({ params }: PublicScorePageProps): Promis
       card: "summary_large_image",
       title,
       description,
-      images: [absoluteUrl(defaultOpenGraphImage)],
+      images: [ogImage],
     },
     alternates: {
       canonical: url,
