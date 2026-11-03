@@ -38,6 +38,11 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    languages: {
+      "zh-CN": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+      en: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/en`,
+      "x-default": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    },
   },
 };
 

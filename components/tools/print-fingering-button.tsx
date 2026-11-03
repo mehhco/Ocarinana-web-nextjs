@@ -7,6 +7,11 @@ import { Button } from '@/components/ui/button';
 const CARD_SELECTOR = 'figure[data-fingering-card] img';
 const IMAGE_WAIT_TIMEOUT_MS = 5000;
 
+interface PrintFingeringButtonProps {
+  label?: string;
+  preparingLabel?: string;
+}
+
 function waitForImage(image: HTMLImageElement): Promise<void> {
   if (image.complete && image.naturalWidth > 0) {
     return Promise.resolve();
@@ -28,7 +33,10 @@ function waitForImage(image: HTMLImageElement): Promise<void> {
  * 指法图默认按需加载，直接调用 window.print() 时，位于首屏之外的
  * 六孔指法图还没有发起请求，打印预览里就会是空白。
  */
-export function PrintFingeringButton() {
+export function PrintFingeringButton({
+  label = '打印这张指法表',
+  preparingLabel = '正在准备打印…',
+}: PrintFingeringButtonProps = {}) {
   const [preparing, setPreparing] = useState(false);
 
   const handlePrint = useCallback(() => {
@@ -71,7 +79,7 @@ export function PrintFingeringButton() {
       disabled={preparing}
     >
       <Printer className="h-4 w-4" />
-      {preparing ? '正在准备打印…' : '打印这张指法表'}
+      {preparing ? preparingLabel : label}
     </Button>
   );
 }

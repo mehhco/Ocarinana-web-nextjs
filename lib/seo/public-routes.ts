@@ -75,6 +75,18 @@ export const publicStaticRoutes: PublicRoute[] = [
     priority: 0.86,
   },
   {
+    path: '/en',
+    lastModified: landingLastModified,
+    changeFrequency: 'monthly',
+    priority: 0.7,
+  },
+  {
+    path: '/en/ocarina-fingering-chart',
+    lastModified: landingLastModified,
+    changeFrequency: 'monthly',
+    priority: 0.68,
+  },
+  {
     path: '/legal/privacy',
     lastModified: legalLastModified,
     changeFrequency: 'yearly',

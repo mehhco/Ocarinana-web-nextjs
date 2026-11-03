@@ -6,6 +6,7 @@ import { hasEnvVars } from "../utils";
 const PUBLIC_PATH_PREFIXES = [
   "/auth",
   "/editor",
+  "/en",
   "/legal",
   "/music-classroom",
   "/scores",

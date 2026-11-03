@@ -50,6 +50,11 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: url,
+    languages: {
+      "zh-CN": url,
+      en: absoluteUrl("/en/ocarina-fingering-chart"),
+      "x-default": url,
+    },
   },
 };
 
