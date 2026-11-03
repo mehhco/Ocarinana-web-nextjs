@@ -13,6 +13,7 @@ import { sortSectionsByScorePosition } from '@/lib/editor/sections';
 import { showError } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { useScoreStore } from '../hooks/useScoreStore';
+import { useEditorT } from '../i18n/editor-locale';
 
 export function SectionStructurePanel() {
   const document = useScoreStore((state) => state.document);
@@ -30,6 +31,7 @@ export function SectionStructurePanel() {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [labelDraft, setLabelDraft] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
+  const t = useEditorT();
 
   const sortedSections = useMemo(
     () => sortSectionsByScorePosition(document.sections, document.measures),
@@ -80,7 +82,7 @@ export function SectionStructurePanel() {
 
     const label = labelDraft.trim();
     if (!label || label.length > 12) {
-      showError('段落名称需为 1–12 个字符');
+      showError(t('段落名称需为 1–12 个字符', 'Section names must be 1–12 characters'));
       return;
     }
     const duplicate = document.sections.some(
@@ -89,7 +91,7 @@ export function SectionStructurePanel() {
         section.label.toLocaleLowerCase() === label.toLocaleLowerCase()
     );
     if (duplicate) {
-      showError('段落名称不能重复');
+      showError(t('段落名称不能重复', 'Section names must be unique'));
       return;
     }
 
@@ -117,11 +119,14 @@ export function SectionStructurePanel() {
           <ListTree className="h-3.5 w-3.5" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-xs font-semibold text-slate-700">段落结构</div>
+          <div className="text-xs font-semibold text-slate-700">{t('段落结构', 'Section structure')}</div>
           <div className="text-[10px] leading-4 text-slate-500">
             {document.sections.length > 0 || document.playbackOrder.length > 0
-              ? `${document.sections.length} 个段落 · ${document.playbackOrder.length} 步顺序`
-              : '可选：标记段落并编排演奏路线'}
+              ? t(
+                  `${document.sections.length} 个段落 · ${document.playbackOrder.length} 步顺序`,
+                  `${document.sections.length} sections · ${document.playbackOrder.length} steps`
+                )
+              : t('可选：标记段落并编排演奏路线', 'Optional: mark sections and plan the play order')}
           </div>
         </div>
         <ChevronDown
@@ -147,17 +152,19 @@ export function SectionStructurePanel() {
         )}
       >
         <Plus className="h-3.5 w-3.5" />
-        {selectedSection ? `此处已有段落 ${selectedSection.label}` : '在选中元素前新增段落'}
+        {selectedSection
+          ? t(`此处已有段落 ${selectedSection.label}`, `Section "${selectedSection.label}" already starts here`)
+          : t('在选中元素前新增段落', 'Add a section before the selection')}
       </button>
 
       <div className="mt-2 space-y-1">
         <div className="flex items-center justify-between text-[10px] font-medium text-slate-500">
-          <span>段落标记</span>
+          <span>{t('段落标记', 'Sections')}</span>
           <span>{sortedSections.length}</span>
         </div>
         {sortedSections.length === 0 ? (
           <div className="rounded-md border border-dashed border-slate-200 px-2 py-2 text-center text-[10px] leading-4 text-slate-400">
-            先在谱面选中一个元素，再创建段落
+            {t('先在谱面选中一个元素，再创建段落', 'Select an element on the score first, then add a section')}
           </div>
         ) : (
           <div className="max-h-32 space-y-1 overflow-y-auto pr-0.5">
@@ -183,10 +190,10 @@ export function SectionStructurePanel() {
                         if (event.key === 'Escape') setEditingSectionId(null);
                       }}
                       className="h-6 min-w-0 flex-1 rounded border border-amber-300 px-1.5 text-[11px] outline-none ring-amber-200 focus:ring-2"
-                      aria-label="段落名称"
+                      aria-label={t('段落名称', 'Section name')}
                     />
                     <button type="submit" className="h-6 rounded bg-amber-600 px-1.5 text-[10px] font-medium text-white">
-                      保存
+                      {t('保存', 'Save')}
                     </button>
                   </form>
                 ) : (
@@ -195,39 +202,39 @@ export function SectionStructurePanel() {
                       type="button"
                       onClick={() => locateSection(section.id)}
                       className="min-w-0 flex-1 truncate rounded px-1.5 py-1 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
-                      title={`定位到段落 ${section.label}`}
+                      title={t(`定位到段落 ${section.label}`, `Go to section ${section.label}`)}
                     >
                       <span className="mr-1.5 inline-flex min-w-5 justify-center rounded border border-slate-400 bg-white px-1 font-serif text-[10px] leading-4">
                         {section.label}
                       </span>
-                      定位
+                      {t('定位', 'Go')}
                     </button>
                     <button
                       type="button"
                       onClick={() => appendPlaybackSection(section.id)}
                       className="flex h-6 items-center gap-0.5 rounded bg-amber-50 px-1.5 text-[10px] font-medium text-amber-800 hover:bg-amber-100"
-                      title={`将 ${section.label} 加入演奏顺序`}
+                      title={t(`将 ${section.label} 加入演奏顺序`, `Add ${section.label} to the play order`)}
                     >
-                      <Plus className="h-3 w-3" />顺序
+                      <Plus className="h-3 w-3" />{t('顺序', 'Order')}
                     </button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
                           className="flex h-6 w-6 items-center justify-center rounded text-slate-500 hover:bg-slate-100"
-                          aria-label={`${section.label} 段落菜单`}
+                          aria-label={t(`${section.label} 段落菜单`, `${section.label} section menu`)}
                         >
                           <MoreHorizontal className="h-3.5 w-3.5" />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="min-w-28">
-                        <DropdownMenuItem onSelect={() => beginRename(section.id)}>重命名</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => beginRename(section.id)}>{t('重命名', 'Rename')}</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onSelect={() => deleteSection(section.id)}
                           className="text-red-600 focus:text-red-600"
                         >
-                          删除段落
+                          {t('删除段落', 'Delete section')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -243,7 +250,7 @@ export function SectionStructurePanel() {
 
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500">
-          <Route className="h-3 w-3" />演奏顺序
+          <Route className="h-3 w-3" />{t('演奏顺序', 'Play order')}
         </div>
         {document.playbackOrder.length > 0 && (
           <button
@@ -251,14 +258,14 @@ export function SectionStructurePanel() {
             onClick={clearPlaybackOrder}
             className="text-[10px] text-slate-400 hover:text-red-600"
           >
-            清空
+            {t('清空', 'Clear')}
           </button>
         )}
       </div>
 
       {document.playbackOrder.length === 0 ? (
         <div className="mt-1.5 rounded-md bg-slate-50 px-2 py-2 text-center text-[10px] leading-4 text-slate-400">
-          点击段落右侧“＋顺序”开始编排
+          {t('点击段落右侧“＋顺序”开始编排', 'Use the + Order button on a section to build the play order')}
         </div>
       ) : (
         <div className="mt-1.5 flex flex-wrap items-center gap-1">
@@ -274,7 +281,10 @@ export function SectionStructurePanel() {
                     <button
                       type="button"
                       className="min-w-6 rounded border border-amber-300 bg-amber-50 px-1.5 py-1 font-serif text-[10px] font-semibold leading-none text-amber-900 hover:bg-amber-100"
-                      aria-label={`演奏顺序第 ${index + 1} 项：${section.label}`}
+                      aria-label={t(
+                        `演奏顺序第 ${index + 1} 项：${section.label}`,
+                        `Play order item ${index + 1}: ${section.label}`
+                      )}
                     >
                       {section.label}
                     </button>
@@ -284,23 +294,23 @@ export function SectionStructurePanel() {
                       disabled={index === 0}
                       onSelect={() => movePlaybackOrderItem(index, -1)}
                     >
-                      向左移动
+                      {t('向左移动', 'Move left')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       disabled={index === document.playbackOrder.length - 1}
                       onSelect={() => movePlaybackOrderItem(index, 1)}
                     >
-                      向右移动
+                      {t('向右移动', 'Move right')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => duplicatePlaybackOrderItem(index)}>
-                      复制此项
+                      {t('复制此项', 'Duplicate')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onSelect={() => removePlaybackOrderItem(index)}
                       className="text-red-600 focus:text-red-600"
                     >
-                      从顺序中删除
+                      {t('从顺序中删除', 'Remove from play order')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
