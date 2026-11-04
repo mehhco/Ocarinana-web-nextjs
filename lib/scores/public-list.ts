@@ -88,6 +88,36 @@ export function getScoreSettings(score: PublicScoreListItem): PublicScoreSetting
   return score.document?.settings ?? {};
 }
 
+/**
+ * 只取公开谱的设置字段用于统计，避免把整份谱面 JSON 拉下来。
+ *
+ * 返回 null 表示读不到（环境变量缺失或查询失败），调用方据此决定
+ * 是回退到旧行为（全部收录）还是按统计结果过滤。
+ */
+export async function fetchPublicScoreSettingsSamples(
+  limit = 1000
+): Promise<PublicScoreSettings[] | null> {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('scores')
+    .select('settings:document->settings')
+    .eq('is_public', true)
+    .limit(limit);
+
+  if (error || !data) {
+    return null;
+  }
+
+  return (data as Array<{ settings?: PublicScoreSettings | null }>).map(
+    (row) => row.settings ?? {}
+  );
+}
+
 export function getInstrumentLabel(instrumentType: string | null | undefined): string {
   return instrumentType === '6-hole' ? '六孔' : '十二孔';
 }

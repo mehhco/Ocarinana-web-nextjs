@@ -87,6 +87,34 @@ const workflow = [
   "导出高清图片",
 ];
 
+const scoreLandingLinks = [
+  {
+    href: "/scores/instrument/6-hole",
+    title: "六孔陶笛谱",
+    desc: "短旋律与入门练习曲为主，谱面标注孔数、调号和指法。",
+  },
+  {
+    href: "/scores/instrument/12-hole",
+    title: "十二孔陶笛谱",
+    desc: "音域更宽，覆盖流行曲、影视配乐和完整旋律。",
+  },
+  {
+    href: "/scores/key/c",
+    title: "1=C 陶笛谱",
+    desc: "最常用的调号，不涉及升降音，适合入门和儿歌民谣。",
+  },
+  {
+    href: "/scores/key/f",
+    title: "1=F 陶笛谱",
+    desc: "偏低音区，适合柔和深沉的旋律，选曲先看最高音。",
+  },
+  {
+    href: "/scores/key/g",
+    title: "1=G 陶笛谱",
+    desc: "会用到降七音或升六音，是新手最容易按错的地方。",
+  },
+];
+
 export default function Home() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -258,6 +286,41 @@ export default function Home() {
                   </li>
                 ))}
               </ol>
+            </div>
+          </div>
+        </section>
+
+        <section className="w-full border-t border-zinc-200 bg-[#fbfaf6] dark:border-white/10 dark:bg-slate-900">
+          <div className="mx-auto w-full max-w-6xl px-5 py-14">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-2xl">
+                <h2 className="text-2xl font-bold md:text-3xl">按孔数或调号找陶笛谱</h2>
+                <p className="mt-3 text-sm leading-7 text-zinc-600 dark:text-slate-300">
+                  乐谱广场已经按六孔、十二孔和 C/F/G 调整理好入口。想直接照着练，从这里进；想改成自己的版本，复制到编辑器继续改。
+                </p>
+              </div>
+              <Link
+                href="/scores"
+                className="text-sm text-emerald-800 underline-offset-4 hover:underline dark:text-emerald-200"
+              >
+                浏览全部乐谱 →
+              </Link>
+            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {scoreLandingLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="group rounded-md border border-zinc-200 bg-white p-5 transition-colors hover:border-emerald-700 dark:border-white/10 dark:bg-slate-950"
+                >
+                  <div className="font-semibold text-zinc-950 group-hover:text-emerald-800 dark:text-white dark:group-hover:text-emerald-200">
+                    {link.title}
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-slate-300">
+                    {link.desc}
+                  </p>
+                </Link>
+              ))}
             </div>
           </div>
         </section>

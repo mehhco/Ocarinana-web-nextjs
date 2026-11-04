@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { ScoreLandingView } from "@/components/scores/score-landing-view";
 import {
   getKeyLanding,
   instrumentLandings,
   keyLandings,
 } from "@/lib/scores/landing";
+import { shouldIndexLanding } from "@/lib/scores/landing-policy";
 import { fetchPublicScores } from "@/lib/scores/public-list";
 import { absoluteUrl } from "@/lib/seo/site";
 
@@ -20,6 +22,10 @@ export function generateStaticParams() {
   return keyLandings.map((landing) => ({ key: landing.slug }));
 }
 
+const getLandingScores = cache((keySignature: "C" | "F" | "G") =>
+  fetchPublicScores({ keySignature, limit: 18 })
+);
+
 export async function generateMetadata({
   params,
 }: KeyLandingPageProps): Promise<Metadata> {
@@ -30,6 +36,8 @@ export async function generateMetadata({
     return { title: '页面不存在', robots: { index: false, follow: false } };
   }
 
+  const scores = await getLandingScores(landing.keySignature);
+  const indexable = shouldIndexLanding(scores.length);
   const url = absoluteUrl(`/scores/key/${landing.slug}`);
 
   return {
@@ -44,16 +52,21 @@ export async function generateMetadata({
       url,
       locale: 'zh_CN',
     },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
-    },
+    robots: indexable
+      ? {
+          index: true,
+          follow: true,
+          googleBot: {
+            index: true,
+            follow: true,
+            'max-image-preview': 'large',
+            'max-snippet': -1,
+          },
+        }
+      : {
+          index: false,
+          follow: true,
+        },
   };
 }
 
@@ -65,10 +78,7 @@ export default async function KeyLandingPage({ params }: KeyLandingPageProps) {
     notFound();
   }
 
-  const scores = await fetchPublicScores({
-    keySignature: landing.keySignature,
-    limit: 18,
-  });
+  const scores = await getLandingScores(landing.keySignature);
 
   const chips = [
     ...keyLandings.map((item) => ({

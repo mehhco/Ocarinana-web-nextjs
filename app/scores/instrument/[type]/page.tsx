@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { ScoreLandingView } from "@/components/scores/score-landing-view";
 import {
   getInstrumentLanding,
@@ -7,6 +8,7 @@ import {
   keyLandings,
   type ScoreInstrumentSlug,
 } from "@/lib/scores/landing";
+import { shouldIndexLanding } from "@/lib/scores/landing-policy";
 import { fetchPublicScores } from "@/lib/scores/public-list";
 import { absoluteUrl } from "@/lib/seo/site";
 
@@ -21,6 +23,10 @@ export function generateStaticParams() {
   return instrumentLandings.map((landing) => ({ type: landing.slug }));
 }
 
+const getLandingScores = cache((instrumentType: '6-hole' | '12-hole') =>
+  fetchPublicScores({ instrumentType, limit: 18 })
+);
+
 export async function generateMetadata({
   params,
 }: InstrumentLandingPageProps): Promise<Metadata> {
@@ -31,6 +37,8 @@ export async function generateMetadata({
     return { title: '页面不存在', robots: { index: false, follow: false } };
   }
 
+  const scores = await getLandingScores(landing.instrumentType);
+  const indexable = shouldIndexLanding(scores.length);
   const url = absoluteUrl(`/scores/instrument/${landing.slug}`);
 
   return {
@@ -45,16 +53,21 @@ export async function generateMetadata({
       url,
       locale: 'zh_CN',
     },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
-    },
+    robots: indexable
+      ? {
+          index: true,
+          follow: true,
+          googleBot: {
+            index: true,
+            follow: true,
+            'max-image-preview': 'large',
+            'max-snippet': -1,
+          },
+        }
+      : {
+          index: false,
+          follow: true,
+        },
   };
 }
 
@@ -68,10 +81,7 @@ export default async function InstrumentLandingPage({
     notFound();
   }
 
-  const scores = await fetchPublicScores({
-    instrumentType: landing.instrumentType,
-    limit: 18,
-  });
+  const scores = await getLandingScores(landing.instrumentType);
 
   const chips = [
     ...instrumentLandings.map((item) => ({

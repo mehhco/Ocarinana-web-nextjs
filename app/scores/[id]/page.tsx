@@ -338,6 +338,20 @@ export default async function PublicScorePage({ params }: PublicScorePageProps) 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600 dark:text-slate-300">
               先用“指法图”检查换指位置，需要歌词时再打开歌词显示。练习前可以导出图片，分享给同学或放进课堂讲义。
             </p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <Link
+                href={`/scores/instrument/${settings.instrumentType === "6-hole" ? "6-hole" : "12-hole"}`}
+                className="rounded-full border border-emerald-900/15 bg-white px-3 py-1.5 font-medium text-emerald-900 transition-colors hover:border-emerald-700 dark:border-white/15 dark:bg-white/10 dark:text-emerald-100"
+              >
+                更多{instrumentLabel}陶笛谱
+              </Link>
+              <Link
+                href={`/scores/key/${keySignature.toLowerCase()}`}
+                className="rounded-full border border-emerald-900/15 bg-white px-3 py-1.5 font-medium text-emerald-900 transition-colors hover:border-emerald-700 dark:border-white/15 dark:bg-white/10 dark:text-emerald-100"
+              >
+                1={keySignature} 陶笛谱
+              </Link>
+            </div>
           </div>
           <Button asChild className="h-11 bg-emerald-700 px-5 text-white hover:bg-emerald-800">
             <Link href="/editor">

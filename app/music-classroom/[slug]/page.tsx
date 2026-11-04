@@ -424,6 +424,45 @@ export default async function ClassroomTopicPage({
             </div>
           </section>
 
+          <section className="mt-8 rounded-xl border border-lime-900/10 bg-white p-5 md:p-6 dark:border-white/10 dark:bg-white/[0.04]">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime-800 dark:text-lime-300">
+                  曲谱库
+                </p>
+                <h2 className="mt-2 text-xl font-bold text-zinc-950 dark:text-white">
+                  按孔数或调号找现成的谱
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                  想直接上手练习，可以按自己的陶笛孔数和调号进对应曲谱库；没有合适的谱时，再把刚学的内容做成一页练习。
+                </p>
+              </div>
+              <Link
+                href="/scores"
+                className="shrink-0 text-sm text-lime-800 underline-offset-4 hover:underline dark:text-lime-300"
+              >
+                浏览乐谱广场 →
+              </Link>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[
+                { href: "/scores/instrument/6-hole", label: "六孔陶笛谱" },
+                { href: "/scores/instrument/12-hole", label: "十二孔陶笛谱" },
+                { href: "/scores/key/c", label: "1=C 陶笛谱" },
+                { href: "/scores/key/f", label: "1=F 陶笛谱" },
+                { href: "/scores/key/g", label: "1=G 陶笛谱" },
+              ].map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:border-lime-700 hover:text-lime-800 dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-200"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </section>
+
           <section className="mt-8 grid gap-5 rounded-xl border border-lime-900/10 bg-[#eef3dd] p-5 md:grid-cols-[1fr_auto] md:items-center md:p-6 dark:border-white/10 dark:bg-[#111908]">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime-800 dark:text-lime-300">
