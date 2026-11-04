@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthRedirectUrl } from "@/lib/auth/redirect-url";
 import { Button } from "@/components/ui/button";
 import { LoadingButtonContent } from "@/components/loading-button-content";
 import {
@@ -45,7 +46,7 @@ export function SignUpForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
+          emailRedirectTo: getAuthRedirectUrl("/protected", window.location.origin),
         },
       });
       if (error) throw error;

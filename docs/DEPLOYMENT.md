@@ -141,34 +141,57 @@ supabase db push
 
 ### 步骤3: 配置认证
 
-1. 在 Supabase Dashboard 中打开 "Authentication" > "Settings"
-2. 配置 "Site URL":
+1. 在 Supabase Dashboard 中打开 "Authentication" > "URL Configuration"
+2. 配置 "Site URL"（**必须是生产域名**，新项目默认是 `http://localhost:3000`，留着它重置邮件就会回跳 `localhost`）:
    ```
-   https://your-domain.com
+   https://www.ocarinana.com
    ```
-3. 配置 "Redirect URLs":
+3. 配置 "Redirect URLs"（必须使用通配符，只写裸域名匹配不到带路径的地址）:
    ```
-   https://your-domain.com/auth/confirm
-   https://your-domain.com/auth/callback
+   https://www.ocarinana.com/**
+   https://ocarinana.com/**
+   http://localhost:3000/**
    ```
 4. 启用邮箱确认（推荐）:
    - 打开 "Email Auth" 设置
    - 勾选 "Confirm email"
 
-### 步骤4: 配置邮件模板（可选）
+> Supabase 的行为：`redirectTo` 不在白名单里时**不会报错**，而是静默回退到 Site URL。所以白名单少一条，邮件链接就会变成 `redirect_to=http://localhost:3000`，用户点开只能看到“无法连接”。
+
+### 步骤4: 配置邮件模板（强烈推荐）
+
+默认模板使用 `{{ .ConfirmationURL }}`，它会生成 `https://<project>.supabase.co/auth/v1/verify?...` 这样的长链接。这种链接在 QQ 邮箱、微信内置浏览器里容易被链接安全跳转拦截（表现为 `xmspamchecklogicsvr/xmsafejump` + `Invalid url`），而且 PKCE 校验依赖申请重置时所在浏览器的 Cookie，换设备打开必然失败。
+
+改用 `token_hash` 直连本站，链接更短、同域，也不依赖浏览器 Cookie：
 
 1. 打开 "Authentication" > "Email Templates"
-2. 自定义邮件模板：
-   - Confirm signup
-   - Magic Link
-   - Reset password
+2. 修改以下模板，把链接换成 `{{ .SiteURL }}` + `{{ .TokenHash }}`：
 
-示例模板：
-```html
-<h2>欢迎来到 Ocarinana！</h2>
-<p>点击下面的链接确认你的邮箱：</p>
-<a href="{{ .ConfirmationURL }}">确认邮箱</a>
-```
+   **Reset Password**
+   ```html
+   <h2>重置 Ocarinana 密码</h2>
+   <p>点击下面的按钮设置新密码，链接只能使用一次：</p>
+   <p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/auth/update-password">重置密码</a></p>
+   ```
+
+   **Confirm signup**
+   ```html
+   <h2>欢迎来到 Ocarinana！</h2>
+   <p>点击下面的链接确认你的邮箱：</p>
+   <p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">确认邮箱</a></p>
+   ```
+
+3. 模板渲染后 `{{ .SiteURL }}` 必须是 `https://www.ocarinana.com`；如果邮件里的链接仍然指向 `localhost`，说明步骤 3 的 Site URL 没生效。
+
+> 如果邮件里的 `&` 被转义成 `&amp;` 导致链接打不开，把模板 href 里的 `&` 改写成 `&amp;` 即可（HTML 属性里的标准写法）。
+
+### 步骤4.1: 使用自有 SMTP（推荐）
+
+Supabase 默认发件域是 `noreply@mail.app.supabase.io`，QQ 邮箱 / 163 对它的风控很重，容易进垃圾箱甚至拦截链接。用已验证的发件域名更稳：
+
+1. 打开 "Authentication" > "SMTP Settings"（或 Project Settings > Auth > SMTP）
+2. 填入 Resend 的 SMTP 信息：主机 `smtp.resend.com`、端口 `465`、用户名 `resend`、密码为 Resend API Key
+3. 发件人填 `Ocarinana <no-reply@ocarinana.com>`，并确认该域名已在 Resend 完成 SPF/DKIM 验证
 
 ### 步骤5: 获取 API 密钥
 

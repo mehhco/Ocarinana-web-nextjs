@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthRedirectUrl } from "@/lib/auth/redirect-url";
 import { Button } from "@/components/ui/button";
 import { LoadingButtonContent } from "@/components/loading-button-content";
 import {
@@ -33,8 +34,11 @@ export function ForgotPasswordForm({
 
     try {
       // The url which will be included in the email. This URL needs to be configured in your redirect URLs in the Supabase dashboard at https://supabase.com/dashboard/project/_/auth/url-configuration
+      // NEXT_PUBLIC_APP_URL is preferred so preview deployments never leak their
+      // origin into the email; if the URL is not allowlisted Supabase falls back
+      // to the project "Site URL" instead.
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/update-password`,
+        redirectTo: getAuthRedirectUrl("/auth/update-password", window.location.origin),
       });
       if (error) throw error;
       setSuccess(true);
@@ -56,6 +60,9 @@ export function ForgotPasswordForm({
           <CardContent>
             <p className="text-sm text-muted-foreground">
               如果您使用邮箱和密码注册，您将收到一封密码重置邮件。
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              没有收到？请检查垃圾邮件目录。如果邮件里的按钮打不开，请长按复制链接，粘贴到浏览器地址栏中打开。
             </p>
           </CardContent>
         </Card>
