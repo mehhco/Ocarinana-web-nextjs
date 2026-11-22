@@ -57,6 +57,7 @@ interface ToolbarProps {
   isDirty: boolean;
   isSaving: boolean;
   cloudSaveAvailable?: boolean;
+  guestMode?: boolean;
   backHref?: string;
   displayScale: number;
   onBack?: () => void;
@@ -118,6 +119,7 @@ export const Toolbar = memo(function Toolbar({
   isDirty,
   isSaving,
   cloudSaveAvailable = true,
+  guestMode = false,
   backHref,
   displayScale,
   onBack,
@@ -223,13 +225,13 @@ export const Toolbar = memo(function Toolbar({
                 onBack ? (
                   <Button variant="ghost" size="sm" className={TOOL_BUTTON_CLASS} onClick={handleBack} disabled={isSaving}>
                     <ArrowLeftIcon className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t('我的乐谱', 'My scores')}</span>
+                    <span className="hidden sm:inline">{guestMode ? t('返回', 'Back') : t('我的乐谱', 'My scores')}</span>
                   </Button>
                 ) : (
                   <Button asChild variant="ghost" size="sm" className={TOOL_BUTTON_CLASS}>
                     <Link href={backHref} prefetch={false}>
                       <ArrowLeftIcon className="h-4 w-4" />
-                      <span className="hidden sm:inline">{t('我的乐谱', 'My scores')}</span>
+                      <span className="hidden sm:inline">{guestMode ? t('返回', 'Back') : t('我的乐谱', 'My scores')}</span>
                     </Link>
                   </Button>
                 )
@@ -244,13 +246,15 @@ export const Toolbar = memo(function Toolbar({
               >
                 <SaveIcon className="h-4 w-4" />
                 <span className="hidden sm:inline">
-                  {!cloudSaveAvailable
-                    ? t('登录保存', 'Sign in to save')
-                    : isSaving
-                      ? t('保存中', 'Saving')
-                      : isDirty
-                        ? t('保存', 'Save')
-                        : t('已保存', 'Saved')}
+                  {guestMode
+                    ? t('保存到云端', 'Save to cloud')
+                    : !cloudSaveAvailable
+                      ? t('登录保存', 'Sign in to save')
+                      : isSaving
+                        ? t('保存中', 'Saving')
+                        : isDirty
+                          ? t('保存', 'Save')
+                          : t('已保存', 'Saved')}
                 </span>
               </Button>
 

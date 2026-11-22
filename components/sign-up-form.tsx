@@ -17,17 +17,21 @@ import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PendingLink } from "@/components/pending-link";
+import { sanitizeNextPath } from "@/lib/auth/safe-next";
 
 export function SignUpForm({
   className,
+  nextPath,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: React.ComponentPropsWithoutRef<"div"> & { nextPath?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const targetPath = sanitizeNextPath(nextPath);
+  const nextQuery = targetPath === "/" ? "" : `?next=${encodeURIComponent(targetPath)}`;
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +61,7 @@ export function SignUpForm({
       }
       
       // 无论是否自动登录，都跳转到成功页面，让用户手动登录
-      router.replace("/auth/sign-up-success");
+      router.replace(`/auth/sign-up-success${nextQuery}`);
       router.refresh();
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "发生错误");
@@ -119,7 +123,11 @@ export function SignUpForm({
             </div>
             <div className="mt-4 text-center text-sm">
               已有账户？{" "}
-              <PendingLink href="/auth/login" className="underline underline-offset-4" pendingText="打开中...">
+              <PendingLink
+                href={`/auth/login${nextQuery}`}
+                className="underline underline-offset-4"
+                pendingText="打开中..."
+              >
                 立即登录
               </PendingLink>
             </div>

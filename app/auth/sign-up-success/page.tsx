@@ -7,8 +7,18 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PendingLink } from "@/components/pending-link";
+import { sanitizeNextPath } from "@/lib/auth/safe-next";
 
-export default function Page() {
+interface SignUpSuccessPageProps {
+  searchParams: Promise<{ next?: string }>;
+}
+
+export default async function Page({ searchParams }: SignUpSuccessPageProps) {
+  const params = await searchParams;
+  const targetPath = sanitizeNextPath(params.next);
+  const loginHref =
+    targetPath === "/" ? "/auth/login" : `/auth/login?next=${encodeURIComponent(targetPath)}`;
+
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -24,8 +34,13 @@ export default function Page() {
               <p className="text-sm text-muted-foreground">
                 恭喜您，账户注册成功！现在可以使用您的邮箱和密码登录了。
               </p>
+              {targetPath !== "/" && (
+                <p className="text-sm text-muted-foreground">
+                  登录后会回到刚才的编辑器，继续保存你正在写的乐谱。
+                </p>
+              )}
               <Button asChild className="w-full">
-                <PendingLink href="/auth/login" pendingText="打开中..." showPendingSpinner>
+                <PendingLink href={loginHref} pendingText="打开中..." showPendingSpinner>
                   立即登录
                 </PendingLink>
               </Button>

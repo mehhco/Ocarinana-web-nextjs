@@ -9,6 +9,8 @@ interface MobileEditorHeaderProps {
   isSaving: boolean;
   isExporting: boolean;
   backHref?: string;
+  guestMode?: boolean;
+  guestDraftSavedAt?: number | null;
   onBack?: () => void;
   onSave: () => void;
   onExport: () => void;
@@ -23,6 +25,8 @@ export function MobileEditorHeader({
   isSaving,
   isExporting,
   backHref,
+  guestMode = false,
+  guestDraftSavedAt = null,
   onBack,
   onSave,
   onExport,
@@ -35,11 +39,23 @@ export function MobileEditorHeader({
   const canRedo = useScoreStore((state) => state.canRedo);
   const t = useEditorT();
 
-  const saveLabel = isSaving
-    ? t('保存中', 'Saving')
-    : isDirty
-      ? t('保存乐谱', 'Save score')
-      : t('已保存', 'Saved');
+  const saveLabel = guestMode
+    ? t('保存到云端', 'Save to cloud')
+    : isSaving
+      ? t('保存中', 'Saving')
+      : isDirty
+        ? t('保存乐谱', 'Save score')
+        : t('已保存', 'Saved');
+
+  const statusLabel = guestMode
+    ? guestDraftSavedAt
+      ? t('草稿已自动存在本机', 'Draft autosaved on this device')
+      : t('编辑内容会自动暂存本机', 'Edits autosave on this device')
+    : isSaving
+      ? t('正在同步到云端', 'Syncing to the cloud')
+      : isDirty
+        ? t('有未保存修改', 'Unsaved changes')
+        : t('点击编辑乐谱信息', 'Edit score info');
 
   return (
     <header className="editor-safe-top flex shrink-0 items-center gap-1 border-b border-slate-200 bg-white/95 px-2 pb-1.5 shadow-sm backdrop-blur lg:hidden">
@@ -56,13 +72,7 @@ export function MobileEditorHeader({
         aria-label={t('编辑乐谱设置', 'Edit score settings')}
       >
         <span className="block truncate text-sm font-semibold text-slate-900">{title}</span>
-        <span className="block text-[11px] text-slate-500">
-          {isSaving
-            ? t('正在同步到云端', 'Syncing to the cloud')
-            : isDirty
-              ? t('有未保存修改', 'Unsaved changes')
-              : t('点击编辑乐谱信息', 'Edit score info')}
-        </span>
+        <span className="block text-[11px] text-slate-500">{statusLabel}</span>
       </button>
 
       <button type="button" className={ICON_BUTTON} onClick={undo} disabled={!canUndo} aria-label={t('撤销', 'Undo')}>
@@ -80,4 +90,3 @@ export function MobileEditorHeader({
     </header>
   );
 }
-

@@ -3,7 +3,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "注册 - Ocarinana",
-  description: "注册 Ocarinana 账户，免费使用专业的在线陶笛谱生成器，开始创作六孔或十二孔陶笛指法谱",
+  description: "注册 Ocarinana 账户，免费用专业的在线陶笛谱生成器，开始创作六孔或十二孔陶笛指法谱",
   keywords: [
     "Ocarinana注册",
     "陶笛谱生成器注册",
@@ -16,11 +16,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Page() {
+interface SignUpPageProps {
+  searchParams: Promise<{ next?: string }>;
+}
+
+export default async function Page({ searchParams }: SignUpPageProps) {
+  const params = await searchParams;
+
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
-        <SignUpForm />
+        <SignUpForm nextPath={params.next} />
       </div>
     </div>
   );

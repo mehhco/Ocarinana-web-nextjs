@@ -4,6 +4,7 @@ import { ScoreEditor } from "@/components/editor/core/ScoreEditor";
 import { PendingLink } from "@/components/pending-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createClient } from "@/lib/supabase/server";
 import {
   DEFAULT_PRODUCER,
   DEFAULT_SETTINGS,
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 interface PublicEditorPageProps {
-  searchParams: Promise<{ instrument?: string }>;
+  searchParams: Promise<{ instrument?: string; save?: string }>;
 }
 
 function isInstrumentType(value: string | undefined): value is InstrumentType {
@@ -72,6 +73,9 @@ export default async function PublicEditorPage({ searchParams }: PublicEditorPag
             <p className="mt-2 text-sm leading-6 text-slate-600">
               进入编辑器后陶笛类型会锁定，六孔和十二孔会使用各自的音域与指法图。
             </p>
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              试用不需要注册：你写下的谱子会自动暂存在本机浏览器里，登录后可以存到云端。
+            </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
@@ -100,6 +104,14 @@ export default async function PublicEditorPage({ searchParams }: PublicEditorPag
     );
   }
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isSignedIn = Boolean(user);
+  const shouldAutoSaveDraft = isSignedIn && params.save === "1";
+  const loginNextPath = `/editor?instrument=${instrumentType}&save=1`;
+
   return (
     <main className="flex h-screen h-dvh min-h-0 w-full flex-col overflow-hidden bg-slate-50">
       <div className="flex h-12 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4">
@@ -108,17 +120,39 @@ export default async function PublicEditorPage({ searchParams }: PublicEditorPag
         </Link>
         <div className="flex items-center gap-3">
           <span className="hidden text-xs text-slate-500 sm:inline">
-            当前为试用模式，可导出图片；登录后可保存到云端
+            {isSignedIn
+              ? "已登录：点「保存到云端」会把乐谱存进「我的乐谱」"
+              : "编辑内容会自动暂存在本机，不会丢；登录后可保存到云端"}
           </span>
-          <Button asChild size="sm" variant="outline">
-            <PendingLink href="/auth/login" pendingText="打开中..." showPendingSpinner>
-              登录保存
-            </PendingLink>
-          </Button>
+          {isSignedIn ? (
+            <Button asChild size="sm" variant="outline">
+              <PendingLink href="/protected/me/scores" pendingText="打开中..." showPendingSpinner>
+                我的乐谱
+              </PendingLink>
+            </Button>
+          ) : (
+            <Button asChild size="sm" variant="outline">
+              <PendingLink
+                href={`/auth/login?next=${encodeURIComponent(loginNextPath)}`}
+                pendingText="打开中..."
+                showPendingSpinner
+              >
+                登录保存
+              </PendingLink>
+            </Button>
+          )}
         </div>
       </div>
       <div className="min-h-0 flex-1">
-        <ScoreEditor initialDocument={createGuestDocument(instrumentType)} backHref="/" />
+        <ScoreEditor
+          key={instrumentType}
+          initialDocument={createGuestDocument(instrumentType)}
+          backHref="/"
+          guestMode={!isSignedIn}
+          restoreGuestDraft
+          allowCloudCreate={isSignedIn}
+          autoSaveGuestDraftOnLoad={shouldAutoSaveDraft}
+        />
       </div>
     </main>
   );

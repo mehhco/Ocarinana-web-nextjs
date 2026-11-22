@@ -12,8 +12,11 @@ import { MobileToolSheet } from '../mobile/MobileToolSheet';
 import { ScoreSettingsSheet } from '../mobile/ScoreSettingsSheet';
 import { createScoreInCloud, exportAsImage } from '../lib/exportUtils';
 import { useAutoSave } from '../hooks/useAutoSave';
+import { useGuestDraft } from '../hooks/useGuestDraft';
+import { GuestSaveDialog } from '../overlay/GuestSaveDialog';
 import { EDITOR_SCORE_DISPLAY_SCALE_STORAGE_KEY, useScoreDisplayScale } from '../hooks/useScoreDisplayScale';
 import { shouldCreateNewScoreInCloud } from '@/lib/editor/cloud-save-policy';
+import { clearGuestDraft, hasScoreContent, markGuestDraftPendingCloudSave } from '@/lib/editor/guest-draft';
 import {
   BARLINE_SHORTCUTS,
   DURATION_SHORTCUTS,
@@ -31,12 +34,29 @@ interface ScoreEditorProps {
   allowCloudCreate?: boolean;
   backHref?: string;
   locale?: EditorLocale;
+  /** 未登录试用模式：内容只落地到本机草稿，保存时引导登录而不是直接跳走 */
+  guestMode?: boolean;
+  /** 进入编辑器时恢复本机草稿（登录回跳后也要恢复，才能真正把草稿接回账号） */
+  restoreGuestDraft?: boolean;
+  /** 从登录页回跳后，自动把登录前的草稿保存到账号 */
+  autoSaveGuestDraftOnLoad?: boolean;
 }
 
 const DURATION_SHORTCUT_ENTRIES = Object.entries(DURATION_SHORTCUTS) as Array<
   [Extract<Duration, '1/4' | '1/8' | '1/16' | '1/32'>, string]
 >;
 const BARLINE_SHORTCUT_ENTRIES = Object.entries(BARLINE_SHORTCUTS) as Array<[BarlineType, string]>;
+
+function buildEditorReturnPath(): string {
+  if (typeof window === 'undefined') {
+    return '/editor';
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.set('save', '1');
+
+  return `${url.pathname}${url.search}`;
+}
 
 export const ScoreEditor = memo(function ScoreEditor({
   locale = 'zh',
@@ -49,11 +69,18 @@ export const ScoreEditor = memo(function ScoreEditor({
   );
 });
 
-const ScoreEditorInner = memo(function ScoreEditorInner({ initialDocument, scoreId, allowCloudCreate = false, backHref }: ScoreEditorProps) {
+const ScoreEditorInner = memo(function ScoreEditorInner({
+  initialDocument,
+  scoreId,
+  allowCloudCreate = false,
+  backHref,
+  guestMode = false,
+  restoreGuestDraft = guestMode,
+  autoSaveGuestDraftOnLoad = false,
+}: ScoreEditorProps) {
   const t = useEditorT();
   const router = useRouter();
   const [currentScoreId, setCurrentScoreId] = useState(scoreId);
-  const initialize = useScoreStore((state) => state.initialize);
   const documentTitle = useScoreStore((state) => state.document.title);
   const setExporting = useScoreStore((state) => state.setExporting);
   const setSaving = useScoreStore((state) => state.setSaving);
@@ -70,13 +97,22 @@ const ScoreEditorInner = memo(function ScoreEditorInner({ initialDocument, score
   const toggleBeamMode = useScoreStore((state) => state.toggleBeamMode);
   const scoreExportRef = useRef<HTMLDivElement>(null);
   const { isDirty, isSaving, saveNow } = useAutoSave(currentScoreId);
+  const { status: guestDraftStatus, lastSavedAt: guestDraftSavedAt, persistNow } = useGuestDraft({
+    restore: restoreGuestDraft,
+    persist: guestMode,
+    initialDocument,
+    onRestore: () => {
+      showToast(
+        t('已恢复这台设备上未保存的草稿', 'Restored your unsaved draft from this device'),
+        { duration: 5000 }
+      );
+    },
+  });
   const [displayScale, setDisplayScale] = useScoreDisplayScale(EDITOR_SCORE_DISPLAY_SCALE_STORAGE_KEY);
   const [isMobileToolSheetOpen, setMobileToolSheetOpen] = useState(false);
   const [isScoreSettingsOpen, setScoreSettingsOpen] = useState(false);
-
-  useEffect(() => {
-    initialize(initialDocument);
-  }, [initialize, initialDocument]);
+  const [isGuestSaveDialogOpen, setGuestSaveDialogOpen] = useState(false);
+  const guestAutoSaveStartedRef = useRef(false);
 
   useEffect(() => {
     setCurrentScoreId(scoreId);
@@ -213,9 +249,27 @@ const ScoreEditorInner = memo(function ScoreEditorInner({ initialDocument, score
     }
   }, [getDocumentSnapshot, router, setCloudScoreId, setSaving]);
 
+  const goToAuth = useCallback(
+    (target: 'login' | 'sign-up') => {
+      persistNow();
+      markGuestDraftPendingCloudSave();
+
+      const next = encodeURIComponent(buildEditorReturnPath());
+      const path = target === 'login' ? '/auth/login' : '/auth/sign-up';
+
+      router.push(`${path}?next=${next}`);
+    },
+    [persistNow, router]
+  );
+
+  const openGuestSaveDialog = useCallback(() => {
+    persistNow();
+    setGuestSaveDialogOpen(true);
+  }, [persistNow]);
+
   const handleManualSave = useCallback(async () => {
-    if (!currentScoreId && !allowCloudCreate) {
-      router.push('/auth/login');
+    if (guestMode || (!currentScoreId && !allowCloudCreate)) {
+      openGuestSaveDialog();
       return;
     }
 
@@ -225,8 +279,8 @@ const ScoreEditorInner = memo(function ScoreEditorInner({ initialDocument, score
       showSuccess(
         result.skipped
           ? t(
-              '请先修改标题，或填写作词/作曲后再保存到云端',
-              'Edit the title, or fill in the lyricist/composer before saving to the cloud'
+              '请先添加音符，或填写作词/作曲后再保存到云端',
+              'Add some notes, or fill in the lyricist/composer before saving to the cloud'
             )
           : t('乐谱已保存', 'Score saved')
       );
@@ -234,13 +288,13 @@ const ScoreEditorInner = memo(function ScoreEditorInner({ initialDocument, score
     }
 
     showError(result.error || t('保存失败', 'Save failed'));
-  }, [allowCloudCreate, createCurrentDraftInCloud, currentScoreId, router, saveNow, t]);
+  }, [allowCloudCreate, createCurrentDraftInCloud, currentScoreId, guestMode, openGuestSaveDialog, saveNow, t]);
 
   const handleBack = useCallback(async () => {
     if (!backHref) return;
 
     if (!currentScoreId) {
-      if (allowCloudCreate && shouldCreateNewScoreInCloud(getDocumentSnapshot())) {
+      if (!guestMode && allowCloudCreate && shouldCreateNewScoreInCloud(getDocumentSnapshot())) {
         const result = await createCurrentDraftInCloud();
 
         if (!result.success || !result.scoreId) {
@@ -271,10 +325,54 @@ const ScoreEditorInner = memo(function ScoreEditorInner({ initialDocument, score
     createCurrentDraftInCloud,
     currentScoreId,
     getDocumentSnapshot,
+    guestMode,
     isDirty,
     markAsSaved,
     router,
     saveNow,
+    t,
+  ]);
+
+  useEffect(() => {
+    if (!autoSaveGuestDraftOnLoad || guestMode || guestDraftStatus === 'pending' || guestAutoSaveStartedRef.current) {
+      return;
+    }
+
+    guestAutoSaveStartedRef.current = true;
+
+    if (!hasScoreContent(getDocumentSnapshot())) {
+      return;
+    }
+
+    void (async () => {
+      const result = await createCurrentDraftInCloud();
+
+      if (result.success && result.scoreId) {
+        clearGuestDraft();
+        showSuccess(t('登录前的草稿已保存到你的账号', 'Your pre-login draft is now saved to your account'));
+        return;
+      }
+
+      if (result.success && result.skipped) {
+        showToast(
+          t(
+            '请先添加音符，或填写作词/作曲后再保存到云端',
+            'Add some notes, or fill in the lyricist/composer before saving to the cloud'
+          )
+        );
+        return;
+      }
+
+      showError(
+        t('保存失败，草稿仍保存在本机，可再次点击保存', 'Save failed — your draft stays on this device, try saving again')
+      );
+    })();
+  }, [
+    autoSaveGuestDraftOnLoad,
+    createCurrentDraftInCloud,
+    getDocumentSnapshot,
+    guestDraftStatus,
+    guestMode,
     t,
   ]);
 
@@ -285,6 +383,8 @@ const ScoreEditorInner = memo(function ScoreEditorInner({ initialDocument, score
         isSaving={isSaving}
         isExporting={isExporting}
         backHref={backHref}
+        guestMode={guestMode}
+        guestDraftSavedAt={guestDraftSavedAt}
         onBack={handleBack}
         onSave={handleManualSave}
         onExport={handleExportImage}
@@ -295,7 +395,8 @@ const ScoreEditorInner = memo(function ScoreEditorInner({ initialDocument, score
         <Toolbar
           isDirty={isDirty}
           isSaving={isSaving}
-          cloudSaveAvailable={Boolean(currentScoreId) || allowCloudCreate}
+          cloudSaveAvailable={Boolean(currentScoreId) || allowCloudCreate || guestMode}
+          guestMode={guestMode}
           backHref={backHref}
           displayScale={displayScale}
           onBack={handleBack}
@@ -319,6 +420,13 @@ const ScoreEditorInner = memo(function ScoreEditorInner({ initialDocument, score
       <MobileNoteBar onOpenTools={() => setMobileToolSheetOpen(true)} />
       <MobileToolSheet open={isMobileToolSheetOpen} onClose={() => setMobileToolSheetOpen(false)} />
       <ScoreSettingsSheet open={isScoreSettingsOpen} onClose={() => setScoreSettingsOpen(false)} />
+      <GuestSaveDialog
+        open={isGuestSaveDialogOpen}
+        draftSavedToDevice={guestDraftStatus !== 'unavailable'}
+        onClose={() => setGuestSaveDialogOpen(false)}
+        onLogin={() => goToAuth('login')}
+        onSignUp={() => goToAuth('sign-up')}
+      />
     </div>
   );
 });
